@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2001,2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -39,12 +40,15 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
 public class ListDV extends TypeValidator{
 
     public short getAllowedFacets(){
-          return (XSSimpleTypeDecl.FACET_LENGTH | XSSimpleTypeDecl.FACET_MINLENGTH | XSSimpleTypeDecl.FACET_MAXLENGTH | XSSimpleTypeDecl.FACET_PATTERN | XSSimpleTypeDecl.FACET_ENUMERATION | XSSimpleTypeDecl.FACET_WHITESPACE );
+          return (XSSimpleTypeDecl.FACET_LENGTH | XSSimpleTypeDecl.FACET_MINLENGTH |
+                  XSSimpleTypeDecl.FACET_MAXLENGTH | XSSimpleTypeDecl.FACET_PATTERN |
+                  XSSimpleTypeDecl.FACET_ENUMERATION | XSSimpleTypeDecl.FACET_WHITESPACE );
     }
 
     // this method should never be called: XSSimpleTypeDecl is responsible for
     // calling the item type for the convertion
-    public Object getActualValue(String content, ValidationContext context) throws InvalidDatatypeValueException{
+    public Object getActualValue(String content, ValidationContext context)
+            throws InvalidDatatypeValueException{
         return content;
     }
 
@@ -53,7 +57,7 @@ public class ListDV extends TypeValidator{
         return ((ListData)value).getLength();
     }
 
-    final static class ListData extends AbstractList implements ObjectList {
+    final static class ListData extends AbstractList<Object> implements ObjectList {
         final Object[] data;
         private String canonical;
         public ListData(Object[] data) {

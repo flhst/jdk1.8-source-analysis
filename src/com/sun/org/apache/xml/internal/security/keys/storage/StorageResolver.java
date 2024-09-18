@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -38,18 +38,11 @@ import com.sun.org.apache.xml.internal.security.keys.storage.implementations.Sin
  */
 public class StorageResolver {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(StorageResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(StorageResolver.class);
 
     /** Field storageResolvers */
-    private List<StorageResolverSpi> storageResolvers = null;
-
-    /**
-     * Constructor StorageResolver
-     *
-     */
-    public StorageResolver() {}
+    private final List<StorageResolverSpi> storageResolvers = new ArrayList<>();
 
     /**
      * Constructor StorageResolver
@@ -58,18 +51,6 @@ public class StorageResolver {
      */
     public StorageResolver(StorageResolverSpi resolver) {
         this.add(resolver);
-    }
-
-    /**
-     * Method addResolver
-     *
-     * @param resolver
-     */
-    public void add(StorageResolverSpi resolver) {
-        if (storageResolvers == null) {
-            storageResolvers = new ArrayList<StorageResolverSpi>();
-        }
-        this.storageResolvers.add(resolver);
     }
 
     /**
@@ -82,6 +63,24 @@ public class StorageResolver {
     }
 
     /**
+     * Constructor StorageResolver
+     *
+     * @param x509certificate
+     */
+    public StorageResolver(X509Certificate x509certificate) {
+        this.add(x509certificate);
+    }
+
+    /**
+     * Method addResolver
+     *
+     * @param resolver
+     */
+    public void add(StorageResolverSpi resolver) {
+        this.storageResolvers.add(resolver);
+    }
+
+    /**
      * Method addKeyStore
      *
      * @param keyStore
@@ -90,17 +89,8 @@ public class StorageResolver {
         try {
             this.add(new KeyStoreResolver(keyStore));
         } catch (StorageResolverException ex) {
-            log.log(java.util.logging.Level.SEVERE, "Could not add KeyStore because of: ", ex);
+            LOG.error("Could not add KeyStore because of: ", ex);
         }
-    }
-
-    /**
-     * Constructor StorageResolver
-     *
-     * @param x509certificate
-     */
-    public StorageResolver(X509Certificate x509certificate) {
-        this.add(x509certificate);
     }
 
     /**
@@ -127,10 +117,10 @@ public class StorageResolver {
     static class StorageResolverIterator implements Iterator<Certificate> {
 
         /** Field resolvers */
-        Iterator<StorageResolverSpi> resolvers = null;
+        private final Iterator<StorageResolverSpi> resolvers;
 
         /** Field currentResolver */
-        Iterator<Certificate> currentResolver = null;
+        private Iterator<Certificate> currentResolver;
 
         /**
          * Constructor StorageResolverIterator
@@ -142,7 +132,7 @@ public class StorageResolver {
             currentResolver = findNextResolver();
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public boolean hasNext() {
             if (currentResolver == null) {
                 return false;
@@ -153,10 +143,10 @@ public class StorageResolver {
             }
 
             currentResolver = findNextResolver();
-            return (currentResolver != null);
+            return currentResolver != null;
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public Certificate next() {
             if (hasNext()) {
                 return currentResolver.next();

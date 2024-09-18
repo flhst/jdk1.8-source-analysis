@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  */
  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +27,7 @@ import java.util.Map;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -78,6 +79,7 @@ import org.w3c.dom.events.EventTarget;
  * @author Arnaud  Le Hors, IBM
  * @author Joe Kesselman, IBM
  * @since  PR-DOM-Level-1-19980818.
+ * @LastModified: Apr 2019
  */
 public abstract class NodeImpl
     implements Node, NodeList, EventTarget, Cloneable, Serializable{
@@ -121,15 +123,6 @@ public abstract class NodeImpl
      * This is the case of two nodes that are not in the same document.
      */
     public static final short TREE_POSITION_DISCONNECTED = 0x00;
-
-
-    // DocumentPosition
-    public static final short DOCUMENT_POSITION_DISCONNECTED = 0x01;
-    public static final short DOCUMENT_POSITION_PRECEDING = 0x02;
-    public static final short DOCUMENT_POSITION_FOLLOWING = 0x04;
-    public static final short DOCUMENT_POSITION_CONTAINS = 0x08;
-    public static final short DOCUMENT_POSITION_IS_CONTAINED = 0x10;
-    public static final short DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC = 0x20;
 
     /** Serialization version. */
     static final long serialVersionUID = -6316591992167219696L;
@@ -324,7 +317,7 @@ public abstract class NodeImpl
      * NON-DOM
      * set the ownerDocument of this node
      */
-    void setOwnerDocument(CoreDocumentImpl doc) {
+    protected void setOwnerDocument(CoreDocumentImpl doc) {
         if (needsSyncData()) {
             synchronizeData();
         }
@@ -559,7 +552,7 @@ public abstract class NodeImpl
      * @see ParentNode
      *
      * @return org.w3c.dom.Node
-     * @param Index int
+     * @param index int
      */
     public Node item(int index) {
         return null;
@@ -975,9 +968,7 @@ public abstract class NodeImpl
           return 0;
 
         // check if other is from a different implementation
-        try {
-            NodeImpl node = (NodeImpl) other;
-        } catch (ClassCastException e) {
+        if (other != null && !(other instanceof NodeImpl)) {
             // other comes from a different implementation
             String msg = DOMMessageFormatter.formatMessage(
                DOMMessageFormatter.DOM_DOMAIN, "NOT_SUPPORTED_ERR", null);
@@ -1040,7 +1031,7 @@ public abstract class NodeImpl
             otherDepth +=1;
             if (node == this)
               // The other node is a descendent of the reference node.
-              return (DOCUMENT_POSITION_IS_CONTAINED |
+              return (DOCUMENT_POSITION_CONTAINED_BY |
                       DOCUMENT_POSITION_FOLLOWING);
             otherAncestor = node;
         }
@@ -1130,7 +1121,7 @@ public abstract class NodeImpl
           case Node.NOTATION_NODE:
           case Node.ENTITY_NODE: {
           DocumentType container = thisOwnerDoc.getDoctype();
-            if (container == this) return (DOCUMENT_POSITION_IS_CONTAINED |
+            if (container == this) return (DOCUMENT_POSITION_CONTAINED_BY |
                                           DOCUMENT_POSITION_FOLLOWING);
             otherNode = otherAncestor = thisOwnerDoc;
             break;
@@ -1138,7 +1129,7 @@ public abstract class NodeImpl
           case Node.DOCUMENT_TYPE_NODE: {
             if (thisNode == otherOwnerDoc)
               return (DOCUMENT_POSITION_FOLLOWING |
-                      DOCUMENT_POSITION_IS_CONTAINED);
+                      DOCUMENT_POSITION_CONTAINED_BY);
             else if (otherOwnerDoc!=null && thisOwnerDoc==otherOwnerDoc)
               return (DOCUMENT_POSITION_PRECEDING);
             break;
@@ -1152,7 +1143,7 @@ public abstract class NodeImpl
                   // The other node is a descendent of the reference
                   // node's element
                   return DOCUMENT_POSITION_FOLLOWING |
-                         DOCUMENT_POSITION_IS_CONTAINED;
+                         DOCUMENT_POSITION_CONTAINED_BY;
                 otherAncestor = node;
             }
 
@@ -1301,8 +1292,8 @@ public abstract class NodeImpl
         return getNodeValue();  // overriden in some subclasses
     }
 
-    // internal method taking a StringBuffer in parameter
-    void getTextContent(StringBuffer buf) throws DOMException {
+    // internal method taking a StringBuilder in parameter
+    void getTextContent(StringBuilder buf) throws DOMException {
         String content = getNodeValue();
         if (content != null) {
             buf.append(content);
@@ -1424,7 +1415,11 @@ public abstract class NodeImpl
             return false;
         }
         case Node.DOCUMENT_NODE:{
-                return((NodeImpl)((Document)this).getDocumentElement()).isDefaultNamespace(namespaceURI);
+                Element docElement = ((Document)this).getDocumentElement();
+                if (docElement != null) {
+                    return docElement.isDefaultNamespace(namespaceURI);
+                }
+                return false;
             }
 
         case Node.ENTITY_NODE :
@@ -1474,12 +1469,15 @@ public abstract class NodeImpl
 
         switch (type) {
         case Node.ELEMENT_NODE: {
-
-                String namespace = this.getNamespaceURI(); // to flip out children
+                this.getNamespaceURI(); // to flip out children
                 return lookupNamespacePrefix(namespaceURI, (ElementImpl)this);
             }
         case Node.DOCUMENT_NODE:{
-                return((NodeImpl)((Document)this).getDocumentElement()).lookupPrefix(namespaceURI);
+                Element docElement = ((Document)this).getDocumentElement();
+                if (docElement != null) {
+                    return docElement.lookupPrefix(namespaceURI);
+                }
+                return null;
             }
 
         case Node.ENTITY_NODE :
@@ -1510,8 +1508,8 @@ public abstract class NodeImpl
      * Look up the namespace URI associated to the given prefix, starting from this node.
      * Use lookupNamespaceURI(null) to lookup the default namespace
      *
-     * @param namespaceURI
-     * @return th URI for the namespace
+     * @param specifiedPrefix
+     * @return the URI for the namespace
      * @since DOM Level 3
      */
     public String lookupNamespaceURI(String specifiedPrefix) {
@@ -1536,20 +1534,20 @@ public abstract class NodeImpl
                     int length = map.getLength();
                     for (int i=0;i<length;i++) {
                         Node attr = map.item(i);
-                        String attrPrefix = attr.getPrefix();
-                        String value = attr.getNodeValue();
                         namespace = attr.getNamespaceURI();
                         if (namespace !=null && namespace.equals("http://www.w3.org/2000/xmlns/")) {
+                            String attrPrefix = attr.getPrefix();
+                            String value = attr.getNodeValue();
                             // at this point we are dealing with DOM Level 2 nodes only
                             if (specifiedPrefix == null &&
                                 attr.getNodeName().equals("xmlns")) {
                                 // default namespace
-                                return value;
+                                return value.length() > 0 ? value : null;
                             } else if (attrPrefix !=null &&
                                        attrPrefix.equals("xmlns") &&
                                        attr.getLocalName().equals(specifiedPrefix)) {
                                 // non default namespace
-                                return value;
+                                return value.length() > 0 ? value : null;
                             }
                         }
                     }
@@ -1564,7 +1562,11 @@ public abstract class NodeImpl
 
             }
         case Node.DOCUMENT_NODE : {
-                return((NodeImpl)((Document)this).getDocumentElement()).lookupNamespaceURI(specifiedPrefix);
+                Element docElement = ((Document)this).getDocumentElement();
+                if (docElement != null) {
+                    return docElement.lookupNamespaceURI(specifiedPrefix);
+                }
+                return null;
             }
         case Node.ENTITY_NODE :
         case Node.NOTATION_NODE:
@@ -1590,15 +1592,14 @@ public abstract class NodeImpl
         }
     }
 
-
-    Node getElementAncestor (Node currentNode){
+    Node getElementAncestor(Node currentNode) {
         Node parent = currentNode.getParentNode();
-        if (parent != null) {
+        while (parent != null) {
             short type = parent.getNodeType();
             if (type == Node.ELEMENT_NODE) {
                 return parent;
             }
-            return getElementAncestor(parent);
+            parent = parent.getParentNode();
         }
         return null;
     }
@@ -1623,10 +1624,10 @@ public abstract class NodeImpl
             int length = map.getLength();
             for (int i=0;i<length;i++) {
                 Node attr = map.item(i);
-                String attrPrefix = attr.getPrefix();
-                String value = attr.getNodeValue();
                 namespace = attr.getNamespaceURI();
                 if (namespace !=null && namespace.equals("http://www.w3.org/2000/xmlns/")) {
+                    String attrPrefix = attr.getPrefix();
+                    String value = attr.getNodeValue();
                     // DOM Level 2 nodes
                     if (((attr.getNodeName().equals("xmlns")) ||
                          (attrPrefix !=null && attrPrefix.equals("xmlns")) &&
@@ -1686,9 +1687,6 @@ public abstract class NodeImpl
      * <code>Text</code> nodes, as well as any user data or event listeners
      * registered on the nodes.
      * @param arg The node to compare equality with.
-     * @param deep If <code>true</code>, recursively compare the subtrees; if
-     *   <code>false</code>, compare only the nodes themselves (and its
-     *   attributes, if it is an <code>Element</code>).
      * @return If the nodes, and possibly subtrees are equal,
      *   <code>true</code> otherwise <code>false</code>.
      * @since DOM Level 3

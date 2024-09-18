@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -24,7 +24,7 @@ import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.Vector;
+import java.util.ArrayList;
 
 /**
  * A Regular Expression Parser.
@@ -83,8 +83,7 @@ class RegexParser {
     int parenOpened = 1;
     int parennumber = 1;
     boolean hasBackReferences;
-    Vector references = null;
-    int parenCount = 0;
+    ArrayList<ReferencePosition> references = null;
 
     public RegexParser() {
         this.setLocale(Locale.getDefault());
@@ -116,7 +115,7 @@ class RegexParser {
         return (this.options & flag) == flag;
     }
 
-    synchronized Token parse(String regex, int options) throws ParseException {
+    Token parse(String regex, int options) throws ParseException {
         this.options = options;
         this.offset = 0;
         this.setContext(S_NORMAL);
@@ -133,15 +132,16 @@ class RegexParser {
         Token ret = this.parseRegex();
         if (this.offset != this.regexlen)
             throw ex("parser.parse.1", this.offset);
-        if (parenCount < 0)
-            throw ex("parser.factor.0", this.offset);
+        if (this.read() != T_EOF) {
+            throw ex("parser.parse.1", this.offset-1);
+        }
         if (this.references != null) {
             for (int i = 0;  i < this.references.size();  i ++) {
-                ReferencePosition position = (ReferencePosition)this.references.elementAt(i);
+                ReferencePosition position = this.references.get(i);
                 if (this.parennumber <= position.refNumber)
                     throw ex("parser.parse.2", position.position);
             }
-            this.references.removeAllElements();
+            this.references.clear();
         }
         return ret;
     }
@@ -161,6 +161,7 @@ class RegexParser {
         return this.nexttoken;
     }
 
+    @SuppressWarnings("fallthrough")
     final void next() {
         if (this.offset >= this.regexlen) {
             this.chardata = -1;
@@ -240,7 +241,6 @@ class RegexParser {
               break;
           case '(':
             ret = T_LPAREN;
-            parenCount++;
             if (this.offset >= this.regexlen)
                 break;
             if (this.regex.charAt(this.offset) != '?')
@@ -329,11 +329,10 @@ class RegexParser {
      */
     Token parseTerm() throws ParseException {
         int ch = this.read();
-        Token tok = null;
         if (ch == T_OR || ch == T_RPAREN || ch == T_EOF) {
-            tok = Token.createEmpty();
+            return Token.createEmpty();
         } else {
-            tok = this.parseFactor();
+            Token tok = this.parseFactor();
             Token concat = null;
             while ((ch = this.read()) != T_OR && ch != T_RPAREN && ch != T_EOF) {
                 if (concat == null) {
@@ -344,11 +343,8 @@ class RegexParser {
                 concat.addChild(this.parseFactor());
                 //tok = Token.createConcat(tok, this.parseFactor());
             }
+            return tok;
         }
-        if (ch == T_RPAREN) {
-            parenCount--;
-        }
-        return tok;
     }
 
     // ----------------------------------------------------------------
@@ -483,7 +479,7 @@ class RegexParser {
 
             while (this.offset + 1 < this.regexlen) {
                 ch = this.regex.charAt(this.offset + 1);
-                if ('1' <= ch && ch <= '9') {
+                if ('0' <= ch && ch <= '9') {
                     refno = (refno * 10) + (ch - '0');
                     if (refno < this.parennumber) {
                         finalRefno= refno;
@@ -499,8 +495,8 @@ class RegexParser {
             }
 
             this.hasBackReferences = true;
-            if (this.references == null)  this.references = new Vector();
-            this.references.addElement(new ReferencePosition(finalRefno, this.offset));
+            if (this.references == null)  this.references = new ArrayList<>();
+            this.references.add(new ReferencePosition(finalRefno, this.offset));
             this.offset ++;
             if (this.regex.charAt(this.offset) != ')')  throw ex("parser.factor.1", this.offset);
             this.offset ++;
@@ -616,7 +612,7 @@ class RegexParser {
 
         while  (this.offset < this.regexlen) {
             final int ch = this.regex.charAt(this.offset);
-            if ('1' <= ch && ch <= '9') {
+            if ('0' <= ch && ch <= '9') {
                 refnum = (refnum * 10) + (ch - '0');
                 if (refnum < this.parennumber) {
                     ++this.offset;
@@ -634,8 +630,8 @@ class RegexParser {
 
         Token tok = Token.createBackReference(finalRefnum);
         this.hasBackReferences = true;
-        if (this.references == null)  this.references = new Vector();
-        this.references.addElement(new ReferencePosition(finalRefnum, this.offset-2));
+        if (this.references == null)  this.references = new ArrayList<>();
+        this.references.add(new ReferencePosition(finalRefnum, this.offset-2));
         this.next();
         return tok;
     }

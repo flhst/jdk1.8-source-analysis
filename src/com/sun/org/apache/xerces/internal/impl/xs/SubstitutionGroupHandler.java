@@ -2,11 +2,12 @@
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -24,9 +25,10 @@ import com.sun.org.apache.xerces.internal.xs.XSConstants;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 /**
  * To store and validate information about substitutionGroup
@@ -41,14 +43,14 @@ public class SubstitutionGroupHandler {
 
     private static final XSElementDecl[] EMPTY_GROUP = new XSElementDecl[0];
 
-    // grammar resolver
-    XSGrammarBucket fGrammarBucket;
+    // global element declaration resolver
+    private final XSElementDeclHelper fXSElementDeclHelper;
 
     /**
      * Default constructor
      */
-    public SubstitutionGroupHandler(XSGrammarBucket grammarBucket) {
-        fGrammarBucket = grammarBucket;
+    public SubstitutionGroupHandler(XSElementDeclHelper elementDeclHelper) {
+        fXSElementDeclHelper = elementDeclHelper;
     }
 
     // 3.9.4 Element Sequence Locally Valid (Particle) 2.3.3
@@ -61,26 +63,25 @@ public class SubstitutionGroupHandler {
 
         // if the exemplar is not a global element decl, then it's not possible
         // to be substituted by another element.
-        if (exemplar.fScope != XSConstants.SCOPE_GLOBAL)
+        if (exemplar.fScope != XSConstants.SCOPE_GLOBAL) {
             return null;
+        }
 
         // if the decl blocks substitution, return false
-        if ((exemplar.fBlock & XSConstants.DERIVATION_SUBSTITUTION) != 0)
+        if ((exemplar.fBlock & XSConstants.DERIVATION_SUBSTITUTION) != 0) {
             return null;
-
-        // get grammar of the element
-        SchemaGrammar sGrammar = fGrammarBucket.getGrammar(element.uri);
-        if (sGrammar == null)
-            return null;
+        }
 
         // get the decl for the element
-        XSElementDecl eDecl = sGrammar.getGlobalElementDecl(element.localpart);
-        if (eDecl == null)
+        XSElementDecl eDecl = fXSElementDeclHelper.getGlobalElementDecl(element);
+        if (eDecl == null) {
             return null;
+        }
 
         // and check by using substitutionGroup information
-        if (substitutionGroupOK(eDecl, exemplar, exemplar.fBlock))
+        if (substitutionGroupOK(eDecl, exemplar, exemplar.fBlock)) {
             return eDecl;
+        }
 
         return null;
     }
@@ -90,13 +91,15 @@ public class SubstitutionGroupHandler {
     protected boolean substitutionGroupOK(XSElementDecl element, XSElementDecl exemplar, short blockingConstraint) {
         // For an element declaration (call it D) to be validly substitutable for another element declaration (call it C) subject to a blocking constraint (a subset of {substitution, extension, restriction}, the value of a {disallowed substitutions}) one of the following must be true:
         // 1. D and C are the same element declaration.
-        if (element == exemplar)
+        if (element == exemplar) {
             return true;
+        }
 
         // 2 All of the following must be true:
         // 2.1 The blocking constraint does not contain substitution.
-        if ((blockingConstraint & XSConstants.DERIVATION_SUBSTITUTION) != 0)
+        if ((blockingConstraint & XSConstants.DERIVATION_SUBSTITUTION) != 0) {
             return false;
+        }
 
         // 2.2 There is a chain of {substitution group affiliation}s from D to C, that is, either D's {substitution group affiliation} is C, or D's {substitution group affiliation}'s {substitution group affiliation} is C, or . . .
         XSElementDecl subGroup = element.fSubGroup;
@@ -104,14 +107,16 @@ public class SubstitutionGroupHandler {
             subGroup = subGroup.fSubGroup;
         }
 
-        if (subGroup == null)
+        if (subGroup == null) {
             return false;
+        }
 
         // 2.3 The set of all {derivation method}s involved in the derivation of D's {type definition} from C's {type definition} does not intersect with the union of the blocking constraint, C's {prohibited substitutions} (if C is complex, otherwise the empty set) and the {prohibited substitutions} (respectively the empty set) of any intermediate {type definition}s in the derivation of D's {type definition} from C's {type definition}.
         // prepare the combination of {derivation method} and
         // {disallowed substitution}
         return typeDerivationOK(element.fType, exemplar.fType, blockingConstraint);
     }
+
     private boolean typeDerivationOK(XSTypeDefinition derived, XSTypeDefinition base, short blockingConstraint) {
 
         short devMethod = 0, blockConstraint = blockingConstraint;
@@ -192,22 +197,23 @@ public class SubstitutionGroupHandler {
     /**
      * add a list of substitution group information.
      */
+    @SuppressWarnings("unchecked")
     public void addSubstitutionGroup(XSElementDecl[] elements) {
         XSElementDecl subHead, element;
-        Vector subGroup;
+        List<XSElementDecl> subGroup;
         // for all elements with substitution group affiliation
         for (int i = elements.length-1; i >= 0; i--) {
             element = elements[i];
             subHead = element.fSubGroup;
             // check whether this an entry for this element
-            subGroup = (Vector)fSubGroupsB.get(subHead);
+            subGroup = (List<XSElementDecl>)fSubGroupsB.get(subHead);
             if (subGroup == null) {
                 // if not, create a new one
-                subGroup = new Vector();
+                subGroup = new ArrayList<>();
                 fSubGroupsB.put(subHead, subGroup);
             }
             // add to the vactor
-            subGroup.addElement(element);
+            subGroup.add(element);
         }
     }
 
@@ -268,21 +274,23 @@ public class SubstitutionGroupHandler {
             return (OneSubGroup[])subGroup;
 
         // we only have the *direct* substitutions
-        Vector group = (Vector)subGroup, newGroup = new Vector();
+        @SuppressWarnings("unchecked")
+        List<XSElementDecl> group = (ArrayList<XSElementDecl>)subGroup;
+        List<OneSubGroup> newGroup = new ArrayList<>();
         OneSubGroup[] group1;
         // then for each of the direct substitutions, get its substitution
         // group, and combine the groups together.
         short dMethod, bMethod, dSubMethod, bSubMethod;
         for (int i = group.size()-1, j; i >= 0; i--) {
             // Check whether this element is blocked. If so, ignore it.
-            XSElementDecl sub = (XSElementDecl)group.elementAt(i);
+            XSElementDecl sub = (XSElementDecl)group.get(i);
             if (!getDBMethods(sub.fType, element.fType, methods))
                 continue;
             // Remember derivation methods and blocks from the types
             dMethod = methods.dMethod;
             bMethod = methods.bMethod;
             // Add this one to potential group
-            newGroup.addElement(new OneSubGroup(sub, methods.dMethod, methods.bMethod));
+            newGroup.add(new OneSubGroup(sub, methods.dMethod, methods.bMethod));
             // Get potential group for this element
             group1 = getSubGroupB(sub, methods);
             for (j = group1.length-1; j >= 0; j--) {
@@ -292,13 +300,13 @@ public class SubstitutionGroupHandler {
                 // Ignore it if it's blocked
                 if ((dSubMethod & bSubMethod) != 0)
                     continue;
-                newGroup.addElement(new OneSubGroup(group1[j].sub, dSubMethod, bSubMethod));
+                newGroup.add(new OneSubGroup(group1[j].sub, dSubMethod, bSubMethod));
             }
         }
         // Convert to an array
         OneSubGroup[] ret = new OneSubGroup[newGroup.size()];
         for (int i = newGroup.size()-1; i >= 0; i--) {
-            ret[i] = (OneSubGroup)newGroup.elementAt(i);
+            ret[i] = (OneSubGroup)newGroup.get(i);
         }
         // Store the potential sub group
         fSubGroupsB.put(element, ret);

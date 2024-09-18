@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,8 +21,8 @@
 
 package com.sun.org.apache.xerces.internal.dom;
 
-import java.util.Vector;
-
+import java.util.ArrayList;
+import java.util.List;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DocumentFragment;
@@ -126,32 +127,32 @@ public class RangeImpl  implements Range {
                 DOMException.INVALID_STATE_ERR,
                 DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "INVALID_STATE_ERR", null));
         }
-        Vector startV = new Vector();
+        List<Node> startV = new ArrayList<>();
         Node node;
         for (node=fStartContainer; node != null;
              node=node.getParentNode())
         {
-            startV.addElement(node);
+            startV.add(node);
         }
-        Vector endV = new Vector();
+        List<Node> endV = new ArrayList<>();
         for (node=fEndContainer; node != null;
              node=node.getParentNode())
         {
-            endV.addElement(node);
+            endV.add(node);
         }
         int s = startV.size()-1;
         int e = endV.size()-1;
-        Object result = null;
+        Node result = null;
         while (s>=0 && e>=0) {
-            if (startV.elementAt(s) == endV.elementAt(e)) {
-                result = startV.elementAt(s);
+            if (startV.get(s) == endV.get(e)) {
+                result = startV.get(s);
             } else {
                 break;
             }
             --s;
             --e;
         }
-        return (Node)result;
+        return result;
     }
 
 

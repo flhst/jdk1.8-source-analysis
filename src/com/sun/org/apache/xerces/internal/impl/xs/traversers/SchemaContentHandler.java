@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -25,6 +26,7 @@ import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.SAXLocatorWrapper;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
+import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
@@ -77,6 +79,7 @@ final class SchemaContentHandler implements ContentHandler {
     private final QName fAttributeQName = new QName();
     private final XMLAttributesImpl fAttributes = new XMLAttributesImpl();
     private final XMLString fTempString = new XMLString();
+    private final XMLStringBuffer fStringBuffer = new XMLStringBuffer();
 
     /**
      * <p>Constructs an SchemaContentHandler.</p>
@@ -102,6 +105,7 @@ final class SchemaContentHandler implements ContentHandler {
      */
     public void startDocument() throws SAXException {
         fNeedPushNSContext = true;
+        fNamespaceContext.reset();
         try {
             fSchemaDOMParser.startDocument(fSAXLocatorWrapper, null, fNamespaceContext, null);
         }
@@ -325,7 +329,11 @@ final class SchemaContentHandler implements ContentHandler {
             if (nsPrefix.length() > 0) {
                 prefix = XMLSymbols.PREFIX_XMLNS;
                 localpart = nsPrefix;
-                rawname = fSymbolTable.addSymbol(prefix + ":" + localpart);
+                fStringBuffer.clear();
+                fStringBuffer.append(prefix);
+                fStringBuffer.append(':');
+                fStringBuffer.append(localpart);
+                rawname = fSymbolTable.addSymbol(fStringBuffer.ch, fStringBuffer.offset, fStringBuffer.length);
             }
             else {
                 prefix = XMLSymbols.EMPTY_STRING;
@@ -333,7 +341,8 @@ final class SchemaContentHandler implements ContentHandler {
                 rawname = XMLSymbols.PREFIX_XMLNS;
             }
             fAttributeQName.setValues(prefix, localpart, rawname, NamespaceContext.XMLNS_URI);
-            fAttributes.addAttribute(fAttributeQName, XMLSymbols.fCDATASymbol, nsURI);
+            fAttributes.addAttribute(fAttributeQName, XMLSymbols.fCDATASymbol,
+                    (nsURI != null) ? nsURI : XMLSymbols.EMPTY_STRING);
         }
     }
 

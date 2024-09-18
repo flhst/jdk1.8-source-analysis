@@ -1,169 +1,145 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.sun.org.apache.bcel.internal.generic;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import java.io.*;
+import com.sun.org.apache.bcel.internal.classfile.Constant;
+import com.sun.org.apache.bcel.internal.classfile.ConstantClass;
+import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
+import com.sun.org.apache.bcel.internal.classfile.Utility;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
-import com.sun.org.apache.bcel.internal.Constants;
-import com.sun.org.apache.bcel.internal.classfile.*;
 
 /**
- * Abstract super class for instructions that use an index into the
- * constant pool such as LDC, INVOKEVIRTUAL, etc.
+ * Abstract super class for instructions that use an index into the constant pool such as LDC, INVOKEVIRTUAL, etc.
  *
  * @see ConstantPoolGen
  * @see LDC
  * @see INVOKEVIRTUAL
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @LastModified: Jan 2020
  */
-public abstract class CPInstruction extends Instruction
-  implements TypedInstruction, IndexedInstruction
-{
-  protected int index; // index to constant pool
+public abstract class CPInstruction extends Instruction implements TypedInstruction, IndexedInstruction {
 
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  CPInstruction() {}
+    /**
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     */
+    @Deprecated
+    protected int index; // index to constant pool
 
-  /**
-   * @param index to constant pool
-   */
-  protected CPInstruction(short opcode, int index) {
-    super(opcode, (short)3);
-    setIndex(index);
-  }
+    /**
+     * Empty constructor needed for Instruction.readInstruction. Not to be used otherwise.
+     */
+    CPInstruction() {
+    }
 
-  /**
-   * Dump instruction as byte code to stream out.
-   * @param out Output stream
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    out.writeByte(opcode);
-    out.writeShort(index);
-  }
+    /**
+     * @param index to constant pool
+     */
+    protected CPInstruction(final short opcode, final int index) {
+        super(opcode, (short) 3);
+        setIndex(index);
+    }
 
-  /**
-   * Long output format:
-   *
-   * &lt;name of opcode&gt; "["&lt;opcode number&gt;"]"
-   * "("&lt;length of instruction&gt;")" "&lt;"&lt; constant pool index&gt;"&gt;"
-   *
-   * @param verbose long/short format switch
-   * @return mnemonic for instruction
-   */
-  public String toString(boolean verbose) {
-    return super.toString(verbose) + " " + index;
-  }
+    /**
+     * Dump instruction as byte code to stream out.
+     *
+     * @param out Output stream
+     */
+    @Override
+    public void dump(final DataOutputStream out) throws IOException {
+        out.writeByte(super.getOpcode());
+        out.writeShort(index);
+    }
 
-  /**
-   * @return mnemonic for instruction with symbolic references resolved
-   */
-  public String toString(ConstantPool cp) {
-    Constant c   = cp.getConstant(index);
-    String   str = cp.constantToString(c);
+    /**
+     * @return index in constant pool referred by this instruction.
+     */
+    @Override
+    public final int getIndex() {
+        return index;
+    }
 
-    if(c instanceof ConstantClass)
-      str = str.replace('.', '/');
+    /**
+     * @return type related with this instruction.
+     */
+    @Override
+    public Type getType(final ConstantPoolGen cpg) {
+        final ConstantPool cp = cpg.getConstantPool();
+        String name = cp.getConstantString(index, com.sun.org.apache.bcel.internal.Const.CONSTANT_Class);
+        if (!name.startsWith("[")) {
+            name = "L" + name + ";";
+        }
+        return Type.getType(name);
+    }
 
-    return com.sun.org.apache.bcel.internal.Constants.OPCODE_NAMES[opcode] + " " + str;
-  }
+    /**
+     * Read needed data (i.e., index) from file.
+     *
+     * @param bytes input stream
+     * @param wide wide prefix?
+     */
+    @Override
+    protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
+        setIndex(bytes.readUnsignedShort());
+        super.setLength(3);
+    }
 
-  /**
-   * Read needed data (i.e., index) from file.
-   * @param bytes input stream
-   * @param wide wide prefix?
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide)
-       throws IOException
-  {
-    setIndex(bytes.readUnsignedShort());
-    length = 3;
-  }
+    /**
+     * Set the index to constant pool.
+     *
+     * @param index in constant pool.
+     */
+    @Override
+    public void setIndex(final int index) { // TODO could be package-protected?
+        if (index < 0) {
+            throw new ClassGenException("Negative index value: " + index);
+        }
+        this.index = index;
+    }
 
-  /**
-   * @return index in constant pool referred by this instruction.
-   */
-  public final int getIndex() { return index; }
+    /**
+     * Long output format:
+     *
+     * &lt;name of opcode&gt; "["&lt;opcode number&gt;"]" "("&lt;length of instruction&gt;")" "&lt;"&lt; constant pool
+     * index&gt;"&gt;"
+     *
+     * @param verbose long/short format switch
+     * @return mnemonic for instruction
+     */
+    @Override
+    public String toString(final boolean verbose) {
+        return super.toString(verbose) + " " + index;
+    }
 
-  /**
-   * Set the index to constant pool.
-   * @param index in  constant pool.
-   */
-  public void setIndex(int index) {
-    if(index < 0)
-      throw new ClassGenException("Negative index value: " + index);
-
-    this.index = index;
-  }
-
-  /** @return type related with this instruction.
-   */
-  public Type getType(ConstantPoolGen cpg) {
-    ConstantPool cp   = cpg.getConstantPool();
-    String       name = cp.getConstantString(index, com.sun.org.apache.bcel.internal.Constants.CONSTANT_Class);
-
-    if(!name.startsWith("["))
-      name = "L" + name + ";";
-
-    return Type.getType(name);
-  }
+    /**
+     * @return mnemonic for instruction with symbolic references resolved
+     */
+    @Override
+    public String toString(final ConstantPool cp) {
+        final Constant c = cp.getConstant(index);
+        String str = cp.constantToString(c);
+        if (c instanceof ConstantClass) {
+            str = Utility.packageToPath(str);
+        }
+        return com.sun.org.apache.bcel.internal.Const.getOpcodeName(super.getOpcode()) + " " + str;
+    }
 }

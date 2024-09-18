@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -22,6 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations;
 
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
@@ -36,21 +37,26 @@ import org.w3c.dom.Element;
 
 public class RSAKeyValueResolver extends KeyResolverSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(RSAKeyValueResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(RSAKeyValueResolver.class);
 
+    /** {@inheritDoc} */
+    @Override
+    protected boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
+        return XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYVALUE)
+            || XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_RSAKEYVALUE);
+    }
 
-    /** @inheritDoc */
-    public PublicKey engineLookupAndResolvePublicKey(
-        Element element, String BaseURI, StorageResolver storage
+    /** {@inheritDoc} */
+    @Override
+    protected PublicKey engineResolvePublicKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
     ) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName());
-        }
         if (element == null) {
             return null;
         }
+
+        LOG.debug("Can I resolve {}", element.getTagName());
 
         boolean isKeyValue = XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYVALUE);
         Element rsaKeyElement = null;
@@ -68,28 +74,36 @@ public class RSAKeyValueResolver extends KeyResolverSpi {
         }
 
         try {
-            RSAKeyValue rsaKeyValue = new RSAKeyValue(rsaKeyElement, BaseURI);
+            RSAKeyValue rsaKeyValue = new RSAKeyValue(rsaKeyElement, baseURI);
 
             return rsaKeyValue.getPublicKey();
         } catch (XMLSecurityException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "XMLSecurityException", ex);
-            }
+            LOG.debug("XMLSecurityException", ex);
         }
 
         return null;
     }
 
-    /** @inheritDoc */
-    public X509Certificate engineLookupResolveX509Certificate(
-        Element element, String BaseURI, StorageResolver storage
+    /** {@inheritDoc} */
+    @Override
+    protected X509Certificate engineResolveX509Certificate(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
     ) {
         return null;
     }
 
-    /** @inheritDoc */
-    public javax.crypto.SecretKey engineLookupAndResolveSecretKey(
-        Element element, String BaseURI, StorageResolver storage
+    /** {@inheritDoc} */
+    @Override
+    protected javax.crypto.SecretKey engineResolveSecretKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
+    ) {
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected PrivateKey engineResolvePrivateKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
     ) {
         return null;
     }

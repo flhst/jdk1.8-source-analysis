@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Dec 2019
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,13 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: Step.java,v 1.6 2006/06/06 22:34:34 spericas Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
-
-import java.util.Vector;
 
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
@@ -31,9 +27,9 @@ import com.sun.org.apache.bcel.internal.generic.CHECKCAST;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.ICONST;
 import com.sun.org.apache.bcel.internal.generic.ILOAD;
-import com.sun.org.apache.bcel.internal.generic.ISTORE;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
+import com.sun.org.apache.bcel.internal.generic.ISTORE;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
@@ -46,6 +42,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.dtm.Axis;
 import com.sun.org.apache.xml.internal.dtm.DTM;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -62,7 +59,7 @@ final class Step extends RelativeLocationPath {
     /**
      * A vector of predicates (filters) defined on this step - may be null
      */
-    private Vector _predicates;
+    private List<Predicate> _predicates;
 
     /**
      * Some simple predicates can be handled by this class (and not by the
@@ -76,7 +73,7 @@ final class Step extends RelativeLocationPath {
      */
     private int _nodeType;
 
-    public Step(int axis, int nodeType, Vector predicates) {
+    public Step(int axis, int nodeType, List<Predicate> predicates) {
         _axis = axis;
         _nodeType = nodeType;
         _predicates = predicates;
@@ -90,7 +87,7 @@ final class Step extends RelativeLocationPath {
         if (_predicates != null) {
             final int n = _predicates.size();
             for (int i = 0; i < n; i++) {
-                final Predicate exp = (Predicate)_predicates.elementAt(i);
+                final Predicate exp = _predicates.get(i);
                 exp.setParser(parser);
                 exp.setParent(this);
             }
@@ -121,14 +118,14 @@ final class Step extends RelativeLocationPath {
     /**
      * Returns the vector containing all predicates for this step.
      */
-    public Vector getPredicates() {
+    public List<Predicate> getPredicates() {
         return _predicates;
     }
 
     /**
      * Returns the vector containing all predicates for this step.
      */
-    public void addPredicates(Vector predicates) {
+    public void addPredicates(List<Predicate> predicates) {
         if (_predicates == null) {
             _predicates = predicates;
         }
@@ -215,9 +212,7 @@ final class Step extends RelativeLocationPath {
 
         // Type check all predicates (expressions applied to the step)
         if (_predicates != null) {
-            final int n = _predicates.size();
-            for (int i = 0; i < n; i++) {
-                final Expression pred = (Expression)_predicates.elementAt(i);
+            for (Expression pred : _predicates) {
                 pred.typeCheck(stable);
             }
         }
@@ -251,9 +246,9 @@ final class Step extends RelativeLocationPath {
             final XSLTC xsltc = getParser().getXSLTC();
 
             if (_nodeType >= DTM.NTYPES) {
-                final Vector ni = xsltc.getNamesIndex();
+                final List<String> ni = xsltc.getNamesIndex();
 
-                name = (String)ni.elementAt(_nodeType-DTM.NTYPES);
+                name = ni.get(_nodeType-DTM.NTYPES);
                 star = name.lastIndexOf('*');
             }
 
@@ -377,7 +372,7 @@ final class Step extends RelativeLocationPath {
             translateStep(classGen, methodGen, predicateIndex);
         }
         else {
-            final Predicate predicate = (Predicate) _predicates.get(predicateIndex--);
+            final Predicate predicate = _predicates.get(predicateIndex--);
 
             // Special case for predicates that can use the NodeValueIterator
             // instead of an auxiliary class. Certain path/predicates pairs
@@ -527,9 +522,7 @@ final class Step extends RelativeLocationPath {
         final StringBuffer buffer = new StringBuffer("step(\"");
         buffer.append(Axis.getNames(_axis)).append("\", ").append(_nodeType);
         if (_predicates != null) {
-            final int n = _predicates.size();
-            for (int i = 0; i < n; i++) {
-                final Predicate pred = (Predicate)_predicates.elementAt(i);
+            for (Expression pred : _predicates) {
                 buffer.append(", ").append(pred.toString());
             }
         }

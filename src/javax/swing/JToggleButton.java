@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -27,13 +27,14 @@ package javax.swing;
 import java.awt.*;
 import java.awt.event.*;
 
-import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.util.Enumeration;
+
+import sun.awt.CausedFocusEvent;
 
 
 /**
@@ -206,6 +207,40 @@ public class JToggleButton extends AbstractButton implements Accessible {
      */
     boolean shouldUpdateSelectedStateFromAction() {
         return true;
+    }
+
+    JToggleButton getGroupSelection(CausedFocusEvent.Cause cause) {
+        switch (cause) {
+          case ACTIVATION:
+          case TRAVERSAL:
+          case TRAVERSAL_UP:
+          case TRAVERSAL_DOWN:
+          case TRAVERSAL_FORWARD:
+          case TRAVERSAL_BACKWARD:
+            ButtonModel model = getModel();
+            JToggleButton selection = this;
+            if (model instanceof DefaultButtonModel) {
+                ButtonGroup group = ((DefaultButtonModel) model).getGroup();
+                if (group != null && group.getSelection() != null
+                                                  && !group.isSelected(model)) {
+                    Enumeration<AbstractButton> elements = group.getElements();
+                    while (elements.hasMoreElements()) {
+                        AbstractButton member = elements.nextElement();
+                        if (group.isSelected(member.getModel())) {
+                            if (member instanceof JToggleButton &&
+                                member.isVisible() && member.isDisplayable() &&
+                                member.isEnabled() && member.isFocusable()) {
+                                selection = (JToggleButton) member;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            return selection;
+          default:
+            return this;
+        }
     }
 
     // *********************************************************************

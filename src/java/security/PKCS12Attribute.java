@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -76,7 +76,7 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
         // Validate name
         ObjectIdentifier type;
         try {
-            type = new ObjectIdentifier(name);
+            type = ObjectIdentifier.of(name);
         } catch (IOException e) {
             throw new IllegalArgumentException("Incorrect format: name", e);
         }
@@ -85,7 +85,8 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
         // Validate value
         int length = value.length();
         String[] values;
-        if (value.charAt(0) == '[' && value.charAt(length - 1) == ']') {
+        if (length > 1 &&
+                    value.charAt(0) == '[' && value.charAt(length - 1) == ']') {
             values = value.substring(1, length - 1).split(", ");
         } else {
             values = new String[]{ value };
@@ -252,6 +253,9 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
     private void parse(byte[] encoded) throws IOException {
         DerInputStream attributeValue = new DerInputStream(encoded);
         DerValue[] attrSeq = attributeValue.getSequence(2);
+        if (attrSeq.length != 2) {
+            throw new IOException("Invalid length for PKCS12Attribute");
+        }
         ObjectIdentifier type = attrSeq[0].getOID();
         DerInputStream attrContent =
             new DerInputStream(attrSeq[1].toByteArray());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -1322,7 +1322,7 @@ public final class Pattern
 
         // if length > 0, the Pattern is lazily compiled
         compiled = false;
-        if (pattern.length() == 0) {
+        if (pattern.isEmpty()) {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
             compiled = true;
@@ -1347,8 +1347,12 @@ public final class Pattern
         capturingGroupCount = 1;
         localCount = 0;
 
-        if (pattern.length() > 0) {
-            compile();
+        if (!pattern.isEmpty()) {
+            try {
+                compile();
+            } catch (StackOverflowError soe) {
+                throw error("Stack overflow during pattern compilation");
+            }
         } else {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
@@ -1411,6 +1415,8 @@ public final class Pattern
         String result;
 
         i++;
+        if (i == normalizedPattern.length())
+            throw error("Unclosed character class");
         charClass.append("[");
         while(true) {
             int c = normalizedPattern.codePointAt(i);
@@ -1903,6 +1909,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         int ch = temp[cursor++];
         while (ch != 0 && !isLineSeparator(ch))
             ch = temp[cursor++];
+        if (ch == 0 && cursor > patternLength) {
+            cursor = patternLength;
+            ch = temp[cursor++];
+        }
         return ch;
     }
 
@@ -1913,6 +1923,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         int ch = temp[++cursor];
         while (ch != 0 && !isLineSeparator(ch))
             ch = temp[++cursor];
+        if (ch == 0 && cursor > patternLength) {
+            cursor = patternLength;
+            ch = temp[cursor];
+        }
         return ch;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -615,10 +615,12 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
             }
 
             if (isArgument && target instanceof Field && methodName.equals("get")) {
-                Field f = (Field)target;
-                writeln("<object class=" + quote(f.getDeclaringClass().getName()) +
-                        " field=" + quote(f.getName()) + "/>");
-                return;
+                Field f = (Field) target;
+                if (Modifier.isStatic(f.getModifiers())) {
+                    writeln("<object class=" + quote(f.getDeclaringClass().getName()) +
+                            " field=" + quote(f.getName()) + "/>");
+                    return;
+                }
             }
 
             Class<?> primitiveType = primitiveTypeFor(value.getClass());

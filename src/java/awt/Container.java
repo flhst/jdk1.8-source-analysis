@@ -35,6 +35,7 @@ import java.awt.peer.LightweightPeer;
 import java.beans.PropertyChangeListener;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
@@ -55,6 +56,7 @@ import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.awt.CausedFocusEvent;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
@@ -1089,17 +1091,18 @@ public class Container extends Component {
             }
             checkAddToSelf(comp);
             checkNotAWindow(comp);
+            /* Reparent the component and tidy up the tree's state. */
+            if (comp.parent != null) {
+                comp.parent.remove(comp);
+                if (index > component.size()) {
+                    throw new IllegalArgumentException("illegal component position");
+                }
+            }
             if (thisGC != null) {
                 comp.checkGD(thisGC.getDevice().getIDstring());
             }
 
-            /* Reparent the component and tidy up the tree's state. */
-            if (comp.parent != null) {
-                comp.parent.remove(comp);
-                    if (index > component.size()) {
-                        throw new IllegalArgumentException("illegal component position");
-                    }
-            }
+
 
             //index == -1 means add to the end.
             if (index == -1) {
@@ -3716,8 +3719,15 @@ public class Container extends Component {
         throws ClassNotFoundException, IOException
     {
         ObjectInputStream.GetField f = s.readFields();
-        Component [] tmpComponent = (Component[])f.get("component", EMPTY_ARRAY);
+        // array of components may not be present in the stream or may be null
+        Component [] tmpComponent = (Component[])f.get("component", null);
+        if (tmpComponent == null) {
+            tmpComponent = EMPTY_ARRAY;
+        }
         int ncomponents = (Integer) f.get("ncomponents", 0);
+        if (ncomponents < 0 || ncomponents > tmpComponent.length) {
+            throw new InvalidObjectException("Incorrect number of components");
+        }
         component = new java.util.ArrayList<Component>(ncomponents);
         for (int i = 0; i < ncomponents; ++i) {
             component.add(tmpComponent[i]);
@@ -4768,6 +4778,9 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                                srcEvent.getClickCount(),
                                srcEvent.isPopupTrigger(),
                                srcEvent.getButton());
+            MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+            meAccessor.setCausedByTouchEvent(me,
+                meAccessor.isCausedByTouchEvent(srcEvent));
             ((AWTEvent)srcEvent).copyPrivateDataInto(me);
             // translate coordinates to this native container
             final Point ptSrcOrigin = srcComponent.getLocationOnScreen();
@@ -4868,6 +4881,9 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                                             e.getClickCount(),
                                             e.isPopupTrigger(),
                                             e.getButton());
+                MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+                meAccessor.setCausedByTouchEvent(retargeted,
+                    meAccessor.isCausedByTouchEvent(e));
             }
 
             ((AWTEvent)e).copyPrivateDataInto(retargeted);

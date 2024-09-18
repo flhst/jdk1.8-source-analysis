@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -137,7 +137,7 @@ public class URLDecoder {
         StringBuffer sb = new StringBuffer(numChars > 500 ? numChars / 2 : numChars);
         int i = 0;
 
-        if (enc.length() == 0) {
+        if (enc.isEmpty()) {
             throw new UnsupportedEncodingException ("URLDecoder: empty string enc parameter");
         }
 

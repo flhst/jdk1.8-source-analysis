@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -74,7 +74,7 @@ public class AppConfigurationEntry {
                                 LoginModuleControlFlag controlFlag,
                                 Map<String,?> options)
     {
-        if (loginModuleName == null || loginModuleName.length() == 0 ||
+        if (loginModuleName == null || loginModuleName.isEmpty() ||
             (controlFlag != LoginModuleControlFlag.REQUIRED &&
                 controlFlag != LoginModuleControlFlag.REQUISITE &&
                 controlFlag != LoginModuleControlFlag.SUFFICIENT &&

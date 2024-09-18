@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -48,18 +48,15 @@ public class XMLSignatureInputDebugger {
 
     private Set<String> inclusiveNamespaces;
 
-    /** Field doc */
-    private Document doc = null;
-
     /** Field writer */
-    private Writer writer = null;
+    private Writer writer;
 
     /** The HTML Prefix* */
     static final String HTMLPrefix =
         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
         + "<html>\n"
         + "<head>\n"
-        + "<title>Caninical XML node set</title>\n"
+        + "<title>Canonical XML node set</title>\n"
         + "<style type=\"text/css\">\n"
         + "<!-- \n"
         + ".INCLUDED { \n"
@@ -148,27 +145,26 @@ public class XMLSignatureInputDebugger {
      * @throws XMLSignatureException
      */
     public String getHTMLRepresentation() throws XMLSignatureException {
-        if ((this.xpathNodeSet == null) || (this.xpathNodeSet.size() == 0)) {
+        if (this.xpathNodeSet == null || this.xpathNodeSet.isEmpty()) {
             return HTMLPrefix + "<blink>no node set, sorry</blink>" + HTMLSuffix;
         }
 
         // get only a single node as anchor to fetch the owner document
         Node n = this.xpathNodeSet.iterator().next();
 
-        this.doc = XMLUtils.getOwnerDocument(n);
+        Document doc = XMLUtils.getOwnerDocument(n);
 
         try {
             this.writer = new StringWriter();
 
-            this.canonicalizeXPathNodeSet(this.doc);
+            this.canonicalizeXPathNodeSet(doc);
             this.writer.close();
 
             return this.writer.toString();
         } catch (IOException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         } finally {
             this.xpathNodeSet = null;
-            this.doc = null;
             this.writer = null;
         }
     }
@@ -191,7 +187,7 @@ public class XMLSignatureInputDebugger {
         case Node.NOTATION_NODE:
         case Node.DOCUMENT_FRAGMENT_NODE:
         case Node.ATTRIBUTE_NODE:
-            throw new XMLSignatureException("empty");
+            throw new XMLSignatureException("empty", new Object[]{"An incorrect node was provided for c14n: " + currentNodeType});
         case Node.DOCUMENT_NODE:
             this.writer.write(HTMLPrefix);
 
@@ -258,9 +254,9 @@ public class XMLSignatureInputDebugger {
             outputTextToWriter(currentNode.getNodeValue());
 
             for (Node nextSibling = currentNode.getNextSibling();
-                (nextSibling != null)
-                && ((nextSibling.getNodeType() == Node.TEXT_NODE)
-                    || (nextSibling.getNodeType() == Node.CDATA_SECTION_NODE));
+                nextSibling != null
+                && (nextSibling.getNodeType() == Node.TEXT_NODE
+                    || nextSibling.getNodeType() == Node.CDATA_SECTION_NODE);
                 nextSibling = nextSibling.getNextSibling()) {
                 /*
                  * The XPath data model allows to select only the first of a
@@ -299,7 +295,7 @@ public class XMLSignatureInputDebugger {
             }
 
             Arrays.sort(attrs2, ATTR_COMPARE);
-            Object attrs3[] = attrs2;
+            Object[] attrs3 = attrs2;
 
             for (int i = 0; i < attrsLength; i++) {
                 Attr a = (Attr) attrs3[i];
@@ -412,13 +408,13 @@ public class XMLSignatureInputDebugger {
      *
      * The string value of the node is modified by replacing
      * <UL>
-     * <LI>all ampersands (&) with <CODE>&amp;amp;</CODE></LI>
-     * <LI>all open angle brackets (<) with <CODE>&amp;lt;</CODE></LI>
-     * <LI>all quotation mark characters with <CODE>&amp;quot;</CODE></LI>
-     * <LI>and the whitespace characters <CODE>#x9</CODE>, #xA, and #xD,
+     * <LI>all ampersands (&) with {@code &amp;amp;}</LI>
+     * <LI>all open angle brackets (<) with {@code &amp;lt;}</LI>
+     * <LI>all quotation mark characters with {@code &amp;quot;}</LI>
+     * <LI>and the whitespace characters {@code #x9}, #xA, and #xD,
      * with character references. The character references are written in
-     * uppercase hexadecimal with no leading zeroes (for example, <CODE>#xD</CODE>
-     * is represented by the character reference <CODE>&amp;#xD;</CODE>)</LI>
+     * uppercase hexadecimal with no leading zeroes (for example, {@code #xD}
+     * is represented by the character reference {@code &amp;#xD;})</LI>
      * </UL>
      *
      * @param name
@@ -520,15 +516,10 @@ public class XMLSignatureInputDebugger {
             for (int i = 0; i < length; i++) {
                 char c = data.charAt(i);
 
-                switch (c) {
-
-                case 0x0D:
+                if (c == 0x0D) {
                     this.writer.write("&amp;#xD;");
-                    break;
-
-                default:
+                } else {
                     this.writer.write(c);
-                    break;
                 }
             }
         }

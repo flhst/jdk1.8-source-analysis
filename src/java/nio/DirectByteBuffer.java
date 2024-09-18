@@ -206,7 +206,6 @@ class DirectByteBuffer
     public ByteBuffer slice() {
         int pos = this.position();
         int lim = this.limit();
-        assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         int off = (pos << 0);
         assert (off >= 0);
@@ -319,12 +318,10 @@ class DirectByteBuffer
 
             int spos = sb.position();
             int slim = sb.limit();
-            assert (spos <= slim);
             int srem = (spos <= slim ? slim - spos : 0);
 
             int pos = position();
             int lim = limit();
-            assert (pos <= lim);
             int rem = (pos <= lim ? lim - pos : 0);
 
             if (srem > rem)

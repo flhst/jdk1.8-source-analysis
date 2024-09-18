@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -22,17 +22,16 @@
  */
 package com.sun.org.apache.xml.internal.security;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithm;
@@ -61,9 +60,8 @@ public class Init {
     /** The namespace for CONF file **/
     public static final String CONF_NS = "http://www.xmlsecurity.org/NS/#configuration";
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(Init.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(Init.class);
 
     /** Field alreadyInitialized */
     private static boolean alreadyInitialized = false;
@@ -72,7 +70,7 @@ public class Init {
      * Method isInitialized
      * @return true if the library is already initialized.
      */
-    public static synchronized final boolean isInitialized() {
+    public static final synchronized boolean isInitialized() {
         return Init.alreadyInitialized;
     }
 
@@ -85,22 +83,27 @@ public class Init {
             return;
         }
 
-        InputStream is =
+        InputStream is =    //NOPMD
             AccessController.doPrivileged(
-                new PrivilegedAction<InputStream>() {
-                    public InputStream run() {
+                (PrivilegedAction<InputStream>)
+                    () -> {
                         String cfile =
                             System.getProperty("com.sun.org.apache.xml.internal.security.resource.config");
                         if (cfile == null) {
                             return null;
                         }
-                        return getClass().getResourceAsStream(cfile);
+                        return getResourceAsStream(cfile, Init.class);
                     }
-                });
+                );
         if (is == null) {
             dynamicInit();
         } else {
             fileInit(is);
+            try {
+                is.close();
+            } catch (IOException ex) {
+                LOG.warn(ex.getMessage());
+            }
         }
 
         alreadyInitialized = true;
@@ -117,9 +120,8 @@ public class Init {
         //
         I18n.init("en", "US");
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Registering default algorithms");
-        }
+        LOG.debug("Registering default algorithms");
+
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>(){
                 @Override public Void run() throws XMLSecurityException {
@@ -160,10 +162,10 @@ public class Init {
 
                     return null;
                 }
-           });
+            });
         } catch (PrivilegedActionException ex) {
             XMLSecurityException xse = (XMLSecurityException)ex.getException();
-            log.log(java.util.logging.Level.SEVERE, xse.getMessage(), xse);
+            LOG.error(xse.getMessage(), xse);
             xse.printStackTrace();
         }
     }
@@ -174,14 +176,7 @@ public class Init {
     private static void fileInit(InputStream is) {
         try {
             /* read library configuration file */
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
-
-            dbf.setNamespaceAware(true);
-            dbf.setValidating(false);
-
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document doc = db.parse(is);
+            Document doc = XMLUtils.read(is, true);
             Node config = doc.getFirstChild();
             for (; config != null; config = config.getNextSibling()) {
                 if ("Configuration".equals(config.getLocalName())) {
@@ -189,7 +184,7 @@ public class Init {
                 }
             }
             if (config == null) {
-                log.log(java.util.logging.Level.SEVERE, "Error in reading configuration file - Configuration element not found");
+                LOG.error("Error in reading configuration file - Configuration element not found");
                 return;
             }
             for (Node el = config.getFirstChild(); el != null; el = el.getNextSibling()) {
@@ -197,11 +192,11 @@ public class Init {
                     continue;
                 }
                 String tag = el.getLocalName();
-                if (tag.equals("ResourceBundles")) {
+                if ("ResourceBundles".equals(tag)) {
                     Element resource = (Element)el;
                     /* configure internationalization */
-                    Attr langAttr = resource.getAttributeNode("defaultLanguageCode");
-                    Attr countryAttr = resource.getAttributeNode("defaultCountryCode");
+                    Attr langAttr = resource.getAttributeNodeNS(null, "defaultLanguageCode");
+                    Attr countryAttr = resource.getAttributeNodeNS(null, "defaultCountryCode");
                     String languageCode =
                         (langAttr == null) ? null : langAttr.getNodeValue();
                     String countryCode =
@@ -209,45 +204,41 @@ public class Init {
                     I18n.init(languageCode, countryCode);
                 }
 
-                if (tag.equals("CanonicalizationMethods")) {
+                if ("CanonicalizationMethods".equals(tag)) {
                     Element[] list =
                         XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "CanonicalizationMethod");
 
-                    for (int i = 0; i < list.length; i++) {
-                        String uri = list[i].getAttributeNS(null, "URI");
+                    for (Element element : list) {
+                        String uri = element.getAttributeNS(null, "URI");
                         String javaClass =
-                            list[i].getAttributeNS(null, "JAVACLASS");
+                            element.getAttributeNS(null, "JAVACLASS");
                         try {
                             Canonicalizer.register(uri, javaClass);
-                            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                                log.log(java.util.logging.Level.FINE, "Canonicalizer.register(" + uri + ", " + javaClass + ")");
-                            }
+                            LOG.debug("Canonicalizer.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
-                            log.log(java.util.logging.Level.SEVERE, I18n.translate("algorithm.classDoesNotExist", exArgs));
+                            Object[] exArgs = { uri, javaClass };
+                            LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         }
                     }
                 }
 
-                if (tag.equals("TransformAlgorithms")) {
+                if ("TransformAlgorithms".equals(tag)) {
                     Element[] tranElem =
                         XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "TransformAlgorithm");
 
-                    for (int i = 0; i < tranElem.length; i++) {
-                        String uri = tranElem[i].getAttributeNS(null, "URI");
+                    for (Element element : tranElem) {
+                        String uri = element.getAttributeNS(null, "URI");
                         String javaClass =
-                            tranElem[i].getAttributeNS(null, "JAVACLASS");
+                            element.getAttributeNS(null, "JAVACLASS");
                         try {
                             Transform.register(uri, javaClass);
-                            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                                log.log(java.util.logging.Level.FINE, "Transform.register(" + uri + ", " + javaClass + ")");
-                            }
+                            LOG.debug("Transform.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
 
-                            log.log(java.util.logging.Level.SEVERE, I18n.translate("algorithm.classDoesNotExist", exArgs));
+                            LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         } catch (NoClassDefFoundError ex) {
-                            log.log(java.util.logging.Level.WARNING, "Not able to found dependencies for algorithm, I'll keep working.");
+                            LOG.warn("Not able to found dependencies for algorithm, I'll keep working.");
                         }
                     }
                 }
@@ -257,92 +248,69 @@ public class Init {
                     if (algorithmsNode != null) {
                         Element[] algorithms =
                             XMLUtils.selectNodes(algorithmsNode.getFirstChild(), CONF_NS, "Algorithm");
-                        for (int i = 0; i < algorithms.length; i++) {
-                            Element element = algorithms[i];
-                            String id = element.getAttribute("URI");
+                        for (Element element : algorithms) {
+                            String id = element.getAttributeNS(null, "URI");
                             JCEMapper.register(id, new JCEMapper.Algorithm(element));
                         }
                     }
                 }
 
-                if (tag.equals("SignatureAlgorithms")) {
+                if ("SignatureAlgorithms".equals(tag)) {
                     Element[] sigElems =
                         XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "SignatureAlgorithm");
 
-                    for (int i = 0; i < sigElems.length; i++) {
-                        String uri = sigElems[i].getAttributeNS(null, "URI");
+                    for (Element sigElem : sigElems) {
+                        String uri = sigElem.getAttributeNS(null, "URI");
                         String javaClass =
-                            sigElems[i].getAttributeNS(null, "JAVACLASS");
+                            sigElem.getAttributeNS(null, "JAVACLASS");
 
                         /** $todo$ handle registering */
 
                         try {
                             SignatureAlgorithm.register(uri, javaClass);
-                            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                                log.log(java.util.logging.Level.FINE, "SignatureAlgorithm.register(" + uri + ", "
-                                          + javaClass + ")");
-                            }
+                            LOG.debug("SignatureAlgorithm.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
 
-                            log.log(java.util.logging.Level.SEVERE, I18n.translate("algorithm.classDoesNotExist", exArgs));
+                            LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         }
                     }
                 }
 
-                if (tag.equals("ResourceResolvers")) {
-                    Element[]resolverElem =
-                        XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "Resolver");
-
-                    for (int i = 0; i < resolverElem.length; i++) {
-                        String javaClass =
-                            resolverElem[i].getAttributeNS(null, "JAVACLASS");
-                        String description =
-                            resolverElem[i].getAttributeNS(null, "DESCRIPTION");
-
-                        if ((description != null) && (description.length() > 0)) {
-                            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                                log.log(java.util.logging.Level.FINE, "Register Resolver: " + javaClass + ": "
-                                          + description);
-                            }
-                        } else {
-                            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                                log.log(java.util.logging.Level.FINE, "Register Resolver: " + javaClass
-                                          + ": For unknown purposes");
-                            }
-                        }
-                        try {
-                            ResourceResolver.register(javaClass);
-                        } catch (Throwable e) {
-                            log.log(java.util.logging.Level.WARNING,
-                                 "Cannot register:" + javaClass
-                                 + " perhaps some needed jars are not installed",
-                                 e
-                             );
-                        }
-                    }
-                }
-
-                if (tag.equals("KeyResolver")){
+                if ("ResourceResolvers".equals(tag)) {
                     Element[] resolverElem =
                         XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "Resolver");
-                    List<String> classNames = new ArrayList<String>(resolverElem.length);
-                    for (int i = 0; i < resolverElem.length; i++) {
+                    List<String> classNames = new ArrayList<>(resolverElem.length);
+                    for (Element element : resolverElem) {
                         String javaClass =
-                            resolverElem[i].getAttributeNS(null, "JAVACLASS");
+                            element.getAttributeNS(null, "JAVACLASS");
                         String description =
-                            resolverElem[i].getAttributeNS(null, "DESCRIPTION");
+                            element.getAttributeNS(null, "DESCRIPTION");
 
-                        if ((description != null) && (description.length() > 0)) {
-                            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                                log.log(java.util.logging.Level.FINE, "Register Resolver: " + javaClass + ": "
-                                          + description);
-                            }
+                        if (description != null && description.length() > 0) {
+                            LOG.debug("Register Resolver: {}: {}", javaClass, description);
                         } else {
-                            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                                log.log(java.util.logging.Level.FINE, "Register Resolver: " + javaClass
-                                          + ": For unknown purposes");
-                            }
+                            LOG.debug("Register Resolver: {}: For unknown purposes", javaClass);
+                        }
+                        classNames.add(javaClass);
+                    }
+                    ResourceResolver.registerClassNames(classNames);
+                }
+
+                if ("KeyResolver".equals(tag)){
+                    Element[] resolverElem =
+                        XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "Resolver");
+                    List<String> classNames = new ArrayList<>(resolverElem.length);
+                    for (Element element : resolverElem) {
+                        String javaClass =
+                            element.getAttributeNS(null, "JAVACLASS");
+                        String description =
+                            element.getAttributeNS(null, "DESCRIPTION");
+
+                        if (description != null && description.length() > 0) {
+                            LOG.debug("Register Resolver: {}: {}", javaClass, description);
+                        } else {
+                            LOG.debug("Register Resolver: {}: For unknown purposes", javaClass);
                         }
                         classNames.add(javaClass);
                     }
@@ -350,29 +318,194 @@ public class Init {
                 }
 
 
-                if (tag.equals("PrefixMappings")){
-                    if (log.isLoggable(java.util.logging.Level.FINE)) {
-                        log.log(java.util.logging.Level.FINE, "Now I try to bind prefixes:");
-                    }
+                if ("PrefixMappings".equals(tag)){
+                    LOG.debug("Now I try to bind prefixes:");
 
                     Element[] nl =
                         XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "PrefixMapping");
 
-                    for (int i = 0; i < nl.length; i++) {
-                        String namespace = nl[i].getAttributeNS(null, "namespace");
-                        String prefix = nl[i].getAttributeNS(null, "prefix");
-                        if (log.isLoggable(java.util.logging.Level.FINE)) {
-                            log.log(java.util.logging.Level.FINE, "Now I try to bind " + prefix + " to " + namespace);
-                        }
+                    for (Element element : nl) {
+                        String namespace = element.getAttributeNS(null, "namespace");
+                        String prefix = element.getAttributeNS(null, "prefix");
+                        LOG.debug("Now I try to bind {} to {}", prefix, namespace);
                         ElementProxy.setDefaultPrefix(namespace, prefix);
                     }
                 }
             }
         } catch (Exception e) {
-            log.log(java.util.logging.Level.SEVERE, "Bad: ", e);
-            e.printStackTrace();
+            LOG.error("Bad: ", e);
         }
     }
+    /**
+     * Load a given resource. <p></p> This method will try to load the resource
+     * using the following methods (in order):
+     * <ul>
+     * <li>From Thread.currentThread().getContextClassLoader()
+     * <li>From ClassLoaderUtil.class.getClassLoader()
+     * <li>callingClass.getClassLoader()
+     * </ul>
+     *
+     * @param resourceName The name of the resource to load
+     * @param callingClass The Class object of the calling object
+     */
+    public static URL getResource(String resourceName, Class<?> callingClass) {
+        if (resourceName == null) {
+            throw new NullPointerException();
+        }
+        URL url = Thread.currentThread().getContextClassLoader().getResource(resourceName);
+        if (url == null && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            url =
+                    Thread.currentThread().getContextClassLoader().getResource(
+                            resourceName.substring(1)
+                    );
+        }
 
+        ClassLoader cluClassloader = Init.class.getClassLoader();
+        if (cluClassloader == null) {
+            cluClassloader = ClassLoader.getSystemClassLoader();
+        }
+        if (url == null) {
+            url = cluClassloader.getResource(resourceName);
+        }
+        if (url == null && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            url = cluClassloader.getResource(resourceName.substring(1));
+        }
+
+        if (url == null) {
+            ClassLoader cl = callingClass.getClassLoader();
+
+            if (cl != null) {
+                url = cl.getResource(resourceName);
+            }
+        }
+
+        if (url == null) {
+            url = callingClass.getResource(resourceName);
+        }
+
+        if (url == null && resourceName.charAt(0) != '/') {
+            return getResource('/' + resourceName, callingClass);
+        }
+
+        return url;
+    }
+
+    /**
+     * Load a given resources. <p></p> This method will try to load the resources
+     * using the following methods (in order):
+     * <ul>
+     * <li>From Thread.currentThread().getContextClassLoader()
+     * <li>From ClassLoaderUtil.class.getClassLoader()
+     * <li>callingClass.getClassLoader()
+     * </ul>
+     *
+     * @param resourceName The name of the resource to load
+     * @param callingClass The Class object of the calling object
+     */
+    private static List<URL> getResources(String resourceName, Class<?> callingClass) {
+        if (resourceName == null) {
+            throw new NullPointerException();
+        }
+        List<URL> ret = new ArrayList<>();
+        Enumeration<URL> urls = new Enumeration<URL>() {
+            public boolean hasMoreElements() {
+                return false;
+            }
+            public URL nextElement() {
+                return null;
+            }
+
+        };
+        try {
+            urls = Thread.currentThread().getContextClassLoader().getResources(resourceName);
+        } catch (IOException e) {
+            LOG.debug(e.getMessage(), e);
+            //ignore
+        }
+        if (!urls.hasMoreElements() && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            try {
+                urls =
+                        Thread.currentThread().getContextClassLoader().getResources(
+                                resourceName.substring(1)
+                        );
+            } catch (IOException e) {
+                LOG.debug(e.getMessage(), e);
+                // ignore
+            }
+        }
+
+        ClassLoader cluClassloader = Init.class.getClassLoader();
+        if (cluClassloader == null) {
+            cluClassloader = ClassLoader.getSystemClassLoader();
+        }
+        if (!urls.hasMoreElements()) {
+            try {
+                urls = cluClassloader.getResources(resourceName);
+            } catch (IOException e) {
+                LOG.debug(e.getMessage(), e);
+                // ignore
+            }
+        }
+        if (!urls.hasMoreElements() && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            try {
+                urls = cluClassloader.getResources(resourceName.substring(1));
+            } catch (IOException e) {
+                LOG.debug(e.getMessage(), e);
+                // ignore
+            }
+        }
+
+        if (!urls.hasMoreElements()) {
+            ClassLoader cl = callingClass.getClassLoader();
+
+            if (cl != null) {
+                try {
+                    urls = cl.getResources(resourceName);
+                } catch (IOException e) {
+                    LOG.debug(e.getMessage(), e);
+                    // ignore
+                }
+            }
+        }
+
+        if (!urls.hasMoreElements()) {
+            URL url = callingClass.getResource(resourceName);
+            if (url != null) {
+                ret.add(url);
+            }
+        }
+        while (urls.hasMoreElements()) {
+            ret.add(urls.nextElement());
+        }
+
+
+        if (ret.isEmpty() && resourceName.charAt(0) != '/') {
+            return getResources('/' + resourceName, callingClass);
+        }
+        return ret;
+    }
+
+
+    /**
+     * This is a convenience method to load a resource as a stream. <p></p> The
+     * algorithm used to find the resource is given in getResource()
+     *
+     * @param resourceName The name of the resource to load
+     * @param callingClass The Class object of the calling object
+     */
+    private static InputStream getResourceAsStream(String resourceName, Class<?> callingClass) {
+        URL url = getResource(resourceName, callingClass);
+
+        try {
+            return (url != null) ? url.openStream() : null;
+        } catch (IOException e) {
+            LOG.debug(e.getMessage(), e);
+            return null;
+        }
+    }
 }
 

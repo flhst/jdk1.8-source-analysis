@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -73,6 +73,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @see org.xml.sax.Parser
  * @see org.xml.sax.XMLReader
  */
+@SuppressWarnings("deprecation")
 public class XMLReaderAdapter implements Parser, ContentHandler
 {
 

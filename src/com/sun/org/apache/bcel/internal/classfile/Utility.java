@@ -1,1397 +1,1567 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
-
-import com.sun.org.apache.bcel.internal.Constants;
-import com.sun.org.apache.bcel.internal.util.ByteSequence;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.CharArrayReader;
+import java.io.CharArrayWriter;
+import java.io.FilterReader;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
-import java.util.zip.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * Utility functions that do not really belong to any class in particular.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @LastModified: Feb 2023
  */
+// @since 6.0 methods are no longer final
 public abstract class Utility {
-  private static int consumed_chars; /* How many chars have been consumed
-                                      * during parsing in signatureToString().
-                                      * Read by methodSignatureToString().
-                                      * Set by side effect,but only internally.
-                                      */
-  private static boolean wide=false; /* The `WIDE' instruction is used in the
-                                      * byte code to allow 16-bit wide indices
-                                      * for local variables. This opcode
-                                      * precedes an `ILOAD', e.g.. The opcode
-                                      * immediately following takes an extra
-                                      * byte which is combined with the
-                                      * following byte to form a
-                                      * 16-bit value.
-                                      */
-  /**
-   * Convert bit field of flags into string such as `static final'.
-   *
-   * @param  access_flags Access flags
-   * @return String representation of flags
-   */
-  public static final String accessToString(int access_flags) {
-    return accessToString(access_flags, false);
-  }
 
-  /**
-   * Convert bit field of flags into string such as `static final'.
-   *
-   * Special case: Classes compiled with new compilers and with the
-   * `ACC_SUPER' flag would be said to be "synchronized". This is
-   * because SUN used the same value for the flags `ACC_SUPER' and
-   * `ACC_SYNCHRONIZED'.
-   *
-   * @param  access_flags Access flags
-   * @param  for_class access flags are for class qualifiers ?
-   * @return String representation of flags
-   */
-  public static final String accessToString(int access_flags,
-                                            boolean for_class)
-  {
-    StringBuffer buf = new StringBuffer();
+    /**
+     * Decode characters into bytes. Used by <a href="Utility.html#decode(java.lang.String, boolean)">decode()</a>
+     */
+    private static class JavaReader extends FilterReader {
 
-    int p = 0;
-    for(int i=0; p < Constants.MAX_ACC_FLAG; i++) { // Loop through known flags
-      p = pow2(i);
+        public JavaReader(final Reader in) {
+            super(in);
+        }
 
-      if((access_flags & p) != 0) {
-        /* Special case: Classes compiled with new compilers and with the
-         * `ACC_SUPER' flag would be said to be "synchronized". This is
-         * because SUN used the same value for the flags `ACC_SUPER' and
-         * `ACC_SYNCHRONIZED'.
+        @Override
+        public int read() throws IOException {
+            final int b = in.read();
+            if (b != ESCAPE_CHAR) {
+                return b;
+            }
+            final int i = in.read();
+            if (i < 0) {
+                return -1;
+            }
+            if (i >= '0' && i <= '9' || i >= 'a' && i <= 'f') { // Normal escape
+                final int j = in.read();
+                if (j < 0) {
+                    return -1;
+                }
+                final char[] tmp = {(char) i, (char) j};
+                return Integer.parseInt(new String(tmp), 16);
+            }
+            return MAP_CHAR[i];
+        }
+
+        @Override
+        public int read(final char[] cbuf, final int off, final int len) throws IOException {
+            for (int i = 0; i < len; i++) {
+                cbuf[off + i] = (char) read();
+            }
+            return len;
+        }
+    }
+
+    /**
+     * Encode bytes into valid java identifier characters. Used by
+     * <a href="Utility.html#encode(byte[], boolean)">encode()</a>
+     */
+    private static class JavaWriter extends FilterWriter {
+
+        public JavaWriter(final Writer out) {
+            super(out);
+        }
+
+        @Override
+        public void write(final char[] cbuf, final int off, final int len) throws IOException {
+            for (int i = 0; i < len; i++) {
+                write(cbuf[off + i]);
+            }
+        }
+
+        @Override
+        public void write(final int b) throws IOException {
+            if (isJavaIdentifierPart((char) b) && b != ESCAPE_CHAR) {
+                out.write(b);
+            } else {
+                out.write(ESCAPE_CHAR); // Escape character
+                // Special escape
+                if (b >= 0 && b < FREE_CHARS) {
+                    out.write(CHAR_MAP[b]);
+                } else { // Normal escape
+                    final char[] tmp = Integer.toHexString(b).toCharArray();
+                    if (tmp.length == 1) {
+                        out.write('0');
+                        out.write(tmp[0]);
+                    } else {
+                        out.write(tmp[0]);
+                        out.write(tmp[1]);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void write(final String str, final int off, final int len) throws IOException {
+            write(str.toCharArray(), off, len);
+        }
+    }
+
+    /*
+     * How many chars have been consumed during parsing in typeSignatureToString(). Read by methodSignatureToString(). Set
+     * by side effect, but only internally.
+     */
+    private static ThreadLocal<Integer> CONSUMER_CHARS = new ThreadLocal<Integer>() {
+        @Override
+        protected Integer initialValue() {
+            return 0;
+        }
+    };
+
+    /*
+     * The 'WIDE' instruction is used in the byte code to allow 16-bit wide indices for local variables. This opcode
+     * precedes an 'ILOAD', e.g.. The opcode immediately following takes an extra byte which is combined with the following
+     * byte to form a 16-bit value.
+     */
+    private static boolean wide;
+
+    // A-Z, g-z, _, $
+    private static final int FREE_CHARS = 48;
+
+    private static final int[] CHAR_MAP = new int[FREE_CHARS];
+
+    private static final int[] MAP_CHAR = new int[256]; // Reverse map
+
+    private static final char ESCAPE_CHAR = '$';
+
+    static {
+        int j = 0;
+        for (int i = 'A'; i <= 'Z'; i++) {
+            CHAR_MAP[j] = i;
+            MAP_CHAR[i] = j;
+            j++;
+        }
+        for (int i = 'g'; i <= 'z'; i++) {
+            CHAR_MAP[j] = i;
+            MAP_CHAR[i] = j;
+            j++;
+        }
+        CHAR_MAP[j] = '$';
+        MAP_CHAR['$'] = j;
+        j++;
+        CHAR_MAP[j] = '_';
+        MAP_CHAR['_'] = j;
+    }
+
+    /**
+     * Convert bit field of flags into string such as 'static final'.
+     *
+     * @param accessFlags Access flags
+     * @return String representation of flags
+     */
+    public static String accessToString(final int accessFlags) {
+        return accessToString(accessFlags, false);
+    }
+
+    /**
+     * Convert bit field of flags into string such as 'static final'.
+     *
+     * Special case: Classes compiled with new compilers and with the 'ACC_SUPER' flag would be said to be "synchronized".
+     * This is because SUN used the same value for the flags 'ACC_SUPER' and 'ACC_SYNCHRONIZED'.
+     *
+     * @param accessFlags Access flags
+     * @param forClass access flags are for class qualifiers ?
+     * @return String representation of flags
+     */
+    public static String accessToString(final int accessFlags, final boolean forClass) {
+        final StringBuilder buf = new StringBuilder();
+        int p = 0;
+        for (int i = 0; p < Const.MAX_ACC_FLAG_I; i++) { // Loop through known flags
+            p = pow2(i);
+            if ((accessFlags & p) != 0) {
+                /*
+                 * Special case: Classes compiled with new compilers and with the 'ACC_SUPER' flag would be said to be "synchronized".
+                 * This is because SUN used the same value for the flags 'ACC_SUPER' and 'ACC_SYNCHRONIZED'.
+                 */
+                if (forClass && (p == Const.ACC_SUPER || p == Const.ACC_INTERFACE)) {
+                    continue;
+                }
+                buf.append(Const.getAccessName(i)).append(" ");
+            }
+        }
+        return buf.toString().trim();
+    }
+
+    /**
+     * Convert (signed) byte to (unsigned) short value, i.e., all negative values become positive.
+     */
+    private static short byteToShort(final byte b) {
+        return b < 0 ? (short) (256 + b) : (short) b;
+    }
+
+    /**
+     * @param accessFlags the class flags
+     *
+     * @return "class" or "interface", depending on the ACC_INTERFACE flag
+     */
+    public static String classOrInterface(final int accessFlags) {
+        return (accessFlags & Const.ACC_INTERFACE) != 0 ? "interface" : "class";
+    }
+
+    /**
+     * @return 'flag' with bit 'i' set to 0
+     */
+    public static int clearBit(final int flag, final int i) {
+        final int bit = pow2(i);
+        return (flag & bit) == 0 ? flag : flag ^ bit;
+    }
+
+    public static String codeToString(final byte[] code, final ConstantPool constantPool, final int index, final int length) {
+        return codeToString(code, constantPool, index, length, true);
+    }
+
+    /**
+     * Disassemble a byte array of JVM byte codes starting from code line 'index' and return the disassembled string
+     * representation. Decode only 'num' opcodes (including their operands), use -1 if you want to decompile everything.
+     *
+     * @param code byte code array
+     * @param constantPool Array of constants
+     * @param index offset in 'code' array <EM>(number of opcodes, not bytes!)</EM>
+     * @param length number of opcodes to decompile, -1 for all
+     * @param verbose be verbose, e.g. print constant pool index
+     * @return String representation of byte codes
+     */
+    public static String codeToString(final byte[] code, final ConstantPool constantPool, final int index, final int length, final boolean verbose) {
+        final StringBuilder buf = new StringBuilder(code.length * 20); // Should be sufficient // CHECKSTYLE IGNORE MagicNumber
+        try (ByteSequence stream = new ByteSequence(code)) {
+            for (int i = 0; i < index; i++) {
+                codeToString(stream, constantPool, verbose);
+            }
+            for (int i = 0; stream.available() > 0; i++) {
+                if (length < 0 || i < length) {
+                    final String indices = fillup(stream.getIndex() + ":", 6, true, ' ');
+                    buf.append(indices).append(codeToString(stream, constantPool, verbose)).append('\n');
+                }
+            }
+        } catch (final IOException e) {
+            throw new ClassFormatException("Byte code error: " + buf.toString(), e);
+        }
+        return buf.toString();
+    }
+
+    public static String codeToString(final ByteSequence bytes, final ConstantPool constantPool) throws IOException {
+        return codeToString(bytes, constantPool, true);
+    }
+
+    /**
+     * Disassemble a stream of byte codes and return the string representation.
+     *
+     * @param bytes stream of bytes
+     * @param constantPool Array of constants
+     * @param verbose be verbose, e.g. print constant pool index
+     * @return String representation of byte code
+     *
+     * @throws IOException if a failure from reading from the bytes argument occurs
+     */
+    @SuppressWarnings("fallthrough") // by design for case Const.INSTANCEOF
+    public static String codeToString(final ByteSequence bytes, final ConstantPool constantPool,
+            final boolean verbose) throws IOException {
+        final short opcode = (short) bytes.readUnsignedByte();
+        int defaultOffset = 0;
+        int low;
+        int high;
+        int npairs;
+        int index;
+        int vindex;
+        int constant;
+        int[] match;
+        int[] jumpTable;
+        int noPadBytes = 0;
+        int offset;
+        final StringBuilder buf = new StringBuilder(Const.getOpcodeName(opcode));
+        /*
+         * Special case: Skip (0-3) padding bytes, i.e., the following bytes are 4-byte-aligned
          */
-        if(for_class && ((p == Constants.ACC_SUPER) || (p == Constants.ACC_INTERFACE)))
-          continue;
-
-        buf.append(Constants.ACCESS_NAMES[i] + " ");
-      }
-    }
-
-    return buf.toString().trim();
-  }
-
-  /**
-   * @return "class" or "interface", depending on the ACC_INTERFACE flag
-   */
-  public static final String classOrInterface(int access_flags) {
-    return ((access_flags & Constants.ACC_INTERFACE) != 0)? "interface" : "class";
-  }
-
-  /**
-   * Disassemble a byte array of JVM byte codes starting from code line
-   * `index' and return the disassembled string representation. Decode only
-   * `num' opcodes (including their operands), use -1 if you want to
-   * decompile everything.
-   *
-   * @param  code byte code array
-   * @param  constant_pool Array of constants
-   * @param  index offset in `code' array
-   * <EM>(number of opcodes, not bytes!)</EM>
-   * @param  length number of opcodes to decompile, -1 for all
-   * @param  verbose be verbose, e.g. print constant pool index
-   * @return String representation of byte codes
-   */
-  public static final String codeToString(byte[] code,
-                                          ConstantPool constant_pool,
-                                          int index, int length, boolean verbose)
-  {
-    StringBuffer buf    = new StringBuffer(code.length * 20); // Should be sufficient
-    ByteSequence stream = new ByteSequence(code);
-
-    try {
-      for(int i=0; i < index; i++) // Skip `index' lines of code
-        codeToString(stream, constant_pool, verbose);
-
-      for(int i=0; stream.available() > 0; i++) {
-        if((length < 0) || (i < length)) {
-          String indices = fillup(stream.getIndex() + ":", 6, true, ' ');
-          buf.append(indices + codeToString(stream, constant_pool, verbose) + '\n');
+        if (opcode == Const.TABLESWITCH || opcode == Const.LOOKUPSWITCH) {
+            final int remainder = bytes.getIndex() % 4;
+            noPadBytes = remainder == 0 ? 0 : 4 - remainder;
+            for (int i = 0; i < noPadBytes; i++) {
+                byte b;
+                if ((b = bytes.readByte()) != 0) {
+                    System.err.println("Warning: Padding byte != 0 in " + Const.getOpcodeName(opcode) + ":" + b);
+                }
+            }
+            // Both cases have a field default_offset in common
+            defaultOffset = bytes.readInt();
         }
-      }
-    } catch(IOException e) {
-      System.out.println(buf.toString());
-      e.printStackTrace();
-      throw new ClassFormatException("Byte code error: " + e);
+        switch (opcode) {
+        /*
+         * Table switch has variable length arguments.
+         */
+        case Const.TABLESWITCH:
+            low = bytes.readInt();
+            high = bytes.readInt();
+            offset = bytes.getIndex() - 12 - noPadBytes - 1;
+            defaultOffset += offset;
+            buf.append("\tdefault = ").append(defaultOffset).append(", low = ").append(low).append(", high = ").append(high).append("(");
+            jumpTable = new int[high - low + 1];
+            for (int i = 0; i < jumpTable.length; i++) {
+                jumpTable[i] = offset + bytes.readInt();
+                buf.append(jumpTable[i]);
+                if (i < jumpTable.length - 1) {
+                    buf.append(", ");
+                }
+            }
+            buf.append(")");
+            break;
+        /*
+         * Lookup switch has variable length arguments.
+         */
+        case Const.LOOKUPSWITCH: {
+            npairs = bytes.readInt();
+            offset = bytes.getIndex() - 8 - noPadBytes - 1;
+            match = new int[npairs];
+            jumpTable = new int[npairs];
+            defaultOffset += offset;
+            buf.append("\tdefault = ").append(defaultOffset).append(", npairs = ").append(npairs).append(" (");
+            for (int i = 0; i < npairs; i++) {
+                match[i] = bytes.readInt();
+                jumpTable[i] = offset + bytes.readInt();
+                buf.append("(").append(match[i]).append(", ").append(jumpTable[i]).append(")");
+                if (i < npairs - 1) {
+                    buf.append(", ");
+                }
+            }
+            buf.append(")");
+        }
+            break;
+        /*
+         * Two address bytes + offset from start of byte stream form the jump target
+         */
+        case Const.GOTO:
+        case Const.IFEQ:
+        case Const.IFGE:
+        case Const.IFGT:
+        case Const.IFLE:
+        case Const.IFLT:
+        case Const.JSR:
+        case Const.IFNE:
+        case Const.IFNONNULL:
+        case Const.IFNULL:
+        case Const.IF_ACMPEQ:
+        case Const.IF_ACMPNE:
+        case Const.IF_ICMPEQ:
+        case Const.IF_ICMPGE:
+        case Const.IF_ICMPGT:
+        case Const.IF_ICMPLE:
+        case Const.IF_ICMPLT:
+        case Const.IF_ICMPNE:
+            buf.append("\t\t#").append(bytes.getIndex() - 1 + bytes.readShort());
+            break;
+        /*
+         * 32-bit wide jumps
+         */
+        case Const.GOTO_W:
+        case Const.JSR_W:
+            buf.append("\t\t#").append(bytes.getIndex() - 1 + bytes.readInt());
+            break;
+        /*
+         * Index byte references local variable (register)
+         */
+        case Const.ALOAD:
+        case Const.ASTORE:
+        case Const.DLOAD:
+        case Const.DSTORE:
+        case Const.FLOAD:
+        case Const.FSTORE:
+        case Const.ILOAD:
+        case Const.ISTORE:
+        case Const.LLOAD:
+        case Const.LSTORE:
+        case Const.RET:
+            if (wide) {
+                vindex = bytes.readUnsignedShort();
+                wide = false; // Clear flag
+            } else {
+                vindex = bytes.readUnsignedByte();
+            }
+            buf.append("\t\t%").append(vindex);
+            break;
+        /*
+         * Remember wide byte which is used to form a 16-bit address in the following instruction. Relies on that the method is
+         * called again with the following opcode.
+         */
+        case Const.WIDE:
+            wide = true;
+            buf.append("\t(wide)");
+            break;
+        /*
+         * Array of basic type.
+         */
+        case Const.NEWARRAY:
+            buf.append("\t\t<").append(Const.getTypeName(bytes.readByte())).append(">");
+            break;
+        /*
+         * Access object/class fields.
+         */
+        case Const.GETFIELD:
+        case Const.GETSTATIC:
+        case Const.PUTFIELD:
+        case Const.PUTSTATIC:
+            index = bytes.readUnsignedShort();
+            buf.append("\t\t").append(constantPool.constantToString(index, Const.CONSTANT_Fieldref)).append(verbose ? " (" + index + ")" : "");
+            break;
+        /*
+         * Operands are references to classes in constant pool
+         */
+        case Const.NEW:
+        case Const.CHECKCAST:
+            buf.append("\t");
+            //$FALL-THROUGH$
+        case Const.INSTANCEOF:
+            index = bytes.readUnsignedShort();
+            buf.append("\t<").append(constantPool.constantToString(index, Const.CONSTANT_Class)).append(">").append(verbose ? " (" + index + ")" : "");
+            break;
+        /*
+         * Operands are references to methods in constant pool
+         */
+        case Const.INVOKESPECIAL:
+        case Const.INVOKESTATIC:
+            index = bytes.readUnsignedShort();
+            final Constant c = constantPool.getConstant(index);
+            // With Java8 operand may be either a CONSTANT_Methodref
+            // or a CONSTANT_InterfaceMethodref. (markro)
+            buf.append("\t").append(constantPool.constantToString(index, c.getTag())).append(verbose ? " (" + index + ")" : "");
+            break;
+        case Const.INVOKEVIRTUAL:
+            index = bytes.readUnsignedShort();
+            buf.append("\t").append(constantPool.constantToString(index, Const.CONSTANT_Methodref)).append(verbose ? " (" + index + ")" : "");
+            break;
+        case Const.INVOKEINTERFACE:
+            index = bytes.readUnsignedShort();
+            final int nargs = bytes.readUnsignedByte(); // historical, redundant
+            buf.append("\t").append(constantPool.constantToString(index, Const.CONSTANT_InterfaceMethodref)).append(verbose ? " (" + index + ")\t" : "")
+                .append(nargs).append("\t").append(bytes.readUnsignedByte()); // Last byte is a reserved space
+            break;
+        case Const.INVOKEDYNAMIC:
+            index = bytes.readUnsignedShort();
+            buf.append("\t").append(constantPool.constantToString(index, Const.CONSTANT_InvokeDynamic)).append(verbose ? " (" + index + ")\t" : "")
+                .append(bytes.readUnsignedByte()) // Thrid byte is a reserved space
+                .append(bytes.readUnsignedByte()); // Last byte is a reserved space
+            break;
+        /*
+         * Operands are references to items in constant pool
+         */
+        case Const.LDC_W:
+        case Const.LDC2_W:
+            index = bytes.readUnsignedShort();
+            buf.append("\t\t").append(constantPool.constantToString(index, constantPool.getConstant(index).getTag()))
+                .append(verbose ? " (" + index + ")" : "");
+            break;
+        case Const.LDC:
+            index = bytes.readUnsignedByte();
+            buf.append("\t\t").append(constantPool.constantToString(index, constantPool.getConstant(index).getTag()))
+                .append(verbose ? " (" + index + ")" : "");
+            break;
+        /*
+         * Array of references.
+         */
+        case Const.ANEWARRAY:
+            index = bytes.readUnsignedShort();
+            buf.append("\t\t<").append(compactClassName(constantPool.getConstantString(index, Const.CONSTANT_Class), false)).append(">")
+                .append(verbose ? " (" + index + ")" : "");
+            break;
+        /*
+         * Multidimensional array of references.
+         */
+        case Const.MULTIANEWARRAY: {
+            index = bytes.readUnsignedShort();
+            final int dimensions = bytes.readUnsignedByte();
+            buf.append("\t<").append(compactClassName(constantPool.getConstantString(index, Const.CONSTANT_Class), false)).append(">\t").append(dimensions)
+                .append(verbose ? " (" + index + ")" : "");
+        }
+            break;
+        /*
+         * Increment local variable.
+         */
+        case Const.IINC:
+            if (wide) {
+                vindex = bytes.readUnsignedShort();
+                constant = bytes.readShort();
+                wide = false;
+            } else {
+                vindex = bytes.readUnsignedByte();
+                constant = bytes.readByte();
+            }
+            buf.append("\t\t%").append(vindex).append("\t").append(constant);
+            break;
+        default:
+            if (Const.getNoOfOperands(opcode) > 0) {
+                for (int i = 0; i < Const.getOperandTypeCount(opcode); i++) {
+                    buf.append("\t\t");
+                    switch (Const.getOperandType(opcode, i)) {
+                    case Const.T_BYTE:
+                        buf.append(bytes.readByte());
+                        break;
+                    case Const.T_SHORT:
+                        buf.append(bytes.readShort());
+                        break;
+                    case Const.T_INT:
+                        buf.append(bytes.readInt());
+                        break;
+                    default: // Never reached
+                        throw new IllegalStateException("Unreachable default case reached!");
+                    }
+                }
+            }
+        }
+        return buf.toString();
     }
 
-    return buf.toString();
-  }
-
-  public static final String codeToString(byte[] code,
-                                          ConstantPool constant_pool,
-                                          int index, int length) {
-    return codeToString(code, constant_pool, index, length, true);
-  }
-
-  /**
-   * Disassemble a stream of byte codes and return the
-   * string representation.
-   *
-   * @param  bytes stream of bytes
-   * @param  constant_pool Array of constants
-   * @param  verbose be verbose, e.g. print constant pool index
-   * @return String representation of byte code
-   */
-  public static final String codeToString(ByteSequence bytes,
-                                          ConstantPool constant_pool, boolean verbose)
-       throws IOException
-  {
-    short        opcode = (short)bytes.readUnsignedByte();
-    int          default_offset=0, low, high, npairs;
-    int          index, vindex, constant;
-    int[]        match, jump_table;
-    int          no_pad_bytes=0, offset;
-    StringBuffer buf = new StringBuffer(Constants.OPCODE_NAMES[opcode]);
-
-    /* Special case: Skip (0-3) padding bytes, i.e., the
-     * following bytes are 4-byte-aligned
+    /**
+     * Shorten long class names, <em>java/lang/String</em> becomes <em>String</em>.
+     *
+     * @param str The long class name
+     * @return Compacted class name
      */
-    if((opcode == Constants.TABLESWITCH) || (opcode == Constants.LOOKUPSWITCH)) {
-      int remainder = bytes.getIndex() % 4;
-      no_pad_bytes  = (remainder == 0)? 0 : 4 - remainder;
-
-      for(int i=0; i < no_pad_bytes; i++) {
-        byte b;
-
-        if((b=bytes.readByte()) != 0)
-          System.err.println("Warning: Padding byte != 0 in " +
-                             Constants.OPCODE_NAMES[opcode] + ":" + b);
-      }
-
-      // Both cases have a field default_offset in common
-      default_offset = bytes.readInt();
+    public static String compactClassName(final String str) {
+        return compactClassName(str, true);
     }
 
-    switch(opcode) {
-      /* Table switch has variable length arguments.
-       */
-    case Constants.TABLESWITCH:
-      low  = bytes.readInt();
-      high = bytes.readInt();
-
-      offset = bytes.getIndex() - 12 - no_pad_bytes - 1;
-      default_offset += offset;
-
-      buf.append("\tdefault = " + default_offset + ", low = " + low +
-                 ", high = " + high + "(");
-
-      jump_table = new int[high - low + 1];
-      for(int i=0; i < jump_table.length; i++) {
-        jump_table[i] = offset + bytes.readInt();
-        buf.append(jump_table[i]);
-
-        if(i < jump_table.length - 1)
-          buf.append(", ");
-      }
-      buf.append(")");
-
-      break;
-
-      /* Lookup switch has variable length arguments.
-       */
-    case Constants.LOOKUPSWITCH: {
-
-      npairs = bytes.readInt();
-      offset = bytes.getIndex() - 8 - no_pad_bytes - 1;
-
-      match      = new int[npairs];
-      jump_table = new int[npairs];
-      default_offset += offset;
-
-      buf.append("\tdefault = " + default_offset + ", npairs = " + npairs +
-                 " (");
-
-      for(int i=0; i < npairs; i++) {
-        match[i]      = bytes.readInt();
-
-        jump_table[i] = offset + bytes.readInt();
-
-        buf.append("(" + match[i] + ", " + jump_table[i] + ")");
-
-        if(i < npairs - 1)
-          buf.append(", ");
-      }
-      buf.append(")");
-    }
-    break;
-
-    /* Two address bytes + offset from start of byte stream form the
-     * jump target
+    /**
+     * Shorten long class names, <em>java/lang/String</em> becomes <em>java.lang.String</em>, e.g.. If <em>chopit</em> is
+     * <em>true</em> the prefix <em>java.lang</em> is also removed.
+     *
+     * @param str The long class name
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return Compacted class name
      */
-    case Constants.GOTO:      case Constants.IFEQ:      case Constants.IFGE:      case Constants.IFGT:
-    case Constants.IFLE:      case Constants.IFLT:      case Constants.JSR: case Constants.IFNE:
-    case Constants.IFNONNULL: case Constants.IFNULL:    case Constants.IF_ACMPEQ:
-    case Constants.IF_ACMPNE: case Constants.IF_ICMPEQ: case Constants.IF_ICMPGE: case Constants.IF_ICMPGT:
-    case Constants.IF_ICMPLE: case Constants.IF_ICMPLT: case Constants.IF_ICMPNE:
-      buf.append("\t\t#" + ((bytes.getIndex() - 1) + bytes.readShort()));
-      break;
-
-      /* 32-bit wide jumps
-       */
-    case Constants.GOTO_W: case Constants.JSR_W:
-      buf.append("\t\t#" + ((bytes.getIndex() - 1) + bytes.readInt()));
-      break;
-
-      /* Index byte references local variable (register)
-       */
-    case Constants.ALOAD:  case Constants.ASTORE: case Constants.DLOAD:  case Constants.DSTORE: case Constants.FLOAD:
-    case Constants.FSTORE: case Constants.ILOAD:  case Constants.ISTORE: case Constants.LLOAD:  case Constants.LSTORE:
-    case Constants.RET:
-      if(wide) {
-        vindex = bytes.readUnsignedShort();
-        wide=false; // Clear flag
-      }
-      else
-        vindex = bytes.readUnsignedByte();
-
-      buf.append("\t\t%" + vindex);
-      break;
-
-      /*
-       * Remember wide byte which is used to form a 16-bit address in the
-       * following instruction. Relies on that the method is called again with
-       * the following opcode.
-       */
-    case Constants.WIDE:
-      wide      = true;
-      buf.append("\t(wide)");
-      break;
-
-      /* Array of basic type.
-       */
-    case Constants.NEWARRAY:
-      buf.append("\t\t<" + Constants.TYPE_NAMES[bytes.readByte()] + ">");
-      break;
-
-      /* Access object/class fields.
-       */
-    case Constants.GETFIELD: case Constants.GETSTATIC: case Constants.PUTFIELD: case Constants.PUTSTATIC:
-      index = bytes.readUnsignedShort();
-      buf.append("\t\t" +
-                 constant_pool.constantToString(index, Constants.CONSTANT_Fieldref) +
-                 (verbose? " (" + index + ")" : ""));
-      break;
-
-      /* Operands are references to classes in constant pool
-       */
-    case Constants.NEW:
-    case Constants.CHECKCAST:
-      buf.append("\t");
-    case Constants.INSTANCEOF:
-      index = bytes.readUnsignedShort();
-      buf.append("\t<" + constant_pool.constantToString(index,
-                                                        Constants.CONSTANT_Class) +
-                 ">" + (verbose? " (" + index + ")" : ""));
-      break;
-
-      /* Operands are references to methods in constant pool
-       */
-    case Constants.INVOKESPECIAL: case Constants.INVOKESTATIC: case Constants.INVOKEVIRTUAL:
-      index = bytes.readUnsignedShort();
-      buf.append("\t" + constant_pool.constantToString(index,
-                                                       Constants.CONSTANT_Methodref) +
-                 (verbose? " (" + index + ")" : ""));
-      break;
-
-    case Constants.INVOKEINTERFACE:
-      index = bytes.readUnsignedShort();
-      int nargs = bytes.readUnsignedByte(); // historical, redundant
-      buf.append("\t" +
-                 constant_pool.constantToString(index,
-                                                Constants.CONSTANT_InterfaceMethodref) +
-                 (verbose? " (" + index + ")\t" : "") + nargs + "\t" +
-                 bytes.readUnsignedByte()); // Last byte is a reserved space
-      break;
-
-      /* Operands are references to items in constant pool
-       */
-    case Constants.LDC_W: case Constants.LDC2_W:
-      index = bytes.readUnsignedShort();
-
-      buf.append("\t\t" + constant_pool.constantToString
-                 (index, constant_pool.getConstant(index).getTag()) +
-                 (verbose? " (" + index + ")" : ""));
-      break;
-
-    case Constants.LDC:
-      index = bytes.readUnsignedByte();
-
-      buf.append("\t\t" +
-                 constant_pool.constantToString
-                 (index, constant_pool.getConstant(index).getTag()) +
-                 (verbose? " (" + index + ")" : ""));
-      break;
-
-      /* Array of references.
-       */
-    case Constants.ANEWARRAY:
-      index = bytes.readUnsignedShort();
-
-      buf.append("\t\t<" + compactClassName(constant_pool.getConstantString
-                                          (index, Constants.CONSTANT_Class), false) +
-                 ">" + (verbose? " (" + index + ")": ""));
-      break;
-
-      /* Multidimensional array of references.
-       */
-    case Constants.MULTIANEWARRAY: {
-      index          = bytes.readUnsignedShort();
-      int dimensions = bytes.readUnsignedByte();
-
-      buf.append("\t<" + compactClassName(constant_pool.getConstantString
-                                          (index, Constants.CONSTANT_Class), false) +
-                 ">\t" + dimensions + (verbose? " (" + index + ")" : ""));
+    public static String compactClassName(final String str, final boolean chopit) {
+        return compactClassName(str, "java.lang.", chopit);
     }
-    break;
 
-    /* Increment local variable.
+    /**
+     * Shorten long class name <em>str</em>, i.e., chop off the <em>prefix</em>, if the class name starts with this string
+     * and the flag <em>chopit</em> is true. Slashes <em>/</em> are converted to dots <em>.</em>.
+     *
+     * @param str The long class name
+     * @param prefix The prefix the get rid off
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return Compacted class name
      */
-    case Constants.IINC:
-      if(wide) {
-        vindex   = bytes.readUnsignedShort();
-        constant = bytes.readShort();
-        wide     = false;
-      }
-      else {
-        vindex   = bytes.readUnsignedByte();
-        constant = bytes.readByte();
-      }
-      buf.append("\t\t%" + vindex + "\t" + constant);
-      break;
-
-    default:
-      if(Constants.NO_OF_OPERANDS[opcode] > 0) {
-        for(int i=0; i < Constants.TYPE_OF_OPERANDS[opcode].length; i++) {
-          buf.append("\t\t");
-          switch(Constants.TYPE_OF_OPERANDS[opcode][i]) {
-          case Constants.T_BYTE:  buf.append(bytes.readByte()); break;
-          case Constants.T_SHORT: buf.append(bytes.readShort());       break;
-          case Constants.T_INT:   buf.append(bytes.readInt());         break;
-
-          default: // Never reached
-            System.err.println("Unreachable default case reached!");
-            buf.setLength(0);
-          }
+    public static String compactClassName(String str, final String prefix, final boolean chopit) {
+        final int len = prefix.length();
+        str = pathToPackage(str); // Is '/' on all systems, even DOS
+        // If string starts with 'prefix' and contains no further dots
+        if (chopit && str.startsWith(prefix) && str.substring(len).indexOf('.') == -1) {
+            str = str.substring(len);
         }
-      }
+        return str;
     }
 
-    return buf.toString();
-  }
-
-  public static final String codeToString(ByteSequence bytes, ConstantPool constant_pool)
-    throws IOException
-  {
-    return codeToString(bytes, constant_pool, true);
-  }
-
-  /**
-   * Shorten long class names, <em>java/lang/String</em> becomes
-   * <em>String</em>.
-   *
-   * @param str The long class name
-   * @return Compacted class name
-   */
-  public static final String compactClassName(String str) {
-    return compactClassName(str, true);
-  }
-
-  /**
-   * Shorten long class name <em>str</em>, i.e., chop off the <em>prefix</em>,
-   * if the
-   * class name starts with this string and the flag <em>chopit</em> is true.
-   * Slashes <em>/</em> are converted to dots <em>.</em>.
-   *
-   * @param str The long class name
-   * @param prefix The prefix the get rid off
-   * @param chopit Flag that determines whether chopping is executed or not
-   * @return Compacted class name
-   */
-  public static final String compactClassName(String str,
-                                              String prefix,
-                                              boolean chopit)
-  {
-    int len = prefix.length();
-
-    str = str.replace('/', '.'); // Is `/' on all systems, even DOS
-
-    if(chopit) {
-      // If string starts with `prefix' and contains no further dots
-      if(str.startsWith(prefix) &&
-         (str.substring(len).indexOf('.') == -1))
-        str = str.substring(len);
-    }
-
-    return str;
-  }
-
-  /**
-   * Shorten long class names, <em>java/lang/String</em> becomes
-   * <em>java.lang.String</em>,
-   * e.g.. If <em>chopit</em> is <em>true</em> the prefix <em>java.lang</em>
-   * is also removed.
-   *
-   * @param str The long class name
-   * @param chopit Flag that determines whether chopping is executed or not
-   * @return Compacted class name
-   */
-  public static final String compactClassName(String str, boolean chopit) {
-    return compactClassName(str, "java.lang.", chopit);
-  }
-
-  private static final boolean is_digit(char ch) {
-    return (ch >= '0') && (ch <= '9');
-  }
-
-  private static final boolean is_space(char ch) {
-    return (ch == ' ') || (ch == '\t') || (ch == '\r') || (ch == '\n');
-  }
-
-  /**
-   * @return `flag' with bit `i' set to 1
-   */
-  public static final int setBit(int flag, int i) {
-    return flag | pow2(i);
-  }
-
-  /**
-   * @return `flag' with bit `i' set to 0
-   */
-  public static final int clearBit(int flag, int i) {
-    int bit = pow2(i);
-    return (flag & bit) == 0? flag : flag ^ bit;
-  }
-
-  /**
-   * @return true, if bit `i' in `flag' is set
-   */
-  public static final boolean isSet(int flag, int i) {
-    return (flag & pow2(i)) != 0;
-  }
-
-  /**
-   * Converts string containing the method return and argument types
-   * to a byte code method signature.
-   *
-   * @param  ret Return type of method
-   * @param  argv Types of method arguments
-   * @return Byte code representation of method signature
-   */
-  public final static String methodTypeToSignature(String ret, String[] argv)
-    throws ClassFormatException
-  {
-    StringBuffer buf = new StringBuffer("(");
-    String       str;
-
-    if(argv != null)
-      for(int i=0; i < argv.length; i++) {
-        str = getSignature(argv[i]);
-
-        if(str.endsWith("V")) // void can't be a method argument
-          throw new ClassFormatException("Invalid type: " + argv[i]);
-
-        buf.append(str);
-      }
-
-    str = getSignature(ret);
-
-    buf.append(")" + str);
-
-    return buf.toString();
-  }
-
-  /**
-   * @param  signature    Method signature
-   * @return Array of argument types
-   * @throws  ClassFormatException
-   */
-  public static final String[] methodSignatureArgumentTypes(String signature)
-    throws ClassFormatException
-  {
-    return methodSignatureArgumentTypes(signature, true);
-  }
-
-  /**
-   * @param  signature    Method signature
-   * @param chopit Shorten class names ?
-   * @return Array of argument types
-   * @throws  ClassFormatException
-   */
-  public static final String[] methodSignatureArgumentTypes(String signature,
-                                                            boolean chopit)
-    throws ClassFormatException
-  {
-    ArrayList vec = new ArrayList();
-    int       index;
-    String[]  types;
-
-    try { // Read all declarations between for `(' and `)'
-      if(signature.charAt(0) != '(')
-        throw new ClassFormatException("Invalid method signature: " + signature);
-
-      index = 1; // current string position
-
-      while(signature.charAt(index) != ')') {
-        vec.add(signatureToString(signature.substring(index), chopit));
-        index += consumed_chars; // update position
-      }
-    } catch(StringIndexOutOfBoundsException e) { // Should never occur
-      throw new ClassFormatException("Invalid method signature: " + signature);
-    }
-
-    types = new String[vec.size()];
-    vec.toArray(types);
-    return types;
-  }
-  /**
-   * @param  signature    Method signature
-   * @return return type of method
-   * @throws  ClassFormatException
-   */
-  public static final String methodSignatureReturnType(String signature)
-       throws ClassFormatException
-  {
-    return methodSignatureReturnType(signature, true);
-  }
-  /**
-   * @param  signature    Method signature
-   * @param chopit Shorten class names ?
-   * @return return type of method
-   * @throws  ClassFormatException
-   */
-  public static final String methodSignatureReturnType(String signature,
-                                                       boolean chopit)
-       throws ClassFormatException
-  {
-    int    index;
-    String type;
-
-    try {
-      // Read return type after `)'
-      index = signature.lastIndexOf(')') + 1;
-      type = signatureToString(signature.substring(index), chopit);
-    } catch(StringIndexOutOfBoundsException e) { // Should never occur
-      throw new ClassFormatException("Invalid method signature: " + signature);
-    }
-
-    return type;
-  }
-
-  /**
-   * Converts method signature to string with all class names compacted.
-   *
-   * @param signature to convert
-   * @param name of method
-   * @param access flags of method
-   * @return Human readable signature
-   */
-  public static final String methodSignatureToString(String signature,
-                                                     String name,
-                                                     String access) {
-    return methodSignatureToString(signature, name, access, true);
-  }
-
-  public static final String methodSignatureToString(String signature,
-                                                     String name,
-                                                     String access,
-                                                     boolean chopit) {
-    return methodSignatureToString(signature, name, access, chopit, null);
-  }
-
-  /**
-   * A return type signature represents the return value from a method.
-   * It is a series of bytes in the following grammar:
-   *
-   * <return_signature> ::= <field_type> | V
-   *
-   * The character V indicates that the method returns no value. Otherwise, the
-   * signature indicates the type of the return value.
-   * An argument signature represents an argument passed to a method:
-   *
-   * <argument_signature> ::= <field_type>
-   *
-   * A method signature represents the arguments that the method expects, and
-   * the value that it returns.
-   * <method_signature> ::= (<arguments_signature>) <return_signature>
-   * <arguments_signature>::= <argument_signature>*
-   *
-   * This method converts such a string into a Java type declaration like
-   * `void _main(String[])' and throws a `ClassFormatException' when the parsed
-   * type is invalid.
-   *
-   * @param  signature    Method signature
-   * @param  name         Method name
-   * @param  access       Method access rights
-   * @return Java type declaration
-   * @throws  ClassFormatException
-   */
-  public static final String methodSignatureToString(String signature,
-                                                     String name,
-                                                     String access,
-                                                     boolean chopit,
-                                                     LocalVariableTable vars)
-    throws ClassFormatException
-  {
-    StringBuffer buf = new StringBuffer("(");
-    String       type;
-    int          index;
-    int          var_index = (access.indexOf("static") >= 0)? 0 : 1;
-
-    try { // Read all declarations between for `(' and `)'
-      if(signature.charAt(0) != '(')
-        throw new ClassFormatException("Invalid method signature: " + signature);
-
-      index = 1; // current string position
-
-      while(signature.charAt(index) != ')') {
-        String param_type = signatureToString(signature.substring(index), chopit);
-        buf.append(param_type);
-
-        if(vars != null) {
-          LocalVariable l = vars.getLocalVariable(var_index);
-
-          if(l != null)
-            buf.append(" " + l.getName());
-        } else
-          buf.append(" arg" + var_index);
-
-        if("double".equals(param_type) || "long".equals(param_type))
-          var_index += 2;
-        else
-          var_index++;
-
-        buf.append(", ");
-        index += consumed_chars; // update position
-      }
-
-      index++; // update position
-
-      // Read return type after `)'
-      type = signatureToString(signature.substring(index), chopit);
-
-    } catch(StringIndexOutOfBoundsException e) { // Should never occur
-      throw new ClassFormatException("Invalid method signature: " + signature);
-    }
-
-    if(buf.length() > 1) // Tack off the extra ", "
-      buf.setLength(buf.length() - 2);
-
-    buf.append(")");
-
-    return access + ((access.length() > 0)? " " : "") + // May be an empty string
-      type + " " + name + buf.toString();
-  }
-
-  // Guess what this does
-  private static final int pow2(int n) {
-    return 1 << n;
-  }
-
-  /**
-   * Replace all occurences of <em>old</em> in <em>str</em> with <em>new</em>.
-   *
-   * @param str String to permute
-   * @param old String to be replaced
-   * @param new Replacement string
-   * @return new String object
-   */
-  public static final String replace(String str, String old, String new_) {
-    int          index, old_index;
-    StringBuffer buf = new StringBuffer();
-
-    try {
-      if((index = str.indexOf(old)) != -1) { // `old' found in str
-        old_index = 0;                       // String start offset
-
-        // While we have something to replace
-        while((index = str.indexOf(old, old_index)) != -1) {
-          buf.append(str.substring(old_index, index)); // append prefix
-          buf.append(new_);                            // append replacement
-
-          old_index = index + old.length(); // Skip `old'.length chars
+    /**
+     * Escape all occurrences of newline chars '\n', quotes \", etc.
+     */
+    public static String convertString(final String label) {
+        final char[] ch = label.toCharArray();
+        final StringBuilder buf = new StringBuilder();
+        for (final char element : ch) {
+            switch (element) {
+            case '\n':
+                buf.append("\\n");
+                break;
+            case '\r':
+                buf.append("\\r");
+                break;
+            case '\"':
+                buf.append("\\\"");
+                break;
+            case '\'':
+                buf.append("\\'");
+                break;
+            case '\\':
+                buf.append("\\\\");
+                break;
+            default:
+                buf.append(element);
+                break;
+            }
         }
-
-        buf.append(str.substring(old_index)); // append rest of string
-        str = buf.toString();
-      }
-    } catch(StringIndexOutOfBoundsException e) { // Should not occur
-      System.err.println(e);
+        return buf.toString();
     }
 
-    return str;
-  }
-
-  /**
-   * Converts signature to string with all class names compacted.
-   *
-   * @param signature to convert
-   * @return Human readable signature
-   */
-  public static final String signatureToString(String signature) {
-    return signatureToString(signature, true);
-  }
-
-  /**
-   * The field signature represents the value of an argument to a function or
-   * the value of a variable. It is a series of bytes generated by the
-   * following grammar:
-   *
-   * <PRE>
-   * <field_signature> ::= <field_type>
-   * <field_type>      ::= <base_type>|<object_type>|<array_type>
-   * <base_type>       ::= B|C|D|F|I|J|S|Z
-   * <object_type>     ::= L<fullclassname>;
-   * <array_type>      ::= [<field_type>
-   *
-   * The meaning of the base types is as follows:
-   * B byte signed byte
-   * C char character
-   * D double double precision IEEE float
-   * F float single precision IEEE float
-   * I int integer
-   * J long long integer
-   * L<fullclassname>; ... an object of the given class
-   * S short signed short
-   * Z boolean true or false
-   * [<field sig> ... array
-   * </PRE>
-   *
-   * This method converts this string into a Java type declaration such as
-   * `String[]' and throws a `ClassFormatException' when the parsed type is
-   * invalid.
-   *
-   * @param  signature  Class signature
-   * @param chopit Flag that determines whether chopping is executed or not
-   * @return Java type declaration
-   * @throws ClassFormatException
-   */
-  public static final String signatureToString(String signature,
-                                               boolean chopit)
-  {
-    consumed_chars = 1; // This is the default, read just one char like `B'
-
-    try {
-      switch(signature.charAt(0)) {
-      case 'B' : return "byte";
-      case 'C' : return "char";
-      case 'D' : return "double";
-      case 'F' : return "float";
-      case 'I' : return "int";
-      case 'J' : return "long";
-
-      case 'L' : { // Full class name
-        int    index = signature.indexOf(';'); // Look for closing `;'
-
-        if(index < 0)
-          throw new ClassFormatException("Invalid signature: " + signature);
-
-        consumed_chars = index + 1; // "Lblabla;" `L' and `;' are removed
-
-        return compactClassName(signature.substring(1, index), chopit);
-      }
-
-      case 'S' : return "short";
-      case 'Z' : return "boolean";
-
-      case '[' : { // Array declaration
-        int          n;
-        StringBuffer buf, brackets;
-        String       type;
-        char         ch;
-        int          consumed_chars; // Shadows global var
-
-        brackets = new StringBuffer(); // Accumulate []'s
-
-        // Count opening brackets and look for optional size argument
-        for(n=0; signature.charAt(n) == '['; n++)
-          brackets.append("[]");
-
-        consumed_chars = n; // Remember value
-
-        // The rest of the string denotes a `<field_type>'
-        type = signatureToString(signature.substring(n), chopit);
-
-        Utility.consumed_chars += consumed_chars;
-        return type + brackets.toString();
-      }
-
-      case 'V' : return "void";
-
-      default  : throw new ClassFormatException("Invalid signature: `" +
-                                            signature + "'");
-      }
-    } catch(StringIndexOutOfBoundsException e) { // Should never occur
-      throw new ClassFormatException("Invalid signature: " + e + ":" + signature);
-    }
-  }
-
-  /** Parse Java type such as "char", or "java.lang.String[]" and return the
-   * signature in byte code format, e.g. "C" or "[Ljava/lang/String;" respectively.
-   *
-   * @param  type Java type
-   * @return byte code signature
-   */
-  public static String getSignature(String type) {
-    StringBuffer buf        = new StringBuffer();
-    char[]       chars      = type.toCharArray();
-    boolean      char_found = false, delim = false;
-    int          index      = -1;
-
-  loop:
-    for(int i=0; i < chars.length; i++) {
-      switch(chars[i]) {
-      case ' ': case '\t': case '\n': case '\r': case '\f':
-        if(char_found)
-          delim = true;
-        break;
-
-      case '[':
-        if(!char_found)
-          throw new RuntimeException("Illegal type: " + type);
-
-        index = i;
-        break loop;
-
-      default:
-        char_found = true;
-        if(!delim)
-          buf.append(chars[i]);
-      }
-    }
-
-    int brackets = 0;
-
-    if(index > 0)
-      brackets = countBrackets(type.substring(index));
-
-    type = buf.toString();
-    buf.setLength(0);
-
-    for(int i=0; i < brackets; i++)
-      buf.append('[');
-
-    boolean found = false;
-
-    for(int i=Constants.T_BOOLEAN; (i <= Constants.T_VOID) && !found; i++) {
-      if(Constants.TYPE_NAMES[i].equals(type)) {
-        found = true;
-        buf.append(Constants.SHORT_TYPE_NAMES[i]);
-      }
-    }
-
-    if(!found) // Class name
-      buf.append('L' + type.replace('.', '/') + ';');
-
-    return buf.toString();
-  }
-
-  private static int countBrackets(String brackets) {
-    char[]  chars = brackets.toCharArray();
-    int     count = 0;
-    boolean open  = false;
-
-    for(int i=0; i<chars.length; i++) {
-      switch(chars[i]) {
-      case '[':
-        if(open)
-          throw new RuntimeException("Illegally nested brackets:" + brackets);
-        open = true;
-        break;
-
-      case ']':
-        if(!open)
-          throw new RuntimeException("Illegally nested brackets:" + brackets);
-        open = false;
-        count++;
-        break;
-
-      default:
-        // Don't care
-      }
-    }
-
-    if(open)
-      throw new RuntimeException("Illegally nested brackets:" + brackets);
-
-    return count;
-  }
-
-  /**
-   * Return type of method signature as a byte value as defined in <em>Constants</em>
-   *
-   * @param  signature in format described above
-   * @return type of method signature
-   * @see    Constants
-   */
-  public static final byte typeOfMethodSignature(String signature)
-    throws ClassFormatException
-  {
-    int index;
-
-    try {
-      if(signature.charAt(0) != '(')
-        throw new ClassFormatException("Invalid method signature: " + signature);
-
-      index = signature.lastIndexOf(')') + 1;
-      return typeOfSignature(signature.substring(index));
-    } catch(StringIndexOutOfBoundsException e) {
-      throw new ClassFormatException("Invalid method signature: " + signature);
-    }
-  }
-
-  /**
-   * Return type of signature as a byte value as defined in <em>Constants</em>
-   *
-   * @param  signature in format described above
-   * @return type of signature
-   * @see    Constants
-   */
-  public static final byte typeOfSignature(String signature)
-    throws ClassFormatException
-  {
-    try {
-      switch(signature.charAt(0)) {
-      case 'B' : return Constants.T_BYTE;
-      case 'C' : return Constants.T_CHAR;
-      case 'D' : return Constants.T_DOUBLE;
-      case 'F' : return Constants.T_FLOAT;
-      case 'I' : return Constants.T_INT;
-      case 'J' : return Constants.T_LONG;
-      case 'L' : return Constants.T_REFERENCE;
-      case '[' : return Constants.T_ARRAY;
-      case 'V' : return Constants.T_VOID;
-      case 'Z' : return Constants.T_BOOLEAN;
-      case 'S' : return Constants.T_SHORT;
-      default:
-        throw new ClassFormatException("Invalid method signature: " + signature);
-      }
-    } catch(StringIndexOutOfBoundsException e) {
-      throw new ClassFormatException("Invalid method signature: " + signature);
-    }
-  }
-
-  /** Map opcode names to opcode numbers. E.g., return Constants.ALOAD for "aload"
-   */
-  public static short searchOpcode(String name) {
-    name = name.toLowerCase();
-
-    for(short i=0; i < Constants.OPCODE_NAMES.length; i++)
-      if(Constants.OPCODE_NAMES[i].equals(name))
-        return i;
-
-    return -1;
-  }
-
-  /**
-   * Convert (signed) byte to (unsigned) short value, i.e., all negative
-   * values become positive.
-   */
-  private static final short byteToShort(byte b) {
-    return (b < 0)? (short)(256 + b) : (short)b;
-  }
-
-  /** Convert bytes into hexidecimal string
-   *
-   * @return bytes as hexidecimal string, e.g. 00 FA 12 ...
-   */
-  public static final String toHexString(byte[] bytes) {
-    StringBuffer buf = new StringBuffer();
-
-    for(int i=0; i < bytes.length; i++) {
-      short  b   = byteToShort(bytes[i]);
-      String hex = Integer.toString(b, 0x10);
-
-      if(b < 0x10) // just one digit, prepend '0'
-        buf.append('0');
-
-      buf.append(hex);
-
-      if(i < bytes.length - 1)
-        buf.append(' ');
-    }
-
-    return buf.toString();
-  }
-
-  /**
-   * Return a string for an integer justified left or right and filled up with
-   * `fill' characters if necessary.
-   *
-   * @param i integer to format
-   * @param length length of desired string
-   * @param left_justify format left or right
-   * @param fill fill character
-   * @return formatted int
-   */
-  public static final String format(int i, int length, boolean left_justify, char fill) {
-    return fillup(Integer.toString(i), length, left_justify, fill);
-  }
-
-  /**
-   * Fillup char with up to length characters with char `fill' and justify it left or right.
-   *
-   * @param str string to format
-   * @param length length of desired string
-   * @param left_justify format left or right
-   * @param fill fill character
-   * @return formatted string
-   */
-  public static final String fillup(String str, int length, boolean left_justify, char fill) {
-    int    len = length - str.length();
-    char[] buf = new char[(len < 0)? 0 : len];
-
-    for(int j=0; j < buf.length; j++)
-      buf[j] = fill;
-
-    if(left_justify)
-      return str + new String(buf);
-    else
-      return new String(buf) + str;
-  }
-
-  static final boolean equals(byte[] a, byte[] b) {
-    int size;
-
-    if((size=a.length) != b.length)
-      return false;
-
-    for(int i=0; i < size; i++)
-      if(a[i] != b[i])
-        return false;
-
-    return true;
-  }
-
-  public static final void printArray(PrintStream out, Object[] obj) {
-    out.println(printArray(obj, true));
-  }
-
-  public static final void printArray(PrintWriter out, Object[] obj) {
-    out.println(printArray(obj, true));
-  }
-
-  public static final String printArray(Object[] obj) {
-    return printArray(obj, true);
-  }
-
-  public static final String printArray(Object[] obj, boolean braces) {
-    return printArray(obj, braces, false);
-  }
-
-  public static final String printArray(Object[] obj, boolean braces,
-                                        boolean quote) {
-    if(obj == null)
-      return null;
-
-    StringBuffer buf = new StringBuffer();
-    if(braces)
-      buf.append('{');
-
-    for(int i=0; i < obj.length; i++) {
-      if(obj[i] != null) {
-        buf.append((quote? "\"" : "") + obj[i].toString() + (quote? "\"" : ""));
-      } else {
-        buf.append("null");
-      }
-
-      if(i < obj.length - 1) {
-        buf.append(", ");
-      }
-    }
-
-    if(braces)
-      buf.append('}');
-
-    return buf.toString();
-  }
-
-  /** @return true, if character is one of (a, ... z, A, ... Z, 0, ... 9, _)
-   */
-  public static boolean isJavaIdentifierPart(char ch) {
-    return ((ch >= 'a') && (ch <= 'z')) ||
-      ((ch >= 'A') && (ch <= 'Z')) ||
-      ((ch >= '0') && (ch <= '9')) ||
-      (ch == '_');
-  }
-
-  /** Encode byte array it into Java identifier string, i.e., a string
-   * that only contains the following characters: (a, ... z, A, ... Z,
-   * 0, ... 9, _, $).  The encoding algorithm itself is not too
-   * clever: if the current byte's ASCII value already is a valid Java
-   * identifier part, leave it as it is. Otherwise it writes the
-   * escape character($) followed by <p><ul><li> the ASCII value as a
-   * hexadecimal string, if the value is not in the range
-   * 200..247</li> <li>a Java identifier char not used in a lowercase
-   * hexadecimal string, if the value is in the range
-   * 200..247</li><ul></p>
-   *
-   * <p>This operation inflates the original byte array by roughly 40-50%</p>
-   *
-   * @param bytes the byte array to convert
-   * @param compress use gzip to minimize string
-   */
-  public static String encode(byte[] bytes, boolean compress) throws IOException {
-    if(compress) {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      GZIPOutputStream      gos  = new GZIPOutputStream(baos);
-
-      gos.write(bytes, 0, bytes.length);
-      gos.close();
-      baos.close();
-
-      bytes = baos.toByteArray();
-    }
-
-    CharArrayWriter caw = new CharArrayWriter();
-    JavaWriter      jw  = new JavaWriter(caw);
-
-    for(int i=0; i < bytes.length; i++) {
-      int in = bytes[i] & 0x000000ff; // Normalize to unsigned
-      jw.write(in);
-    }
-
-    return caw.toString();
-  }
-
-  /** Decode a string back to a byte array.
-   *
-   * @param bytes the byte array to convert
-   * @param uncompress use gzip to uncompress the stream of bytes
-   */
-  public static byte[] decode(String s, boolean uncompress) throws IOException {
-    char[] chars = s.toCharArray();
-
-    CharArrayReader car = new CharArrayReader(chars);
-    JavaReader      jr  = new JavaReader(car);
-
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-    int ch;
-
-    while((ch = jr.read()) >= 0) {
-      bos.write(ch);
-    }
-
-    bos.close();
-    car.close();
-    jr.close();
-
-    byte[] bytes = bos.toByteArray();
-
-    if(uncompress) {
-      GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes));
-
-      byte[] tmp   = new byte[bytes.length * 3]; // Rough estimate
-      int    count = 0;
-      int    b;
-
-      while((b = gis.read()) >= 0)
-        tmp[count++] = (byte)b;
-
-      bytes = new byte[count];
-      System.arraycopy(tmp, 0, bytes, 0, count);
-    }
-
-    return bytes;
-  }
-
-  // A-Z, g-z, _, $
-  private static final int   FREE_CHARS  = 48;
-  private static       int[] CHAR_MAP    = new int[FREE_CHARS];
-  private static       int[] MAP_CHAR    = new int[256]; // Reverse map
-  private static final char  ESCAPE_CHAR = '$';
-
-  static {
-    int j = 0, k = 0;
-    for(int i='A'; i <= 'Z'; i++) {
-      CHAR_MAP[j] = i;
-      MAP_CHAR[i] = j;
-      j++;
-    }
-
-    for(int i='g'; i <= 'z'; i++) {
-      CHAR_MAP[j] = i;
-      MAP_CHAR[i] = j;
-      j++;
-    }
-
-    CHAR_MAP[j]   = '$';
-    MAP_CHAR['$'] = j;
-    j++;
-
-    CHAR_MAP[j]   = '_';
-    MAP_CHAR['_'] = j;
-  }
-
-  /** Decode characters into bytes.
-   * Used by <a href="Utility.html#decode(java.lang.String, boolean)">decode()</a>
-   */
-  private static class JavaReader extends FilterReader {
-    public JavaReader(Reader in) {
-      super(in);
-    }
-
-    public int read() throws IOException {
-      int b = in.read();
-
-      if(b != ESCAPE_CHAR) {
-        return b;
-      } else {
-        int i = in.read();
-
-        if(i < 0)
-          return -1;
-
-        if(((i >= '0') && (i <= '9')) || ((i >= 'a') && (i <= 'f'))) { // Normal escape
-          int j = in.read();
-
-          if(j < 0)
-            return -1;
-
-          char[] tmp = { (char)i, (char)j };
-          int    s   = Integer.parseInt(new String(tmp), 16);
-
-          return s;
-        } else { // Special escape
-          return MAP_CHAR[i];
+    private static int countBrackets(final String brackets) {
+        final char[] chars = brackets.toCharArray();
+        int count = 0;
+        boolean open = false;
+        for (final char c : chars) {
+            switch (c) {
+            case '[':
+                if (open) {
+                    throw new IllegalArgumentException("Illegally nested brackets:" + brackets);
+                }
+                open = true;
+                break;
+            case ']':
+                if (!open) {
+                    throw new IllegalArgumentException("Illegally nested brackets:" + brackets);
+                }
+                open = false;
+                count++;
+                break;
+            default:
+                // Don't care
+                break;
+            }
         }
-      }
-    }
-
-    public int read(char[] cbuf, int off, int len) throws IOException {
-      for(int i=0; i < len; i++)
-        cbuf[off + i] = (char)read();
-
-      return len;
-    }
-  }
-
-  /** Encode bytes into valid java identifier characters.
-   * Used by <a href="Utility.html#encode(byte[], boolean)">encode()</a>
-   */
-  private static class JavaWriter extends FilterWriter {
-    public JavaWriter(Writer out) {
-      super(out);
-    }
-
-    public void write(int b) throws IOException {
-      if(isJavaIdentifierPart((char)b) && (b != ESCAPE_CHAR)) {
-        out.write(b);
-      } else {
-        out.write(ESCAPE_CHAR); // Escape character
-
-        // Special escape
-        if(b >= 0 && b < FREE_CHARS) {
-          out.write(CHAR_MAP[b]);
-        } else { // Normal escape
-          char[] tmp = Integer.toHexString(b).toCharArray();
-
-          if(tmp.length == 1) {
-            out.write('0');
-            out.write(tmp[0]);
-          } else {
-            out.write(tmp[0]);
-            out.write(tmp[1]);
-          }
+        if (open) {
+            throw new IllegalArgumentException("Illegally nested brackets:" + brackets);
         }
-      }
+        return count;
     }
 
-    public void write(char[] cbuf, int off, int len) throws IOException {
-      for(int i=0; i < len; i++)
-        write(cbuf[off + i]);
+    /**
+     * Decode a string back to a byte array.
+     *
+     * @param s the string to convert
+     * @param uncompress use gzip to uncompress the stream of bytes
+     *
+     * @throws IOException if there's a gzip exception
+     */
+    public static byte[] decode(final String s, final boolean uncompress) throws IOException {
+        byte[] bytes;
+        try (JavaReader jr = new JavaReader(new CharArrayReader(s.toCharArray())); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            int ch;
+            while ((ch = jr.read()) >= 0) {
+                bos.write(ch);
+            }
+            bytes = bos.toByteArray();
+        }
+        if (uncompress) {
+            final GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes));
+            final byte[] tmp = new byte[bytes.length * 3]; // Rough estimate
+            int count = 0;
+            int b;
+            while ((b = gis.read()) >= 0) {
+                tmp[count++] = (byte) b;
+            }
+            bytes = Arrays.copyOf(tmp, count);
+        }
+        return bytes;
     }
 
-    public void write(String str, int off, int len) throws IOException {
-      write(str.toCharArray(), off, len);
+    /**
+     * Encode byte array it into Java identifier string, i.e., a string that only contains the following characters: (a, ...
+     * z, A, ... Z, 0, ... 9, _, $). The encoding algorithm itself is not too clever: if the current byte's ASCII value
+     * already is a valid Java identifier part, leave it as it is. Otherwise it writes the escape character($) followed by:
+     *
+     * <ul>
+     * <li>the ASCII value as a hexadecimal string, if the value is not in the range 200..247</li>
+     * <li>a Java identifier char not used in a lowercase hexadecimal string, if the value is in the range 200..247</li>
+     * </ul>
+     *
+     * <p>
+     * This operation inflates the original byte array by roughly 40-50%
+     * </p>
+     *
+     * @param bytes the byte array to convert
+     * @param compress use gzip to minimize string
+     *
+     * @throws IOException if there's a gzip exception
+     */
+    public static String encode(byte[] bytes, final boolean compress) throws IOException {
+        if (compress) {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+                gos.write(bytes, 0, bytes.length);
+                gos.finish();
+                bytes = baos.toByteArray();
+            }
+        }
+        final CharArrayWriter caw = new CharArrayWriter();
+        try (JavaWriter jw = new JavaWriter(caw)) {
+            for (final byte b : bytes) {
+                final int in = b & 0x000000ff; // Normalize to unsigned
+                jw.write(in);
+            }
+        }
+        return caw.toString();
     }
-  }
 
-  /**
-   * Escape all occurences of newline chars '\n', quotes \", etc.
-   */
-  public static final String convertString(String label) {
-    char[]       ch  = label.toCharArray();
-    StringBuffer buf = new StringBuffer();
-
-    for(int i=0; i < ch.length; i++) {
-      switch(ch[i]) {
-      case '\n':
-        buf.append("\\n"); break;
-      case '\r':
-        buf.append("\\r"); break;
-      case '\"':
-        buf.append("\\\""); break;
-      case '\'':
-        buf.append("\\'"); break;
-      case '\\':
-        buf.append("\\\\"); break;
-      default:
-        buf.append(ch[i]); break;
-      }
+    /**
+     * Fillup char with up to length characters with char 'fill' and justify it left or right.
+     *
+     * @param str string to format
+     * @param length length of desired string
+     * @param leftJustify format left or right
+     * @param fill fill character
+     * @return formatted string
+     */
+    public static String fillup(final String str, final int length, final boolean leftJustify, final char fill) {
+        final int len = length - str.length();
+        final char[] buf = new char[Math.max(len, 0)];
+        Arrays.fill(buf, fill);
+        if (leftJustify) {
+            return str + new String(buf);
+        }
+        return new String(buf) + str;
     }
 
-    return buf.toString();
-  }
+    /**
+     * Return a string for an integer justified left or right and filled up with 'fill' characters if necessary.
+     *
+     * @param i integer to format
+     * @param length length of desired string
+     * @param leftJustify format left or right
+     * @param fill fill character
+     * @return formatted int
+     */
+    public static String format(final int i, final int length, final boolean leftJustify, final char fill) {
+        return fillup(Integer.toString(i), length, leftJustify, fill);
+    }
+
+    /**
+     * WARNING:
+     *
+     * There is some nomenclature confusion through much of the BCEL code base with respect to the terms Descriptor and
+     * Signature. For the offical definitions see:
+     *
+     * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3"> Descriptors in The Java
+     *      Virtual Machine Specification</a>
+     *
+     * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.9.1"> Signatures in The Java
+     *      Virtual Machine Specification</a>
+     *
+     *      In brief, a descriptor is a string representing the type of a field or method. Signatures are similar, but more
+     *      complex. Signatures are used to encode declarations written in the Java programming language that use types
+     *      outside the type system of the Java Virtual Machine. They are used to describe the type of any class, interface,
+     *      constructor, method or field whose declaration uses type variables or parameterized types.
+     *
+     *      To parse a descriptor, call typeSignatureToString. To parse a signature, call signatureToString.
+     *
+     *      Note that if the signature string is a single, non-generic item, the call to signatureToString reduces to a call
+     *      to typeSignatureToString. Also note, that if you only wish to parse the first item in a longer signature string,
+     *      you should call typeSignatureToString directly.
+     */
+
+    /**
+     * Parse Java type such as "char", or "java.lang.String[]" and return the signature in byte code format, e.g. "C" or
+     * "[Ljava/lang/String;" respectively.
+     *
+     * @param type Java type
+     * @return byte code signature
+     */
+    public static String getSignature(String type) {
+        final StringBuilder buf = new StringBuilder();
+        final char[] chars = type.toCharArray();
+        boolean charFound = false;
+        boolean delim = false;
+        int index = -1;
+        loop: for (int i = 0; i < chars.length; i++) {
+            switch (chars[i]) {
+            case ' ':
+            case '\t':
+            case '\n':
+            case '\r':
+            case '\f':
+                if (charFound) {
+                    delim = true;
+                }
+                break;
+            case '[':
+                if (!charFound) {
+                    throw new IllegalArgumentException("Illegal type: " + type);
+                }
+                index = i;
+                break loop;
+            default:
+                charFound = true;
+                if (!delim) {
+                    buf.append(chars[i]);
+                }
+            }
+        }
+        int brackets = 0;
+        if (index > 0) {
+            brackets = countBrackets(type.substring(index));
+        }
+        type = buf.toString();
+        buf.setLength(0);
+        for (int i = 0; i < brackets; i++) {
+            buf.append('[');
+        }
+        boolean found = false;
+        for (int i = Const.T_BOOLEAN; i <= Const.T_VOID && !found; i++) {
+            if (Const.getTypeName(i).equals(type)) {
+                found = true;
+                buf.append(Const.getShortTypeName(i));
+            }
+        }
+        if (!found) {
+            buf.append('L').append(packageToPath(type)).append(';');
+        }
+        return buf.toString();
+    }
+
+    /**
+     * @param ch the character to test if it's part of an identifier
+     *
+     * @return true, if character is one of (a, ... z, A, ... Z, 0, ... 9, _)
+     */
+    public static boolean isJavaIdentifierPart(final char ch) {
+        return ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' || ch == '_';
+    }
+
+    /**
+     * @return true, if bit 'i' in 'flag' is set
+     */
+    public static boolean isSet(final int flag, final int i) {
+        return (flag & pow2(i)) != 0;
+    }
+
+    /**
+     * Converts argument list portion of method signature to string with all class names compacted.
+     *
+     * @param signature Method signature
+     * @return String Array of argument types
+     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     */
+    public static String[] methodSignatureArgumentTypes(final String signature) throws ClassFormatException {
+        return methodSignatureArgumentTypes(signature, true);
+    }
+
+    /**
+     * Converts argument list portion of method signature to string.
+     *
+     * @param signature Method signature
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return String Array of argument types
+     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     */
+    public static String[] methodSignatureArgumentTypes(final String signature, final boolean chopit) throws ClassFormatException {
+        final List<String> vec = new ArrayList<>();
+        int index;
+        try {
+            // Skip any type arguments to read argument declarations between '(' and ')'
+            index = signature.indexOf('(') + 1;
+            if (index <= 0) {
+                throw new ClassFormatException("Invalid method signature: " + signature);
+            }
+            while (signature.charAt(index) != ')') {
+                vec.add(typeSignatureToString(signature.substring(index), chopit));
+                // corrected concurrent private static field acess
+                index += unwrap(CONSUMER_CHARS); // update position
+            }
+        } catch (final StringIndexOutOfBoundsException e) { // Should never occur
+            throw new ClassFormatException("Invalid method signature: " + signature, e);
+        }
+        return vec.toArray(Const.EMPTY_STRING_ARRAY);
+    }
+
+    /**
+     * Converts return type portion of method signature to string with all class names compacted.
+     *
+     * @param signature Method signature
+     * @return String representation of method return type
+     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     */
+    public static String methodSignatureReturnType(final String signature) throws ClassFormatException {
+        return methodSignatureReturnType(signature, true);
+    }
+
+    /**
+     * Converts return type portion of method signature to string.
+     *
+     * @param signature Method signature
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return String representation of method return type
+     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     */
+    public static String methodSignatureReturnType(final String signature, final boolean chopit) throws ClassFormatException {
+        int index;
+        String type;
+        try {
+            // Read return type after ')'
+            index = signature.lastIndexOf(')') + 1;
+            if (index <= 0) {
+                throw new ClassFormatException("Invalid method signature: " + signature);
+            }
+            type = typeSignatureToString(signature.substring(index), chopit);
+        } catch (final StringIndexOutOfBoundsException e) { // Should never occur
+            throw new ClassFormatException("Invalid method signature: " + signature, e);
+        }
+        return type;
+    }
+
+    /**
+     * Converts method signature to string with all class names compacted.
+     *
+     * @param signature to convert
+     * @param name of method
+     * @param access flags of method
+     * @return Human readable signature
+     */
+    public static String methodSignatureToString(final String signature, final String name, final String access) {
+        return methodSignatureToString(signature, name, access, true);
+    }
+
+    /**
+     * Converts method signature to string.
+     *
+     * @param signature to convert
+     * @param name of method
+     * @param access flags of method
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return Human readable signature
+     */
+    public static String methodSignatureToString(final String signature, final String name, final String access, final boolean chopit) {
+        return methodSignatureToString(signature, name, access, chopit, null);
+    }
+
+    /**
+     * This method converts a method signature string into a Java type declaration like 'void main(String[])' and throws a
+     * 'ClassFormatException' when the parsed type is invalid.
+     *
+     * @param signature Method signature
+     * @param name Method name
+     * @param access Method access rights
+     * @param chopit flag that determines whether chopping is executed or not
+     * @param vars the LocalVariableTable for the method
+     * @return Java type declaration
+     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     */
+    public static String methodSignatureToString(final String signature, final String name, final String access, final boolean chopit,
+        final LocalVariableTable vars) throws ClassFormatException {
+        final StringBuilder buf = new StringBuilder("(");
+        String type;
+        int index;
+        int varIndex = access.contains("static") ? 0 : 1;
+        try {
+            // Skip any type arguments to read argument declarations between '(' and ')'
+            index = signature.indexOf('(') + 1;
+            if (index <= 0) {
+                throw new ClassFormatException("Invalid method signature: " + signature);
+            }
+            while (signature.charAt(index) != ')') {
+                final String paramType = typeSignatureToString(signature.substring(index), chopit);
+                buf.append(paramType);
+                if (vars != null) {
+                    final LocalVariable l = vars.getLocalVariable(varIndex, 0);
+                    if (l != null) {
+                        buf.append(" ").append(l.getName());
+                    }
+                } else {
+                    buf.append(" arg").append(varIndex);
+                }
+                if ("double".equals(paramType) || "long".equals(paramType)) {
+                    varIndex += 2;
+                } else {
+                    varIndex++;
+                }
+                buf.append(", ");
+                // corrected concurrent private static field acess
+                index += unwrap(CONSUMER_CHARS); // update position
+            }
+            index++; // update position
+            // Read return type after ')'
+            type = typeSignatureToString(signature.substring(index), chopit);
+        } catch (final StringIndexOutOfBoundsException e) { // Should never occur
+            throw new ClassFormatException("Invalid method signature: " + signature, e);
+        }
+        // ignore any throws information in the signature
+        if (buf.length() > 1) {
+            buf.setLength(buf.length() - 2);
+        }
+        buf.append(")");
+        return access + (!access.isEmpty() ? " " : "") + // May be an empty string
+            type + " " + name + buf.toString();
+    }
+
+    /**
+     * Converts string containing the method return and argument types to a byte code method signature.
+     *
+     * @param ret Return type of method
+     * @param argv Types of method arguments
+     * @return Byte code representation of method signature
+     *
+     * @throws ClassFormatException if the signature is for Void
+     */
+    public static String methodTypeToSignature(final String ret, final String[] argv) throws ClassFormatException {
+        final StringBuilder buf = new StringBuilder("(");
+        String str;
+        if (argv != null) {
+            for (final String element : argv) {
+                str = getSignature(element);
+                if (str.endsWith("V")) {
+                    throw new ClassFormatException("Invalid type: " + element);
+                }
+                buf.append(str);
+            }
+        }
+        str = getSignature(ret);
+        buf.append(")").append(str);
+        return buf.toString();
+    }
+
+    /**
+     * Converts '.'s to '/'s.
+     *
+     * @param name Source
+     * @return converted value
+     * @since 6.7.0
+     */
+    public static String packageToPath(final String name) {
+        return name.replace('.', '/');
+    }
+
+    /**
+     * Converts a path to a package name.
+     *
+     * @param str the source path.
+     * @return a package name.
+     * @since 6.6.0
+     */
+    public static String pathToPackage(final String str) {
+        return str.replace('/', '.');
+    }
+
+    private static int pow2(final int n) {
+        return 1 << n;
+    }
+
+    public static String printArray(final Object[] obj) {
+        return printArray(obj, true);
+    }
+
+    public static String printArray(final Object[] obj, final boolean braces) {
+        return printArray(obj, braces, false);
+    }
+
+    public static String printArray(final Object[] obj, final boolean braces, final boolean quote) {
+        if (obj == null) {
+            return null;
+        }
+        final StringBuilder buf = new StringBuilder();
+        if (braces) {
+            buf.append('{');
+        }
+        for (int i = 0; i < obj.length; i++) {
+            if (obj[i] != null) {
+                buf.append(quote ? "\"" : "").append(obj[i]).append(quote ? "\"" : "");
+            } else {
+                buf.append("null");
+            }
+            if (i < obj.length - 1) {
+                buf.append(", ");
+            }
+        }
+        if (braces) {
+            buf.append('}');
+        }
+        return buf.toString();
+    }
+
+    public static void printArray(final PrintStream out, final Object[] obj) {
+        out.println(printArray(obj, true));
+    }
+
+    public static void printArray(final PrintWriter out, final Object[] obj) {
+        out.println(printArray(obj, true));
+    }
+
+    /**
+     * Replace all occurrences of <em>old</em> in <em>str</em> with <em>new</em>.
+     *
+     * @param str String to permute
+     * @param old String to be replaced
+     * @param new_ Replacement string
+     * @return new String object
+     */
+    public static String replace(String str, final String old, final String new_) {
+        int index;
+        int oldIndex;
+        try {
+            if (str.contains(old)) { // 'old' found in str
+                final StringBuilder buf = new StringBuilder();
+                oldIndex = 0; // String start offset
+                // While we have something to replace
+                while ((index = str.indexOf(old, oldIndex)) != -1) {
+                    buf.append(str, oldIndex, index); // append prefix
+                    buf.append(new_); // append replacement
+                    oldIndex = index + old.length(); // Skip 'old'.length chars
+                }
+                buf.append(str.substring(oldIndex)); // append rest of string
+                str = buf.toString();
+            }
+        } catch (final StringIndexOutOfBoundsException e) { // Should not occur
+            System.err.println(e);
+        }
+        return str;
+    }
+
+    /**
+     * Map opcode names to opcode numbers. E.g., return Constants.ALOAD for "aload"
+     */
+    public static short searchOpcode(String name) {
+        name = name.toLowerCase(Locale.ENGLISH);
+        for (short i = 0; i < Const.OPCODE_NAMES_LENGTH; i++) {
+            if (Const.getOpcodeName(i).equals(name)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * @return 'flag' with bit 'i' set to 1
+     */
+    public static int setBit(final int flag, final int i) {
+        return flag | pow2(i);
+    }
+
+    /**
+     * Converts a signature to a string with all class names compacted. Class, Method and Type signatures are supported.
+     * Enum and Interface signatures are not supported.
+     *
+     * @param signature signature to convert
+     * @return String containg human readable signature
+     */
+    public static String signatureToString(final String signature) {
+        return signatureToString(signature, true);
+    }
+
+    /**
+     * Converts a signature to a string. Class, Method and Type signatures are supported. Enum and Interface signatures are
+     * not supported.
+     *
+     * @param signature signature to convert
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return String containg human readable signature
+     */
+    public static String signatureToString(final String signature, final boolean chopit) {
+        String type = "";
+        String typeParams = "";
+        int index = 0;
+        if (signature.charAt(0) == '<') {
+            // we have type paramters
+            typeParams = typeParamTypesToString(signature, chopit);
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        if (signature.charAt(index) == '(') {
+            // We have a Method signature.
+            // add types of arguments
+            type = typeParams + typeSignaturesToString(signature.substring(index), chopit, ')');
+            index += unwrap(CONSUMER_CHARS); // update position
+            // add return type
+            type = type + typeSignatureToString(signature.substring(index), chopit);
+            index += unwrap(CONSUMER_CHARS); // update position
+            // ignore any throws information in the signature
+            return type;
+        }
+        // Could be Class or Type...
+        type = typeSignatureToString(signature.substring(index), chopit);
+        index += unwrap(CONSUMER_CHARS); // update position
+        if (typeParams.isEmpty() && index == signature.length()) {
+            // We have a Type signature.
+            return type;
+        }
+        // We have a Class signature.
+        final StringBuilder typeClass = new StringBuilder(typeParams);
+        typeClass.append(" extends ");
+        typeClass.append(type);
+        if (index < signature.length()) {
+            typeClass.append(" implements ");
+            typeClass.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        while (index < signature.length()) {
+            typeClass.append(", ");
+            typeClass.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        return typeClass.toString();
+    }
+
+    /**
+     * Convert bytes into hexadecimal string
+     *
+     * @param bytes an array of bytes to convert to hexadecimal
+     *
+     * @return bytes as hexadecimal string, e.g. 00 fa 12 ...
+     */
+    public static String toHexString(final byte[] bytes) {
+        final StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            final short b = byteToShort(bytes[i]);
+            final String hex = Integer.toHexString(b);
+            if (b < 0x10) {
+                buf.append('0');
+            }
+            buf.append(hex);
+            if (i < bytes.length - 1) {
+                buf.append(' ');
+            }
+        }
+        return buf.toString();
+    }
+
+    /**
+     * Return type of method signature as a byte value as defined in <em>Constants</em>
+     *
+     * @param signature in format described above
+     * @return type of method signature
+     * @see Const
+     *
+     * @throws ClassFormatException if signature is not a method signature
+     */
+    public static byte typeOfMethodSignature(final String signature) throws ClassFormatException {
+        int index;
+        try {
+            if (signature.charAt(0) != '(') {
+                throw new ClassFormatException("Invalid method signature: " + signature);
+            }
+            index = signature.lastIndexOf(')') + 1;
+            return typeOfSignature(signature.substring(index));
+        } catch (final StringIndexOutOfBoundsException e) {
+            throw new ClassFormatException("Invalid method signature: " + signature, e);
+        }
+    }
+
+    /**
+     * Return type of signature as a byte value as defined in <em>Constants</em>
+     *
+     * @param signature in format described above
+     * @return type of signature
+     * @see Const
+     *
+     * @throws ClassFormatException if signature isn't a known type
+     */
+    public static byte typeOfSignature(final String signature) throws ClassFormatException {
+        try {
+            switch (signature.charAt(0)) {
+            case 'B':
+                return Const.T_BYTE;
+            case 'C':
+                return Const.T_CHAR;
+            case 'D':
+                return Const.T_DOUBLE;
+            case 'F':
+                return Const.T_FLOAT;
+            case 'I':
+                return Const.T_INT;
+            case 'J':
+                return Const.T_LONG;
+            case 'L':
+            case 'T':
+                return Const.T_REFERENCE;
+            case '[':
+                return Const.T_ARRAY;
+            case 'V':
+                return Const.T_VOID;
+            case 'Z':
+                return Const.T_BOOLEAN;
+            case 'S':
+                return Const.T_SHORT;
+            case '!':
+            case '+':
+            case '*':
+                return typeOfSignature(signature.substring(1));
+            default:
+                throw new ClassFormatException("Invalid method signature: " + signature);
+            }
+        } catch (final StringIndexOutOfBoundsException e) {
+            throw new ClassFormatException("Invalid method signature: " + signature, e);
+        }
+    }
+
+    /**
+     * Converts a type parameter list signature to a string.
+     *
+     * @param signature signature to convert
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return String containg human readable signature
+     */
+    private static String typeParamTypesToString(final String signature, final boolean chopit) {
+        // The first character is guranteed to be '<'
+        final StringBuilder typeParams = new StringBuilder("<");
+        int index = 1; // skip the '<'
+        // get the first TypeParameter
+        typeParams.append(typeParamTypeToString(signature.substring(index), chopit));
+        index += unwrap(CONSUMER_CHARS); // update position
+        // are there more TypeParameters?
+        while (signature.charAt(index) != '>') {
+            typeParams.append(", ");
+            typeParams.append(typeParamTypeToString(signature.substring(index), chopit));
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        wrap(CONSUMER_CHARS, index + 1); // account for the '>' char
+        return typeParams.append(">").toString();
+    }
+
+    /**
+     * Converts a type parameter signature to a string.
+     *
+     * @param signature signature to convert
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return String containg human readable signature
+     */
+    private static String typeParamTypeToString(final String signature, final boolean chopit) {
+        int index = signature.indexOf(':');
+        if (index <= 0) {
+            throw new ClassFormatException("Invalid type parameter signature: " + signature);
+        }
+        // get the TypeParameter identifier
+        final StringBuilder typeParam = new StringBuilder(signature.substring(0, index));
+        index++; // account for the ':'
+        if (signature.charAt(index) != ':') {
+            // we have a class bound
+            typeParam.append(" extends ");
+            typeParam.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        // look for interface bounds
+        while (signature.charAt(index) == ':') {
+            index++; // skip over the ':'
+            typeParam.append(" & ");
+            typeParam.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        wrap(CONSUMER_CHARS, index);
+        return typeParam.toString();
+    }
+
+    /**
+     * Converts a list of type signatures to a string.
+     *
+     * @param signature signature to convert
+     * @param chopit flag that determines whether chopping is executed or not
+     * @param term character indicating the end of the list
+     * @return String containg human readable signature
+     */
+    private static String typeSignaturesToString(final String signature, final boolean chopit, final char term) {
+        // The first character will be an 'open' that matches the 'close' contained in term.
+        final StringBuilder typeList = new StringBuilder(signature.substring(0, 1));
+        int index = 1; // skip the 'open' character
+        // get the first Type in the list
+        if (signature.charAt(index) != term) {
+            typeList.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        // are there more types in the list?
+        while (signature.charAt(index) != term) {
+            typeList.append(", ");
+            typeList.append(typeSignatureToString(signature.substring(index), chopit));
+            index += unwrap(CONSUMER_CHARS); // update position
+        }
+        wrap(CONSUMER_CHARS, index + 1); // account for the term char
+        return typeList.append(term).toString();
+    }
+
+    /**
+     *
+     * This method converts a type signature string into a Java type declaration such as 'String[]' and throws a
+     * 'ClassFormatException' when the parsed type is invalid.
+     *
+     * @param signature type signature
+     * @param chopit flag that determines whether chopping is executed or not
+     * @return string containing human readable type signature
+     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     * @since 6.4.0
+     */
+    public static String typeSignatureToString(final String signature, final boolean chopit) throws ClassFormatException {
+        // corrected concurrent private static field acess
+        wrap(CONSUMER_CHARS, 1); // This is the default, read just one char like 'B'
+        try {
+            switch (signature.charAt(0)) {
+            case 'B':
+                return "byte";
+            case 'C':
+                return "char";
+            case 'D':
+                return "double";
+            case 'F':
+                return "float";
+            case 'I':
+                return "int";
+            case 'J':
+                return "long";
+            case 'T': { // TypeVariableSignature
+                final int index = signature.indexOf(';'); // Look for closing ';'
+                if (index < 0) {
+                    throw new ClassFormatException("Invalid type variable signature: " + signature);
+                }
+                // corrected concurrent private static field acess
+                wrap(CONSUMER_CHARS, index + 1); // "Tblabla;" 'T' and ';' are removed
+                return compactClassName(signature.substring(1, index), chopit);
+            }
+            case 'L': { // Full class name
+                // should this be a while loop? can there be more than
+                // one generic clause? (markro)
+                int fromIndex = signature.indexOf('<'); // generic type?
+                if (fromIndex < 0) {
+                    fromIndex = 0;
+                } else {
+                    fromIndex = signature.indexOf('>', fromIndex);
+                    if (fromIndex < 0) {
+                        throw new ClassFormatException("Invalid signature: " + signature);
+                    }
+                }
+                final int index = signature.indexOf(';', fromIndex); // Look for closing ';'
+                if (index < 0) {
+                    throw new ClassFormatException("Invalid signature: " + signature);
+                }
+
+                // check to see if there are any TypeArguments
+                final int bracketIndex = signature.substring(0, index).indexOf('<');
+                if (bracketIndex < 0) {
+                    // just a class identifier
+                    wrap(CONSUMER_CHARS, index + 1); // "Lblabla;" 'L' and ';' are removed
+                    return compactClassName(signature.substring(1, index), chopit);
+                }
+                // but make sure we are not looking past the end of the current item
+                fromIndex = signature.indexOf(';');
+                if (fromIndex < 0) {
+                    throw new ClassFormatException("Invalid signature: " + signature);
+                }
+                if (fromIndex < bracketIndex) {
+                    // just a class identifier
+                    wrap(CONSUMER_CHARS, fromIndex + 1); // "Lblabla;" 'L' and ';' are removed
+                    return compactClassName(signature.substring(1, fromIndex), chopit);
+                }
+
+                // we have TypeArguments; build up partial result
+                // as we recurse for each TypeArgument
+                final StringBuilder type = new StringBuilder(compactClassName(signature.substring(1, bracketIndex), chopit)).append("<");
+                int consumedChars = bracketIndex + 1; // Shadows global var
+
+                // check for wildcards
+                if (signature.charAt(consumedChars) == '+') {
+                    type.append("? extends ");
+                    consumedChars++;
+                } else if (signature.charAt(consumedChars) == '-') {
+                    type.append("? super ");
+                    consumedChars++;
+                }
+
+                // get the first TypeArgument
+                if (signature.charAt(consumedChars) == '*') {
+                    type.append("?");
+                    consumedChars++;
+                } else {
+                    type.append(typeSignatureToString(signature.substring(consumedChars), chopit));
+                    // update our consumed count by the number of characters the for type argument
+                    consumedChars = unwrap(Utility.CONSUMER_CHARS) + consumedChars;
+                    wrap(Utility.CONSUMER_CHARS, consumedChars);
+                }
+
+                // are there more TypeArguments?
+                while (signature.charAt(consumedChars) != '>') {
+                    type.append(", ");
+                    // check for wildcards
+                    if (signature.charAt(consumedChars) == '+') {
+                        type.append("? extends ");
+                        consumedChars++;
+                    } else if (signature.charAt(consumedChars) == '-') {
+                        type.append("? super ");
+                        consumedChars++;
+                    }
+                    if (signature.charAt(consumedChars) == '*') {
+                        type.append("?");
+                        consumedChars++;
+                    } else {
+                        type.append(typeSignatureToString(signature.substring(consumedChars), chopit));
+                        // update our consumed count by the number of characters the for type argument
+                        consumedChars = unwrap(Utility.CONSUMER_CHARS) + consumedChars;
+                        wrap(Utility.CONSUMER_CHARS, consumedChars);
+                    }
+                }
+
+                // process the closing ">"
+                consumedChars++;
+                type.append(">");
+
+                if (signature.charAt(consumedChars) == '.') {
+                    // we have a ClassTypeSignatureSuffix
+                    type.append(".");
+                    // convert SimpleClassTypeSignature to fake ClassTypeSignature
+                    // and then recurse to parse it
+                    type.append(typeSignatureToString("L" + signature.substring(consumedChars + 1), chopit));
+                    // update our consumed count by the number of characters the for type argument
+                    // note that this count includes the "L" we added, but that is ok
+                    // as it accounts for the "." we didn't consume
+                    consumedChars = unwrap(Utility.CONSUMER_CHARS) + consumedChars;
+                    wrap(Utility.CONSUMER_CHARS, consumedChars);
+                    return type.toString();
+                }
+                if (signature.charAt(consumedChars) != ';') {
+                    throw new ClassFormatException("Invalid signature: " + signature);
+                }
+                wrap(Utility.CONSUMER_CHARS, consumedChars + 1); // remove final ";"
+                return type.toString();
+            }
+            case 'S':
+                return "short";
+            case 'Z':
+                return "boolean";
+            case '[': { // Array declaration
+                int n;
+                StringBuilder brackets;
+                String type;
+                int consumedChars; // Shadows global var
+                brackets = new StringBuilder(); // Accumulate []'s
+                // Count opening brackets and look for optional size argument
+                for (n = 0; signature.charAt(n) == '['; n++) {
+                    brackets.append("[]");
+                }
+                consumedChars = n; // Remember value
+                // The rest of the string denotes a '<field_type>'
+                type = typeSignatureToString(signature.substring(n), chopit);
+                // corrected concurrent private static field acess
+                // Utility.consumed_chars += consumed_chars; is replaced by:
+                final int temp = unwrap(Utility.CONSUMER_CHARS) + consumedChars;
+                wrap(Utility.CONSUMER_CHARS, temp);
+                return type + brackets.toString();
+            }
+            case 'V':
+                return "void";
+            default:
+                throw new ClassFormatException("Invalid signature: '" + signature + "'");
+            }
+        } catch (final StringIndexOutOfBoundsException e) { // Should never occur
+            throw new ClassFormatException("Invalid signature: " + signature, e);
+        }
+    }
+
+    private static int unwrap(final ThreadLocal<Integer> tl) {
+        return tl.get();
+    }
+
+    private static void wrap(final ThreadLocal<Integer> tl, final int value) {
+        tl.set(value);
+    }
+
 }

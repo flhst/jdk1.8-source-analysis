@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -24,23 +24,22 @@ package com.sun.org.apache.xml.internal.security.c14n.implementations;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.ProcessingInstruction;
-import org.xml.sax.SAXException;
 
 /**
  * Serializes the physical representation of the subtree. All the attributes
@@ -54,8 +53,6 @@ import org.xml.sax.SAXException;
  */
 public class CanonicalizerPhysical extends CanonicalizerBase {
 
-    private final SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
-
     /**
      * Constructor Canonicalizer20010315
      */
@@ -68,10 +65,10 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
      *
      * @param xpathNodeSet
      * @param inclusiveNamespaces
-     * @return none it always fails
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException always
      */
-    public byte[] engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, String inclusiveNamespaces)
+    public void engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, String inclusiveNamespaces, OutputStream writer)
         throws CanonicalizationException {
 
         /** $todo$ well, should we throw UnsupportedOperationException ? */
@@ -83,10 +80,10 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
      *
      * @param rootNode
      * @param inclusiveNamespaces
-     * @return none it always fails
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces)
+    public void engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces, OutputStream writer)
         throws CanonicalizationException {
 
         /** $todo$ well, should we throw UnsupportedOperationException ? */
@@ -94,31 +91,44 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
     }
 
     /**
-     * Returns the Attr[]s to be output for the given element.
+     * Always throws a CanonicalizationException.
+     *
+     * @param rootNode
+     * @param inclusiveNamespaces
+     * @param writer OutputStream to write the canonicalization result
+     * @throws CanonicalizationException
+     */
+    public void engineCanonicalizeSubTree(
+            Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace, OutputStream writer)
+            throws CanonicalizationException {
+
+        /** $todo$ well, should we throw UnsupportedOperationException ? */
+        throw new CanonicalizationException("c14n.Canonicalizer.UnsupportedOperation");
+    }
+
+    /**
+     * Output the Attr[]s for the given element.
      * <br>
-     * The code of this method is a copy of {@link #handleAttributes(Element,
-     * NameSpaceSymbTable)},
+     * The code of this method is a copy of
+     * {@link #outputAttributes(Element, NameSpaceSymbTable, Map, OutputStream)},
      * whereas it takes into account that subtree-c14n is -- well -- subtree-based.
      * So if the element in question isRoot of c14n, it's parent is not in the
      * node set, as well as all other ancestors.
      *
      * @param element
      * @param ns
-     * @return the Attr[]s to be output
-     * @throws CanonicalizationException
+     * @param cache
+     * @param writer OutputStream to write the canonicalization result
+     * @throws CanonicalizationException, DOMException, IOException
      */
     @Override
-    protected Iterator<Attr> handleAttributesSubtree(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
-        if (!element.hasAttributes()) {
-            return null;
-        }
-
-        // result will contain all the attrs declared directly on that element
-        final SortedSet<Attr> result = this.result;
-        result.clear();
-
+    protected void outputAttributesSubtree(Element element, NameSpaceSymbTable ns,
+                                           Map<String, byte[]> cache, OutputStream writer)
+        throws CanonicalizationException, DOMException, IOException {
         if (element.hasAttributes()) {
+            // result will contain all the attrs declared directly on that element
+            SortedSet<Attr> result = new TreeSet<>(COMPARE);
+
             NamedNodeMap attrs = element.getAttributes();
             int attrsLength = attrs.getLength();
 
@@ -126,29 +136,26 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
                 Attr attribute = (Attr) attrs.item(i);
                 result.add(attribute);
             }
-        }
 
-        return result.iterator();
+            //we output all Attrs which are available
+            for (Attr attr : result) {
+                outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
+            }
+        }
     }
 
-    /**
-     * Returns the Attr[]s to be output for the given element.
-     *
-     * @param element
-     * @param ns
-     * @return the Attr[]s to be output
-     * @throws CanonicalizationException
-     */
     @Override
-    protected Iterator<Attr> handleAttributes(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
+    protected void outputAttributes(Element element, NameSpaceSymbTable ns,
+                                    Map<String, byte[]> cache, OutputStream writer)
+        throws CanonicalizationException, DOMException, IOException {
 
         /** $todo$ well, should we throw UnsupportedOperationException ? */
         throw new CanonicalizationException("c14n.Canonicalizer.UnsupportedOperation");
     }
 
+    @Override
     protected void circumventBugIfNeeded(XMLSignatureInput input)
-        throws CanonicalizationException, ParserConfigurationException, IOException, SAXException {
+        throws XMLParserException, IOException {
         // nothing to do
     }
 
@@ -157,14 +164,9 @@ public class CanonicalizerPhysical extends CanonicalizerBase {
         // nothing to do
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public final String engineGetURI() {
         return Canonicalizer.ALGO_ID_C14N_PHYSICAL;
-    }
-
-    /** @inheritDoc */
-    public final boolean engineGetIncludeComments() {
-        return true;
     }
 
     @Override

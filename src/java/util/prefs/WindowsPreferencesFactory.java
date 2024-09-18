@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -39,13 +39,13 @@ class WindowsPreferencesFactory implements PreferencesFactory  {
      * Returns WindowsPreferences.userRoot
      */
     public Preferences userRoot() {
-        return WindowsPreferences.userRoot;
+        return WindowsPreferences.getUserRoot();
     }
 
     /**
      * Returns WindowsPreferences.systemRoot
      */
     public Preferences systemRoot() {
-        return WindowsPreferences.systemRoot;
+        return WindowsPreferences.getSystemRoot();
     }
 }

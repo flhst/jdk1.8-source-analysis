@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -395,7 +395,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * "<xsl:stylesheet>" is a keyword that should not be translated.
          */
         {ErrorMsg.ILLEGAL_TEXT_NODE_ERR,
-        "Textdata utanf\u00F6r det \u00F6versta elementet <xsl:stylesheet>."},
+        "Textdata utanf\u00F6r toppniv\u00E5elementet <xsl:stylesheet>."},
 
         /*
          * Note to translators:  JAXP is an acronym for the Java API for XML
@@ -545,7 +545,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * not be translated.
          */
         {ErrorMsg.NO_MAIN_TRANSLET_ERR,
-        "Templates inneh\u00E5ller inte n\u00E5gon klass med namnet ''{0}''."},
+        "Templates inneh\u00E5ller inte n\u00E5gon klass med namnet {0}."},
 
         /*
          * Note to translators:  The substitution text is the name of a class.

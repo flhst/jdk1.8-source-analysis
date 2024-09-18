@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -145,30 +146,6 @@ public class AttrNSImpl
         }
                 this.name = qualifiedName;
         setName(namespaceURI, qualifiedName);
-    }
-
-    /**
-     * NON-DOM: resets this node and sets specified values for the node
-     *
-     * @param ownerDocument
-     * @param namespaceURI
-     * @param qualifiedName
-     * @param localName
-     */
-    public void setValues (CoreDocumentImpl ownerDocument,
-                         String namespaceURI,
-                         String qualifiedName,
-                         String localName){
-
-        super.textNode = null;
-        super.flags = 0;
-        isSpecified(true);
-        hasStringValue(true);
-        super.setOwnerDocument(ownerDocument);
-        this.localName = localName;
-        this.namespaceURI = namespaceURI;
-        super.name = qualifiedName;
-        super.value = null;
     }
 
     //
@@ -314,14 +291,14 @@ public class AttrNSImpl
      * Checks if a type is derived from another by restriction. See:
      * http://www.w3.org/TR/DOM-Level-3-Core/core.html#TypeInfo-isDerivedFrom
      *
-     * @param ancestorNS
+     * @param typeNamespaceArg
      *        The namspace of the ancestor type declaration
-     * @param ancestorName
+     * @param typeNameArg
      *        The name of the ancestor type declaration
-     * @param type
-     *        The reference type definition
+     * @param derivationMethod
+     *        The derivation method
      *
-     * @return boolean True if the type is derived by restriciton for the
+     * @return boolean True if the type is derived by restriction for the
      *         reference type
      */
     public boolean isDerivedFrom(String typeNamespaceArg,

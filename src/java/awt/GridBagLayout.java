@@ -1110,7 +1110,7 @@ java.io.Serializable {
                 }
 
 
-                /* Cache the current slave's size. */
+                /* Cache the current child's size. */
                 if (sizeflag == PREFERREDSIZE)
                     d = comp.getPreferredSize();
                 else
@@ -1251,7 +1251,7 @@ java.io.Serializable {
                 else if (constraints.gridwidth == 0 && curCol < 0)
                     curRow = curY + curHeight;
 
-                /* Assign the new values to the gridbag slave */
+                /* Assign the new values to the gridbag child */
                 constraints.tempX = curX;
                 constraints.tempY = curY;
                 constraints.tempWidth = curWidth;
@@ -1370,7 +1370,7 @@ java.io.Serializable {
                         px = constraints.tempX + constraints.tempWidth; /* right column */
 
                         /*
-                         * Figure out if we should use this slave\'s weight.  If the weight
+                         * Figure out if we should use this child's weight.  If the weight
                          * is less than the total weight spanned by the width of the cell,
                          * then discard the weight.  Otherwise split the difference
                          * according to the existing weights.
@@ -1396,7 +1396,7 @@ java.io.Serializable {
 
                         /*
                          * Calculate the minWidth array values.
-                         * First, figure out how wide the current slave needs to be.
+                         * First, figure out how wide the current child needs to be.
                          * Then, see if it will fit within the current minWidth values.
                          * If it will not fit, add the difference according to the
                          * weightX array.
@@ -1431,7 +1431,7 @@ java.io.Serializable {
                         py = constraints.tempY + constraints.tempHeight; /* bottom row */
 
                         /*
-                         * Figure out if we should use this slave's weight.  If the weight
+                         * Figure out if we should use this child's weight.  If the weight
                          * is less than the total weight spanned by the height of the cell,
                          * then discard the weight.  Otherwise split it the difference
                          * according to the existing weights.
@@ -1457,7 +1457,7 @@ java.io.Serializable {
 
                         /*
                          * Calculate the minHeight array values.
-                         * First, figure out how tall the current slave needs to be.
+                         * First, figure out how tall the current child needs to be.
                          * Then, see if it will fit within the current minHeight values.
                          * If it will not fit, add the difference according to the
                          * weightY array.
@@ -1977,7 +1977,7 @@ java.io.Serializable {
 
     /**
      * Figures out the minimum size of the
-     * master based on the information from <code>getLayoutInfo</code>.
+     * parent based on the information from <code>getLayoutInfo</code>.
      * This method should only be used internally by
      * <code>GridBagLayout</code>.
      *
@@ -2054,7 +2054,7 @@ java.io.Serializable {
         rightToLeft = !parent.getComponentOrientation().isLeftToRight();
 
         /*
-         * If the parent has no slaves anymore, then don't do anything
+         * If the parent has no children anymore, then don't do anything
          * at all:  just leave the parent's size as-is.
          */
         if (components.length == 0 &&
@@ -2064,7 +2064,7 @@ java.io.Serializable {
         }
 
         /*
-         * Pass #1: scan all the slaves to figure out the total amount
+         * Pass #1: scan all the children to figure out the total amount
          * of space needed.
          */
 
@@ -2154,7 +2154,7 @@ java.io.Serializable {
          */
 
         /*
-         * Now do the actual layout of the slaves using the layout information
+         * Now do the actual layout of the children using the layout information
          * that has been collected.
          */
 

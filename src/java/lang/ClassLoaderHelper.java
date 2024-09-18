@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -29,6 +29,14 @@ import java.io.File;
 class ClassLoaderHelper {
 
     private ClassLoaderHelper() {}
+
+    /**
+     * Returns true if loading a native library only if
+     * it's present on the file system.
+     */
+    static boolean loadLibraryOnlyIfPresent() {
+        return true;
+    }
 
     /**
      * Returns an alternate path name for the given file

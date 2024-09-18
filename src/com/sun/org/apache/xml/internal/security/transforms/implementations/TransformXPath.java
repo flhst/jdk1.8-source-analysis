@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -22,14 +22,14 @@
  */
 package com.sun.org.apache.xml.internal.security.transforms.implementations;
 
+import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.xml.transform.TransformerException;
 
-import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityRuntimeException;
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -44,36 +44,32 @@ import org.w3c.dom.Node;
 /**
  * Class TransformXPath
  *
- * Implements the <CODE>http://www.w3.org/TR/1999/REC-xpath-19991116</CODE>
+ * Implements the {@code http://www.w3.org/TR/1999/REC-xpath-19991116}
  * transform.
  *
- * @author Christian Geuer-Pollmann
  * @see <a href="http://www.w3.org/TR/1999/REC-xpath-19991116">XPath</a>
  *
  */
 public class TransformXPath extends TransformSpi {
 
-    /** Field implementedTransformURI */
-    public static final String implementedTransformURI = Transforms.TRANSFORM_XPATH;
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+            com.sun.org.slf4j.internal.LoggerFactory.getLogger(TransformXPath.class);
 
     /**
-     * Method engineGetURI
-     *
-     * @inheritDoc
+     * {@inheritDoc}
      */
+    @Override
     protected String engineGetURI() {
-        return implementedTransformURI;
+        return Transforms.TRANSFORM_XPATH;
     }
 
     /**
-     * Method enginePerformTransform
-     * @inheritDoc
-     * @param input
-     *
-     * @throws TransformationException
+     * {@inheritDoc}
      */
+    @Override
     protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, OutputStream os, Transform transformObject
+        XMLSignatureInput input, OutputStream os, Element transformElement,
+        String baseURI, boolean secureValidation
     ) throws TransformationException {
         try {
             /**
@@ -89,30 +85,34 @@ public class TransformXPath extends TransformSpi {
              */
             Element xpathElement =
                 XMLUtils.selectDsNode(
-                    transformObject.getElement().getFirstChild(), Constants._TAG_XPATH, 0);
+                    transformElement.getFirstChild(), Constants._TAG_XPATH, 0);
 
             if (xpathElement == null) {
-                Object exArgs[] = { "ds:XPath", "Transform" };
+                Object[] exArgs = { "ds:XPath", "Transform" };
 
                 throw new TransformationException("xml.WrongContent", exArgs);
             }
-            Node xpathnode = xpathElement.getChildNodes().item(0);
-            String str = XMLUtils.getStrFromNode(xpathnode);
-            input.setNeedsToBeExpanded(needsCircumvent(str));
+            Node xpathnode = xpathElement.getFirstChild();
             if (xpathnode == null) {
                 throw new DOMException(
                     DOMException.HIERARCHY_REQUEST_ERR, "Text must be in ds:Xpath"
                 );
             }
+            String str = XMLUtils.getStrFromNode(xpathnode);
+            input.setNeedsToBeExpanded(needsCircumvent(str));
 
-            XPathFactory xpathFactory = XPathFactory.newInstance();
+            XPathFactory xpathFactory = getXPathFactory();
             XPathAPI xpathAPIInstance = xpathFactory.newXPathAPI();
             input.addNodeFilter(new XPathNodeFilter(xpathElement, xpathnode, str, xpathAPIInstance));
             input.setNodeSet(true);
             return input;
-        } catch (DOMException ex) {
-            throw new TransformationException("empty", ex);
+        } catch (XMLParserException | IOException | DOMException ex) {
+            throw new TransformationException(ex);
         }
+    }
+
+    protected XPathFactory getXPathFactory() {
+        return XPathFactory.newInstance();
     }
 
     /**
@@ -120,15 +120,15 @@ public class TransformXPath extends TransformSpi {
      * @return true if needs to be circumvent for bug.
      */
     private boolean needsCircumvent(String str) {
-        return (str.indexOf("namespace") != -1) || (str.indexOf("name()") != -1);
+        return str.indexOf("namespace") != -1 || str.indexOf("name()") != -1;
     }
 
-    static class XPathNodeFilter implements NodeFilter {
+    private static class XPathNodeFilter implements NodeFilter {
 
-        XPathAPI xPathAPI;
-        Node xpathnode;
-        Element xpathElement;
-        String str;
+        private final XPathAPI xPathAPI;
+        private final Node xpathnode;
+        private final Element xpathElement;
+        private final String str;
 
         XPathNodeFilter(Element xpathElement, Node xpathnode, String str, XPathAPI xPathAPI) {
             this.xpathnode = xpathnode;
@@ -148,11 +148,8 @@ public class TransformXPath extends TransformSpi {
                 }
                 return 0;
             } catch (TransformerException e) {
-                Object[] eArgs = {currentNode};
-                throw new XMLSecurityRuntimeException("signature.Transform.node", eArgs, e);
-            } catch (Exception e) {
-                Object[] eArgs = {currentNode, Short.valueOf(currentNode.getNodeType())};
-                throw new XMLSecurityRuntimeException("signature.Transform.nodeAndType",eArgs, e);
+                LOG.debug("Error evaluating XPath expression", e);
+                return 0;
             }
         }
 

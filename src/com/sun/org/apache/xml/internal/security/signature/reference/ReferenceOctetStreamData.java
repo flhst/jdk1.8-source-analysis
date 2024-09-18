@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -21,17 +21,14 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id$
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package com.sun.org.apache.xml.internal.security.signature.reference;
 
 import java.io.InputStream;
 
 /**
- * A representation of a <code>ReferenceData</code> type containing an OctetStream.
+ * A representation of a {@code ReferenceData} type containing an OctetStream.
  */
 public class ReferenceOctetStreamData implements ReferenceData {
     private InputStream octetStream;
@@ -39,11 +36,11 @@ public class ReferenceOctetStreamData implements ReferenceData {
     private String mimeType;
 
     /**
-     * Creates a new <code>ReferenceOctetStreamData</code>.
+     * Creates a new {@code ReferenceOctetStreamData}.
      *
      * @param octetStream the input stream containing the octets
-     * @throws NullPointerException if <code>octetStream</code> is
-     *    <code>null</code>
+     * @throws NullPointerException if {@code octetStream} is
+     *    {@code null}
      */
     public ReferenceOctetStreamData(InputStream octetStream) {
         if (octetStream == null) {
@@ -53,15 +50,15 @@ public class ReferenceOctetStreamData implements ReferenceData {
     }
 
     /**
-     * Creates a new <code>ReferenceOctetStreamData</code>.
+     * Creates a new {@code ReferenceOctetStreamData}.
      *
      * @param octetStream the input stream containing the octets
      * @param uri the URI String identifying the data object (may be
-     *    <code>null</code>)
+     *    {@code null})
      * @param mimeType the MIME type associated with the data object (may be
-     *    <code>null</code>)
-     * @throws NullPointerException if <code>octetStream</code> is
-     *    <code>null</code>
+     *    {@code null})
+     * @throws NullPointerException if {@code octetStream} is
+     *    {@code null}
      */
     public ReferenceOctetStreamData(InputStream octetStream, String uri,
         String mimeType) {
@@ -74,9 +71,9 @@ public class ReferenceOctetStreamData implements ReferenceData {
     }
 
     /**
-     * Returns the input stream of this <code>ReferenceOctetStreamData</code>.
+     * Returns the input stream of this {@code ReferenceOctetStreamData}.
      *
-     * @return the input stream of this <code>ReferenceOctetStreamData</code>.
+     * @return the input stream of this {@code ReferenceOctetStreamData}.
      */
     public InputStream getOctetStream() {
         return octetStream;
@@ -84,9 +81,9 @@ public class ReferenceOctetStreamData implements ReferenceData {
 
     /**
      * Returns the URI String identifying the data object represented by this
-     * <code>ReferenceOctetStreamData</code>.
+     * {@code ReferenceOctetStreamData}.
      *
-     * @return the URI String or <code>null</code> if not applicable
+     * @return the URI String or {@code null} if not applicable
      */
     public String getURI() {
         return uri;
@@ -94,9 +91,9 @@ public class ReferenceOctetStreamData implements ReferenceData {
 
     /**
      * Returns the MIME type associated with the data object represented by this
-     * <code>ReferenceOctetStreamData</code>.
+     * {@code ReferenceOctetStreamData}.
      *
-     * @return the MIME type or <code>null</code> if not applicable
+     * @return the MIME type or {@code null} if not applicable
      */
     public String getMimeType() {
         return mimeType;

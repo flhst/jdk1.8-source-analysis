@@ -53,15 +53,17 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
 
 
     SocksSocketImpl() {
-        // Nothing needed
+        super(false);
     }
 
     SocksSocketImpl(String server, int port) {
+        super(false);
         this.server = server;
         this.serverPort = (port == -1 ? DEFAULT_PORT : port);
     }
 
     SocksSocketImpl(Proxy proxy) {
+        super(false);
         SocketAddress a = proxy.address();
         if (a instanceof InetSocketAddress) {
             InetSocketAddress ad = (InetSocketAddress) a;
@@ -722,7 +724,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                     AccessController.doPrivileged(
                         new PrivilegedExceptionAction<Void>() {
                             public Void run() throws Exception {
-                                cmdsock = new Socket(new PlainSocketImpl());
+                                cmdsock = new Socket(new PlainSocketImpl(false));
                                 cmdsock.connect(new InetSocketAddress(server, serverPort));
                                 cmdIn = cmdsock.getInputStream();
                                 cmdOut = cmdsock.getOutputStream();
@@ -753,7 +755,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Void>() {
                         public Void run() throws Exception {
-                            cmdsock = new Socket(new PlainSocketImpl());
+                            cmdsock = new Socket(new PlainSocketImpl(false));
                             cmdsock.connect(new InetSocketAddress(server, serverPort));
                             cmdIn = cmdsock.getInputStream();
                             cmdOut = cmdsock.getOutputStream();

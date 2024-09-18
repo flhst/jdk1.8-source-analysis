@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -80,11 +80,17 @@ public abstract class VersionHelper {
     public abstract Class<?> loadClass(String className)
         throws ClassNotFoundException;
 
+    abstract Class<?> loadClass(String className, boolean initialize, ClassLoader cl)
+        throws ClassNotFoundException;
+
     abstract Class<?> loadClass(String className, ClassLoader cl)
         throws ClassNotFoundException;
 
     public abstract Class<?> loadClass(String className, String codebase)
         throws ClassNotFoundException, MalformedURLException;
+
+    public abstract Class<?> loadClassWithoutInit(String className)
+        throws ClassNotFoundException;
 
     /*
      * Returns a JNDI property from the system properties.  Returns

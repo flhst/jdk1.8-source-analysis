@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -25,9 +25,8 @@ import com.sun.org.apache.xerces.internal.impl.xs.XSElementDecl;
 import com.sun.org.apache.xerces.internal.impl.xs.SubstitutionGroupHandler;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaException;
 import com.sun.org.apache.xerces.internal.impl.xs.XSConstraints;
-
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * XSAllCM implements XSCMValidator and handles &lt;all&gt;.
@@ -203,16 +202,17 @@ public class XSAllCM implements XSCMValidator {
      * have been seen.
      *
      * @param state  the current state
-     * @return       a Vector whose entries are instances of
+     * @return       a list whose entries are instances of
      *               either XSWildcardDecl or XSElementDecl.
      */
-    public Vector whatCanGoHere(int[] state) {
-        Vector ret = new Vector();
+    public List<Object> whatCanGoHere(int[] state) {
+        List<Object> ret = new ArrayList<>();
         for (int i = 0; i < fNumElements; i++) {
             // we only try to look for a matching decl if we have not seen
             // this element yet.
-            if (state[i+1] == STATE_START)
-                ret.addElement(fAllElements[i]);
+            if (state[i+1] == STATE_START) {
+                ret.add(fAllElements[i]);
+            }
         }
         return ret;
     }
@@ -221,4 +221,15 @@ public class XSAllCM implements XSCMValidator {
         return null;
     }
 
+    public int [] occurenceInfo(int[] state) {
+        return null;
+    }
+
+    public String getTermName(int termId) {
+        return null;
+    }
+
+    public boolean isCompactedForUPA() {
+        return false;
+    }
 } // class XSAllCM

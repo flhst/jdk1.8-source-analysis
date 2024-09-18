@@ -76,12 +76,8 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         initProto();
     }
 
-    public TwoStacksPlainSocketImpl(boolean exclBind) {
-        exclusiveBind = exclBind;
-    }
-
-    public TwoStacksPlainSocketImpl(FileDescriptor fd, boolean exclBind) {
-        this.fd = fd;
+    public TwoStacksPlainSocketImpl(boolean exclBind, boolean isServer) {
+        super(isServer);
         exclusiveBind = exclBind;
     }
 

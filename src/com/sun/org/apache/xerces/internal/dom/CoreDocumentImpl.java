@@ -1506,7 +1506,7 @@ public class CoreDocumentImpl
         if (nodeTable == null) {
             nodeTable = new HashMap<>();
             num = --nodeCounter;
-            nodeTable.put(node, new Integer(num));
+            nodeTable.put(node, num);
         } else {
             Integer n = nodeTable.get(node);
             if (n == null) {
@@ -1828,6 +1828,11 @@ public class CoreDocumentImpl
                     // Adopting between two dissimilar DOM's is not allowed
                     return null;
                 }
+            }
+            // Adopting from a deferred DOM into another deferred DOM
+            else if (otherImpl instanceof DeferredDOMImplementationImpl) {
+                // traverse the DOM and expand deferred nodes and then allow adoption
+                undeferChildren (node);
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -141,7 +141,7 @@ class PatternEntry {
         if (showWhiteSpace)
             toAddTo.append(' ');
         appendQuoted(chars,toAddTo);
-        if (showExtension && extension.length() != 0) {
+        if (showExtension && !extension.isEmpty()) {
             toAddTo.append('/');
             appendQuoted(extension,toAddTo);
         }

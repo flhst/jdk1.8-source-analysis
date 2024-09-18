@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -450,7 +450,7 @@ JavaMain(void * _args)
      * consistent in the UI we need to track and report the application main class.
      */
     appClass = GetApplicationClass(env);
-    NULL_CHECK_RETURN_VALUE(appClass, -1);
+    CHECK_EXCEPTION_NULL_LEAVE(appClass);
     /*
      * PostJVMInit uses the class name as the application name for GUI purposes,
      * for example, on OSX this sets the application name in the menu bar for
@@ -650,9 +650,35 @@ static void
 SetJvmEnvironment(int argc, char **argv) {
 
     static const char*  NMT_Env_Name    = "NMT_LEVEL_";
-
     int i;
     for (i = 0; i < argc; i++) {
+        char *arg = argv[i];
+        /*
+         * Since this must be a VM flag we stop processing once we see
+         * an argument the launcher would not have processed beyond (such
+         * as -version or -h), or an argument that indicates the following
+         * arguments are for the application (i.e. the main class name, or
+         * the -jar argument).
+         */
+        if (i > 0) {
+            char *prev = argv[i - 1];
+            // skip non-dash arg preceded by class path specifiers
+            if (*arg != '-' &&
+                    ((JLI_StrCmp(prev, "-cp") == 0
+                    || JLI_StrCmp(prev, "-classpath") == 0))) {
+                continue;
+            }
+
+            if (*arg != '-'
+                    || JLI_StrCmp(arg, "-version") == 0
+                    || JLI_StrCmp(arg, "-fullversion") == 0
+                    || JLI_StrCmp(arg, "-help") == 0
+                    || JLI_StrCmp(arg, "-?") == 0
+                    || JLI_StrCmp(arg, "-jar") == 0
+                    || JLI_StrCmp(arg, "-X") == 0) {
+                return;
+            }
+        }
         /*
          * The following case checks for "-XX:NativeMemoryTracking=value".
          * If value is non null, an environmental variable set to this value
@@ -660,7 +686,6 @@ SetJvmEnvironment(int argc, char **argv) {
          * The argument is passed to the JVM, which will check validity.
          * The JVM is responsible for removing the env variable.
          */
-        char *arg = argv[i];
         if (JLI_StrCCmp(arg, "-XX:NativeMemoryTracking=") == 0) {
             int retval;
             // get what follows this parameter, include "="
@@ -1249,13 +1274,12 @@ NewPlatformString(JNIEnv *env, char *s)
         (*env)->SetByteArrayRegion(env, ary, 0, len, (jbyte *)s);
         if (!(*env)->ExceptionOccurred(env)) {
             if (makePlatformStringMID == NULL) {
-                CHECK_JNI_RETURN_0(
-                    makePlatformStringMID = (*env)->GetStaticMethodID(env,
-                        cls, "makePlatformString", "(Z[B)Ljava/lang/String;"));
+                NULL_CHECK0(makePlatformStringMID = (*env)->GetStaticMethodID(env,
+                          cls, "makePlatformString", "(Z[B)Ljava/lang/String;"));
             }
-            CHECK_JNI_RETURN_0(
-                str = (*env)->CallStaticObjectMethod(env, cls,
-                    makePlatformStringMID, USE_STDERR, ary));
+            str = (*env)->CallStaticObjectMethod(env, cls,
+                    makePlatformStringMID, USE_STDERR, ary);
+            CHECK_EXCEPTION_RETURN_VALUE(0);
             (*env)->DeleteLocalRef(env, ary);
             return str;
         }
@@ -1276,6 +1300,7 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 
     NULL_CHECK0(cls = FindBootStrapClass(env, "java/lang/String"));
     NULL_CHECK0(ary = (*env)->NewObjectArray(env, strc, cls, 0));
+    CHECK_EXCEPTION_RETURN_VALUE(0);
     for (i = 0; i < strc; i++) {
         jstring str = NewPlatformString(env, *strv++);
         NULL_CHECK0(str);
@@ -1306,9 +1331,10 @@ LoadMainClass(JNIEnv *env, int mode, char *name)
                 "(ZILjava/lang/String;)Ljava/lang/Class;"));
 
     str = NewPlatformString(env, name);
-    CHECK_JNI_RETURN_0(
-        result = (*env)->CallStaticObjectMethod(
-            env, cls, mid, USE_STDERR, mode, str));
+    CHECK_EXCEPTION_RETURN_VALUE(0);
+
+    result = (*env)->CallStaticObjectMethod(env, cls, mid, USE_STDERR, mode, str);
+    CHECK_EXCEPTION_RETURN_VALUE(0);
 
     if (JLI_IsTraceLauncher()) {
         end   = CounterGet();

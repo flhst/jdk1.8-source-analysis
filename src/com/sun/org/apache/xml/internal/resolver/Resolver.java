@@ -1,16 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
-// Resolver.java - Represents an extension of OASIS Open Catalog files.
-
 /*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -32,11 +29,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.MalformedURLException;
 import javax.xml.parsers.SAXParserFactory;
-import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xml.internal.resolver.readers.SAXCatalogReader;
 import com.sun.org.apache.xml.internal.resolver.readers.OASISXMLCatalogReader;
 import com.sun.org.apache.xml.internal.resolver.readers.TR9401CatalogReader;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  * An extension to OASIS Open Catalog files, this class supports
@@ -87,14 +84,12 @@ public class Resolver extends Catalog {
    * Setup readers.
    */
   public void setupReaders() {
-    SAXParserFactory spf = catalogManager.useServicesMechanism() ?
-                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
-    spf.setNamespaceAware(true);
+    SAXParserFactory spf = JdkXmlUtils.getSAXFactory(catalogManager.overrideDefaultParser());
     spf.setValidating(false);
 
     SAXCatalogReader saxReader = new SAXCatalogReader(spf);
 
-    saxReader.setCatalogParser(null, "XMLCatalog",
+    saxReader.setCatalogParser(null, "XCatalog",
                                "com.sun.org.apache.xml.internal.resolver.readers.XCatalogReader");
 
     saxReader.setCatalogParser(OASISXMLCatalogReader.namespaceName,

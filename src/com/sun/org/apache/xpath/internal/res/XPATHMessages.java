@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XPATHMessages.java,v 1.2.4.1 2005/09/01 14:57:34 pvedula Exp $
- */
+
 package com.sun.org.apache.xpath.internal.res;
 
-import com.sun.org.apache.bcel.internal.util.SecuritySupport;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
-import java.util.ListResourceBundle;
+import java.util.ResourceBundle;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * A utility class for issuing XPath error messages.
@@ -36,7 +34,7 @@ public class XPATHMessages extends XMLMessages {
     /**
      * The language specific resource object for XPath messages.
      */
-    private static ListResourceBundle XPATHBundle = null;
+    private static ResourceBundle XPATHBundle = null;
     /**
      * The class name of the XPath error message string table.
      */
@@ -100,7 +98,7 @@ public class XPATHMessages extends XMLMessages {
      *
      * @return The formatted message string.
      */
-    public static final String createXPATHMsg(ListResourceBundle fResourceBundle,
+    private static final String createXPATHMsg(ResourceBundle fResourceBundle,
             String msgKey, Object args[]) //throws Exception
     {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -35,7 +35,6 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.I18n;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
-import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -45,11 +44,11 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
      * Constructor RSAKeyValue
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public RSAKeyValue(Element element, String BaseURI) throws XMLSecurityException {
-        super(element, BaseURI);
+    public RSAKeyValue(Element element, String baseURI) throws XMLSecurityException {
+        super(element, baseURI);
     }
 
     /**
@@ -62,7 +61,7 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
     public RSAKeyValue(Document doc, BigInteger modulus, BigInteger exponent) {
         super(doc);
 
-        XMLUtils.addReturnToElement(this.constructionElement);
+        addReturnToSelf();
         this.addBigIntegerElement(modulus, Constants._TAG_MODULUS);
         this.addBigIntegerElement(exponent, Constants._TAG_EXPONENT);
     }
@@ -77,9 +76,9 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
     public RSAKeyValue(Document doc, Key key) throws IllegalArgumentException {
         super(doc);
 
-        XMLUtils.addReturnToElement(this.constructionElement);
+        addReturnToSelf();
 
-        if (key instanceof java.security.interfaces.RSAPublicKey ) {
+        if (key instanceof RSAPublicKey ) {
             this.addBigIntegerElement(
                 ((RSAPublicKey) key).getModulus(), Constants._TAG_MODULUS
             );
@@ -87,13 +86,13 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
                 ((RSAPublicKey) key).getPublicExponent(), Constants._TAG_EXPONENT
             );
         } else {
-            Object exArgs[] = { Constants._TAG_RSAKEYVALUE, key.getClass().getName() };
+            Object[] exArgs = { Constants._TAG_RSAKEYVALUE, key.getClass().getName() };
 
             throw new IllegalArgumentException(I18n.translate("KeyValue.IllegalArgument", exArgs));
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public PublicKey getPublicKey() throws XMLSecurityException {
         try {
             KeyFactory rsaFactory = KeyFactory.getInstance("RSA");
@@ -110,14 +109,12 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
             PublicKey pk = rsaFactory.generatePublic(rsaKeyspec);
 
             return pk;
-        } catch (NoSuchAlgorithmException ex) {
-            throw new XMLSecurityException("empty", ex);
-        } catch (InvalidKeySpecException ex) {
-            throw new XMLSecurityException("empty", ex);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            throw new XMLSecurityException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_RSAKEYVALUE;
     }

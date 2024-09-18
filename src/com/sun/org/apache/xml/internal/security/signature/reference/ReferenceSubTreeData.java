@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id$
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package com.sun.org.apache.xml.internal.security.signature.reference;
 
@@ -37,7 +34,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * A representation of a <code>ReferenceNodeSetData</code> type containing a node-set.
+ * A representation of a {@code ReferenceNodeSetData} type containing a node-set.
  * This is a subtype of NodeSetData that represents a dereferenced
  * same-document URI as the root of a subdocument. The main reason is
  * for efficiency and performance, as some transforms can operate
@@ -109,11 +106,11 @@ public class ReferenceSubTreeData implements ReferenceNodeSetData {
          * Dereferences a same-document URI fragment.
          *
          * @param node the node (document or element) referenced by the
-         *        URI fragment. If null, returns an empty set.
+         *     URI fragment. If null, returns an empty set.
          * @return a set of nodes (minus any comment nodes)
          */
         private List<Node> dereferenceSameDocumentURI(Node node) {
-            List<Node> nodeSet = new ArrayList<Node>();
+            List<Node> nodeSet = new ArrayList<>();
             if (node != null) {
                 nodeSetMinusCommentNodes(node, nodeSet, null);
             }
@@ -127,7 +124,7 @@ public class ReferenceSubTreeData implements ReferenceNodeSetData {
          *
          * @param node the node to traverse
          * @param nodeSet the set of nodes traversed so far
-         * @param the previous sibling node
+         * @param prevSibling the previous sibling node
          */
         @SuppressWarnings("fallthrough")
         private void nodeSetMinusCommentNodes(Node node, List<Node> nodeSet,

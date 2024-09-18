@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 package com.sun.org.apache.bcel.internal.util;
@@ -58,6 +58,7 @@ package com.sun.org.apache.bcel.internal.util;
  * <http://www.apache.org/>.
  */
 
+import jdk.xml.internal.SecuritySupport;
 import java.util.*;
 import java.util.zip.*;
 import java.io.*;
@@ -93,7 +94,7 @@ public class ClassPath implements Serializable {
         File file = new File(path);
 
         try {
-          if(SecuritySupport.getFileExists(file)) {
+          if(SecuritySupport.isFileExists(file)) {
             if(file.isDirectory())
               vec.add(new Dir(path));
             else
@@ -144,7 +145,7 @@ public class ClassPath implements Serializable {
         String name = tok.nextToken();
         File   file = new File(name);
 
-        if(SecuritySupport.getFileExists(file)) {
+        if(SecuritySupport.isFileExists(file)) {
           list.add(name);
         }
       }
@@ -344,7 +345,7 @@ public class ClassPath implements Serializable {
       final File file = new File(dir + File.separatorChar +
                                  name.replace('.', File.separatorChar) + suffix);
 
-      return SecuritySupport.getFileExists(file)? new ClassFile() {
+      return SecuritySupport.isFileExists(file)? new ClassFile() {
         public InputStream getInputStream() throws IOException { return new FileInputStream(file); }
 
         public String      getPath()        { try {

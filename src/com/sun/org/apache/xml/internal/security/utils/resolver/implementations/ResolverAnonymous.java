@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -23,62 +23,55 @@
 
 package com.sun.org.apache.xml.internal.security.utils.resolver.implementations;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
+import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverException;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverSpi;
 
 /**
- * @author $Author: coheigea $
  */
 public class ResolverAnonymous extends ResourceResolverSpi {
 
-    private InputStream inStream = null;
-
-    @Override
-    public boolean engineIsThreadSafe() {
-        return true;
-    }
+    private final Path resourcePath;
 
     /**
      * @param filename
-     * @throws FileNotFoundException
      * @throws IOException
      */
-    public ResolverAnonymous(String filename) throws FileNotFoundException, IOException {
-        inStream = new FileInputStream(filename);
+    public ResolverAnonymous(String filename) throws IOException {
+        this(Paths.get(filename));
     }
 
     /**
-     * @param is
+     * @param resourcePath
      */
-    public ResolverAnonymous(InputStream is) {
-        inStream = is;
+    public ResolverAnonymous(Path resourcePath) {
+        this.resourcePath = resourcePath;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override
-    public XMLSignatureInput engineResolveURI(ResourceResolverContext context) {
-        return new XMLSignatureInput(inStream);
+    public XMLSignatureInput engineResolveURI(ResourceResolverContext context) throws ResourceResolverException {
+        try {
+            XMLSignatureInput input = new XMLSignatureInput(Files.newInputStream(resourcePath));
+            input.setSecureValidation(context.secureValidation);
+            return input;
+        } catch (IOException e) {
+            throw new ResourceResolverException(e, context.uriToResolve, context.baseUri, "generic.EmptyMessage");
+        }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public boolean engineCanResolveURI(ResourceResolverContext context) {
-        if (context.uriToResolve == null) {
-            return true;
-        }
-        return false;
+        return context.uriToResolve == null;
     }
 
-    /** @inheritDoc */
-    public String[] engineGetPropertyKeys() {
-        return new String[0];
-    }
 }

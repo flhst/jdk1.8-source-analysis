@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -82,6 +82,10 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         add();
     }
 
+    static ReferenceQueue<Object> getQueue() {
+        return queue;
+    }
+
     /* Invoked by VM */
     static void register(Object finalizee) {
         new Finalizer(finalizee);
@@ -108,32 +112,29 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
     /* Create a privileged secondary finalizer thread in the system thread
        group for the given Runnable, and wait for it to complete.
 
-       This method is used by both runFinalization and runFinalizersOnExit.
-       The former method invokes all pending finalizers, while the latter
-       invokes all uninvoked finalizers if on-exit finalization has been
-       enabled.
+       This method is used by runFinalization.
 
-       These two methods could have been implemented by offloading their work
-       to the regular finalizer thread and waiting for that thread to finish.
+       It could have been implemented by offloading the work to the
+       regular finalizer thread and waiting for that thread to finish.
        The advantage of creating a fresh thread, however, is that it insulates
-       invokers of these methods from a stalled or deadlocked finalizer thread.
+       invokers of that method from a stalled or deadlocked finalizer thread.
      */
     private static void forkSecondaryFinalizer(final Runnable proc) {
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
                 public Void run() {
-                ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                for (ThreadGroup tgn = tg;
-                     tgn != null;
-                     tg = tgn, tgn = tg.getParent());
-                Thread sft = new Thread(tg, proc, "Secondary finalizer");
-                sft.start();
-                try {
-                    sft.join();
-                } catch (InterruptedException x) {
-                    /* Ignore */
-                }
-                return null;
+                    ThreadGroup tg = Thread.currentThread().getThreadGroup();
+                    for (ThreadGroup tgn = tg;
+                         tgn != null;
+                         tg = tgn, tgn = tg.getParent());
+                    Thread sft = new Thread(tg, proc, "Secondary finalizer");
+                    sft.start();
+                    try {
+                        sft.join();
+                    } catch (InterruptedException x) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return null;
                 }});
     }
 
@@ -146,6 +147,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         forkSecondaryFinalizer(new Runnable() {
             private volatile boolean running;
             public void run() {
+                // in case of recursive call to run()
                 if (running)
                     return;
                 final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
@@ -159,36 +161,13 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         });
     }
 
-    /* Invoked by java.lang.Shutdown */
-    static void runAllFinalizers() {
-        if (!VM.isBooted()) {
-            return;
-        }
-
-        forkSecondaryFinalizer(new Runnable() {
-            private volatile boolean running;
-            public void run() {
-                if (running)
-                    return;
-                final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-                running = true;
-                for (;;) {
-                    Finalizer f;
-                    synchronized (lock) {
-                        f = unfinalized;
-                        if (f == null) break;
-                        unfinalized = f.next;
-                    }
-                    f.runFinalizer(jla);
-                }}});
-    }
-
     private static class FinalizerThread extends Thread {
         private volatile boolean running;
         FinalizerThread(ThreadGroup g) {
             super(g, "Finalizer");
         }
         public void run() {
+            // in case of recursive call to run()
             if (running)
                 return;
 

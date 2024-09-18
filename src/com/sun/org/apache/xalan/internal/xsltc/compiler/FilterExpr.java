@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Dec 2019
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,23 +18,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: FilterExpr.java,v 1.2.4.1 2005/09/12 10:22:50 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
-
-import java.util.Vector;
 
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.ILOAD;
-import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
-import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
-import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.ISTORE;
+import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
@@ -43,6 +37,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ReferenceType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -59,9 +54,9 @@ class FilterExpr extends Expression {
     /**
      * Array of predicates in '(e)[p1]...[pn]'.
      */
-    private final Vector _predicates;
+    private final List<Expression> _predicates;
 
-    public FilterExpr(Expression primary, Vector predicates) {
+    public FilterExpr(Expression primary, List<Expression> predicates) {
         _primary = primary;
         _predicates = predicates;
         primary.setParent(this);
@@ -80,7 +75,7 @@ class FilterExpr extends Expression {
         if (_predicates != null) {
             final int n = _predicates.size();
             for (int i = 0; i < n; i++) {
-                final Expression exp = (Expression)_predicates.elementAt(i);
+                final Expression exp = (Expression)_predicates.get(i);
                 exp.setParser(parser);
                 exp.setParent(this);
             }
@@ -114,7 +109,7 @@ class FilterExpr extends Expression {
         // Type check predicates and turn all optimizations off if appropriate
         int n = _predicates.size();
         for (int i = 0; i < n; i++) {
-            Predicate pred = (Predicate) _predicates.elementAt(i);
+            Predicate pred = (Predicate) _predicates.get(i);
 
             if (!canOptimize) {
                 pred.dontOptimize();

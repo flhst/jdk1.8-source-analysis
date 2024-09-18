@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2000-2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -62,6 +63,8 @@ public class XMLInputSource {
     /** Encoding. */
     protected String fEncoding;
 
+    //indicates whether the source is created by a resolver
+    boolean fIsCreatedByResolver = false;
     //
     // Constructors
     //
@@ -80,12 +83,15 @@ public class XMLInputSource {
      * @param baseSystemId The base system identifier. This value should
      *                     always be set to the fully expanded URI of the
      *                     base system identifier, if possible.
+     * @param isCreatedByResolver a flag to indicate whether the source is
+     * created by a resolver
      */
     public XMLInputSource(String publicId, String systemId,
-                          String baseSystemId) {
+                          String baseSystemId, boolean isCreatedByResolver) {
         fPublicId = publicId;
         fSystemId = systemId;
         fBaseSystemId = baseSystemId;
+        fIsCreatedByResolver = isCreatedByResolver;
     } // <init>(String,String,String)
 
     /**
@@ -250,5 +256,20 @@ public class XMLInputSource {
     public String getEncoding() {
         return fEncoding;
     } // getEncoding():String
+
+    /**
+     * Sets the flag to indicate whether this source is created by a resolver
+     * @param createdByResolver the flag
+     */
+    public void setCreatedByResolver(boolean createdByResolver) {
+        fIsCreatedByResolver = createdByResolver;
+    }
+    /**
+     * Returns a boolean to indicate whether this source is created by a resolver.
+     * @return true if the source is created by a resolver, false otherwise
+     */
+    public boolean isCreatedByResolver() {
+        return fIsCreatedByResolver;
+    }
 
 } // class XMLInputSource

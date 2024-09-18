@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2000-2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -29,7 +30,10 @@ import com.sun.org.apache.xerces.internal.util.EncodingMap;
 /**
  * This class represents an encoding.
  *
- * @version $Id: EncodingInfo.java,v 1.6 2007/10/18 03:39:08 joehw Exp $
+ * @deprecated As of Xerces 2.9.0, Xerces DOM L3 Serializer implementation
+ * is replaced by that of Xalan. Main class
+ * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
+ * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
 public class EncodingInfo {
 

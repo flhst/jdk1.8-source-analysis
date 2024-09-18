@@ -95,12 +95,15 @@ class HeapByteBuffer
     }
 
     public ByteBuffer slice() {
+        int pos = this.position();
+        int lim = this.limit();
+        int rem = (pos <= lim ? lim - pos : 0);
         return new HeapByteBuffer(hb,
                                         -1,
                                         0,
-                                        this.remaining(),
-                                        this.remaining(),
-                                        this.position() + offset);
+                                        rem,
+                                        rem,
+                                        pos + offset);
     }
 
     public ByteBuffer duplicate() {
@@ -201,13 +204,15 @@ class HeapByteBuffer
             if (src == this)
                 throw new IllegalArgumentException();
             HeapByteBuffer sb = (HeapByteBuffer)src;
+            int spos = sb.position();
+            int pos = position();
             int n = sb.remaining();
             if (n > remaining())
                 throw new BufferOverflowException();
-            System.arraycopy(sb.hb, sb.ix(sb.position()),
-                             hb, ix(position()), n);
-            sb.position(sb.position() + n);
-            position(position() + n);
+            System.arraycopy(sb.hb, sb.ix(spos),
+                             hb, ix(pos), n);
+            sb.position(spos + n);
+            position(pos + n);
         } else if (src.isDirect()) {
             int n = src.remaining();
             if (n > remaining())

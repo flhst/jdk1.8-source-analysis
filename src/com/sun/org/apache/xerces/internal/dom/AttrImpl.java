@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -111,6 +111,7 @@ import org.w3c.dom.Text;
  * @author Andy Clark, IBM
  * @version $Id: AttrImpl.java,v 1.5 2008/06/10 00:59:32 joehw Exp $
  * @since PR-DOM-Level-1-19980818.
+ * @LastModified: Apr 2019
  *
  */
 public class AttrImpl
@@ -140,8 +141,6 @@ public class AttrImpl
     /** Type information */
     // REVISIT: we are losing the type information in DOM during serialization
     transient Object type;
-
-    protected TextImpl textNode = null;
 
     //
     // Constructors
@@ -193,14 +192,14 @@ public class AttrImpl
      * NON-DOM
      * set the ownerDocument of this node and its children
      */
-    void setOwnerDocument(CoreDocumentImpl doc) {
+    protected void setOwnerDocument(CoreDocumentImpl doc) {
         if (needsSyncChildren()) {
             synchronizeChildren();
         }
         super.setOwnerDocument(doc);
         if (!hasStringValue()) {
             for (ChildNode child = (ChildNode) value;
-                 child != null; child = child.nextSibling) {
+                child != null; child = child.nextSibling) {
                 child.setOwnerDocument(doc);
             }
         }
@@ -350,6 +349,8 @@ public class AttrImpl
 
         Element ownerElement = getOwnerElement();
         String oldvalue = "";
+        TextImpl textNode = null;
+
         if (needsSyncData()) {
             synchronizeData();
         }
@@ -364,13 +365,7 @@ public class AttrImpl
                     oldvalue = (String) value;
                     // create an actual text node as our child so
                     // that we can use it in the event
-                    if (textNode == null) {
-                        textNode = (TextImpl)
-                            ownerDocument.createTextNode((String) value);
-                    }
-                    else {
-                        textNode.data = (String) value;
-                    }
+                    textNode = (TextImpl) ownerDocument.createTextNode((String) value);
                     value = textNode;
                     textNode.isFirstChild(true);
                     textNode.previousSibling = textNode;
@@ -415,9 +410,16 @@ public class AttrImpl
         // since we need to combine the remove and insert.
         isSpecified(true);
         if (ownerDocument.getMutationEvents()) {
-            // if there are any event handlers create a real node
-            internalInsertBefore(ownerDocument.createTextNode(newvalue),
-                                 null, true);
+            // if there are any event handlers create a real node or
+            // reuse the one we synthesized for the remove notifications
+            // if it exists.
+            if (textNode == null) {
+                textNode = (TextImpl) ownerDocument.createTextNode(newvalue);
+            }
+            else {
+                textNode.data = newvalue;
+            }
+            internalInsertBefore(textNode, null, true);
             hasStringValue(false);
             // notify document
             ownerDocument.modifiedAttrValue(this, oldvalue);
@@ -1034,7 +1036,7 @@ public class AttrImpl
      * NodeList method: Return the Nth immediate child of this node, or
      * null if the index is out of bounds.
      * @return org.w3c.dom.Node
-     * @param Index int
+     * @param index int
      */
     public Node item(int index) {
 
@@ -1076,12 +1078,12 @@ public class AttrImpl
      * Checks if a type is derived from another by restriction. See:
      * http://www.w3.org/TR/DOM-Level-3-Core/core.html#TypeInfo-isDerivedFrom
      *
-     * @param ancestorNS
+     * @param typeNamespaceArg
      *        The namspace of the ancestor type declaration
-     * @param ancestorName
+     * @param typeNameArg
      *        The name of the ancestor type declaration
-     * @param type
-     *        The reference type definition
+     * @param derivationMethod
+     *        The derivation method
      *
      * @return boolean True if the type is derived by restriciton for the
      *         reference type

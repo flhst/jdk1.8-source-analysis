@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -74,6 +74,8 @@ class JarFile extends ZipFile {
     private JarVerifier jv;
     private boolean jvInitialized;
     private boolean verify;
+    static final ThreadLocal<Boolean> isInitializing = new ThreadLocal<>();
+
 
     // indicates if Class-Path attribute present (only valid if hasCheckedSpecialAttributes true)
     private boolean hasClassPathAttribute;
@@ -186,15 +188,20 @@ class JarFile extends ZipFile {
         if (man == null) {
 
             JarEntry manEntry = getManEntry();
-
             // If found then load the manifest
             if (manEntry != null) {
                 if (verify) {
                     byte[] b = getBytes(manEntry);
-                    man = new Manifest(new ByteArrayInputStream(b));
                     if (!jvInitialized) {
-                        jv = new JarVerifier(b);
+                        if (getManifestCount() == 1) {
+                            jv = new JarVerifier(manEntry.getName(), b);
+                        } else {
+                            if (JarVerifier.debug != null) {
+                                JarVerifier.debug.println("Multiple MANIFEST.MF found. Treat JAR file as unsigned");
+                            }
+                        }
                     }
+                    man = new Manifest(jv, new ByteArrayInputStream(b));
                 } else {
                     man = new Manifest(super.getInputStream(manEntry));
                 }
@@ -202,6 +209,18 @@ class JarFile extends ZipFile {
             }
         }
         return man;
+    }
+
+    private int getManifestCount() {
+        int count = 0;
+        String[] names = getMetaInfEntryNames();
+        for (int i = 0; i < names.length; i++) {
+            String name = names[i].toUpperCase(Locale.ENGLISH);
+            if (name.equals(MANIFEST_NAME)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private native String[] getMetaInfEntryNames();
@@ -374,7 +393,7 @@ class JarFile extends ZipFile {
                         }
                         if (mev == null) {
                             mev = new ManifestEntryVerifier
-                                (getManifestFromReference());
+                                (getManifestFromReference(), jv.manifestName);
                         }
                         byte[] b = getBytes(e);
                         if (b != null && b.length > 0) {
@@ -422,7 +441,16 @@ class JarFile extends ZipFile {
      */
     private byte[] getBytes(ZipEntry ze) throws IOException {
         try (InputStream is = super.getInputStream(ze)) {
-            return IOUtils.readFully(is, (int)ze.getSize(), true);
+            long uncompressedSize = ze.getSize();
+            if (uncompressedSize > SignatureFileVerifier.MAX_SIG_FILE_SIZE) {
+                throw new IOException("Unsupported size: " + uncompressedSize +
+                        " for JarEntry " + ze.getName() +
+                        ". Allowed max size: " +
+                        SignatureFileVerifier.MAX_SIG_FILE_SIZE + " bytes");
+            }
+            int len = (int)uncompressedSize;
+
+            return IOUtils.readFully(is, len, true);
         }
     }
 
@@ -602,15 +630,20 @@ class JarFile extends ZipFile {
         return false;
     }
 
-    private synchronized void ensureInitialization() {
+    synchronized void ensureInitialization() {
         try {
             maybeInstantiateVerifier();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         if (jv != null && !jvInitialized) {
-            initializeVerifier();
-            jvInitialized = true;
+            isInitializing.set(Boolean.TRUE);
+            try {
+                initializeVerifier();
+                jvInitialized = true;
+            } finally {
+                isInitializing.set(Boolean.FALSE);
+            }
         }
     }
 
@@ -787,5 +820,10 @@ class JarFile extends ZipFile {
             return jv.getManifestDigests();
         }
         return new ArrayList<Object>();
+    }
+
+    static boolean isInitializing() {
+        Boolean value = isInitializing.get();
+        return (value == null) ? false : value;
     }
 }

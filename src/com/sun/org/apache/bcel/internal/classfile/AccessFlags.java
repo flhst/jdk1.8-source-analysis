@@ -1,174 +1,217 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
-
-import  com.sun.org.apache.bcel.internal.Constants;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * Super class for all objects that have modifiers like private, final, ...
- * I.e. classes, fields, and methods.
+ * Super class for all objects that have modifiers like private, final, ... I.e.
+ * classes, fields, and methods.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @LastModified: Jan 2020
  */
-public abstract class AccessFlags implements java.io.Serializable {
-  protected int access_flags;
+public abstract class AccessFlags {
 
-  public AccessFlags() {}
+    /**
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     */
+    @java.lang.Deprecated
+    protected int access_flags; // TODO not used externally at present
 
-  /**
-   * @param a inital access flags
-   */
-  public AccessFlags(int a) {
-    access_flags = a;
-  }
-
-  /**
-   * @return Access flags of the object aka. "modifiers".
-   */
-  public final int getAccessFlags() { return access_flags; }
-
-  /**
-   * @return Access flags of the object aka. "modifiers".
-   */
-  public final int getModifiers() { return access_flags; }
-
-  /** Set access flags aka "modifiers".
-   * @param access_flags Access flags of the object.
-   */
-  public final void setAccessFlags(int access_flags) {
-    this.access_flags = access_flags;
-  }
-
-  /** Set access flags aka "modifiers".
-   * @param access_flags Access flags of the object.
-   */
-  public final void setModifiers(int access_flags) {
-    setAccessFlags(access_flags);
-  }
-
-  private final void setFlag(int flag, boolean set) {
-    if((access_flags & flag) != 0) { // Flag is set already
-      if(!set) // Delete flag ?
-        access_flags ^= flag;
-    } else {   // Flag not set
-      if(set)  // Set flag ?
-        access_flags |= flag;
+    public AccessFlags() {
     }
-  }
 
-  public final void isPublic(boolean flag) { setFlag(Constants.ACC_PUBLIC, flag); }
-  public final boolean isPublic() {
-    return (access_flags & Constants.ACC_PUBLIC) != 0;
-  }
+    /**
+     * @param a initial access flags
+     */
+    public AccessFlags(final int a) {
+        access_flags = a;
+    }
 
-  public final void isPrivate(boolean flag) { setFlag(Constants.ACC_PRIVATE, flag); }
-  public final boolean isPrivate() {
-    return (access_flags & Constants.ACC_PRIVATE) != 0;
-  }
+    /**
+     * @return Access flags of the object aka. "modifiers".
+     */
+    public final int getAccessFlags() {
+        return access_flags;
+    }
 
-  public final void isProtected(boolean flag) { setFlag(Constants.ACC_PROTECTED, flag); }
-  public final boolean isProtected() {
-    return (access_flags & Constants.ACC_PROTECTED) != 0;
-  }
+    /**
+     * @return Access flags of the object aka. "modifiers".
+     */
+    public final int getModifiers() {
+        return access_flags;
+    }
 
-  public final void isStatic(boolean flag) { setFlag(Constants.ACC_STATIC, flag); }
-  public final boolean isStatic() {
-    return (access_flags & Constants.ACC_STATIC) != 0;
-  }
+    public final boolean isAbstract() {
+        return (access_flags & Const.ACC_ABSTRACT) != 0;
+    }
 
-  public final void isFinal(boolean flag) { setFlag(Constants.ACC_FINAL, flag); }
-  public final boolean isFinal() {
-    return (access_flags & Constants.ACC_FINAL) != 0;
-  }
+    public final void isAbstract(final boolean flag) {
+        setFlag(Const.ACC_ABSTRACT, flag);
+    }
 
-  public final void isSynchronized(boolean flag) { setFlag(Constants.ACC_SYNCHRONIZED, flag); }
-  public final boolean isSynchronized() {
-    return (access_flags & Constants.ACC_SYNCHRONIZED) != 0;
-  }
+    public final boolean isAnnotation() {
+        return (access_flags & Const.ACC_ANNOTATION) != 0;
+    }
 
-  public final void isVolatile(boolean flag) { setFlag(Constants.ACC_VOLATILE, flag); }
-  public final boolean isVolatile() {
-    return (access_flags & Constants.ACC_VOLATILE) != 0;
-  }
+    public final void isAnnotation(final boolean flag) {
+        setFlag(Const.ACC_ANNOTATION, flag);
+    }
 
-  public final void isTransient(boolean flag) { setFlag(Constants.ACC_TRANSIENT, flag); }
-  public final boolean isTransient() {
-    return (access_flags & Constants.ACC_TRANSIENT) != 0;
-  }
+    public final boolean isEnum() {
+        return (access_flags & Const.ACC_ENUM) != 0;
+    }
 
-  public final void isNative(boolean flag) { setFlag(Constants.ACC_NATIVE, flag); }
-  public final boolean isNative() {
-    return (access_flags & Constants.ACC_NATIVE) != 0;
-  }
+    public final void isEnum(final boolean flag) {
+        setFlag(Const.ACC_ENUM, flag);
+    }
 
-  public final void isInterface(boolean flag) { setFlag(Constants.ACC_INTERFACE, flag); }
-  public final boolean isInterface() {
-    return (access_flags & Constants.ACC_INTERFACE) != 0;
-  }
+    public final boolean isFinal() {
+        return (access_flags & Const.ACC_FINAL) != 0;
+    }
 
-  public final void isAbstract(boolean flag) { setFlag(Constants.ACC_ABSTRACT, flag); }
-  public final boolean isAbstract() {
-    return (access_flags & Constants.ACC_ABSTRACT) != 0;
-  }
+    public final void isFinal(final boolean flag) {
+        setFlag(Const.ACC_FINAL, flag);
+    }
 
-  public final void isStrictfp(boolean flag) { setFlag(Constants.ACC_STRICT, flag); }
-  public final boolean isStrictfp() {
-    return (access_flags & Constants.ACC_STRICT) != 0;
-  }
+    public final boolean isInterface() {
+        return (access_flags & Const.ACC_INTERFACE) != 0;
+    }
+
+    public final void isInterface(final boolean flag) {
+        setFlag(Const.ACC_INTERFACE, flag);
+    }
+
+    public final boolean isNative() {
+        return (access_flags & Const.ACC_NATIVE) != 0;
+    }
+
+    public final void isNative(final boolean flag) {
+        setFlag(Const.ACC_NATIVE, flag);
+    }
+
+    public final boolean isPrivate() {
+        return (access_flags & Const.ACC_PRIVATE) != 0;
+    }
+
+    public final void isPrivate(final boolean flag) {
+        setFlag(Const.ACC_PRIVATE, flag);
+    }
+
+    public final boolean isProtected() {
+        return (access_flags & Const.ACC_PROTECTED) != 0;
+    }
+
+    public final void isProtected(final boolean flag) {
+        setFlag(Const.ACC_PROTECTED, flag);
+    }
+
+    public final boolean isPublic() {
+        return (access_flags & Const.ACC_PUBLIC) != 0;
+    }
+
+    public final void isPublic(final boolean flag) {
+        setFlag(Const.ACC_PUBLIC, flag);
+    }
+
+    public final boolean isStatic() {
+        return (access_flags & Const.ACC_STATIC) != 0;
+    }
+
+    public final void isStatic(final boolean flag) {
+        setFlag(Const.ACC_STATIC, flag);
+    }
+
+    public final boolean isStrictfp() {
+        return (access_flags & Const.ACC_STRICT) != 0;
+    }
+
+    public final void isStrictfp(final boolean flag) {
+        setFlag(Const.ACC_STRICT, flag);
+    }
+
+    public final boolean isSynchronized() {
+        return (access_flags & Const.ACC_SYNCHRONIZED) != 0;
+    }
+
+    public final void isSynchronized(final boolean flag) {
+        setFlag(Const.ACC_SYNCHRONIZED, flag);
+    }
+
+    public final boolean isSynthetic() {
+        return (access_flags & Const.ACC_SYNTHETIC) != 0;
+    }
+
+    public final void isSynthetic(final boolean flag) {
+        setFlag(Const.ACC_SYNTHETIC, flag);
+    }
+
+    public final boolean isTransient() {
+        return (access_flags & Const.ACC_TRANSIENT) != 0;
+    }
+
+    public final void isTransient(final boolean flag) {
+        setFlag(Const.ACC_TRANSIENT, flag);
+    }
+
+    public final boolean isVarArgs() {
+        return (access_flags & Const.ACC_VARARGS) != 0;
+    }
+
+    public final void isVarArgs(final boolean flag) {
+        setFlag(Const.ACC_VARARGS, flag);
+    }
+
+    public final boolean isVolatile() {
+        return (access_flags & Const.ACC_VOLATILE) != 0;
+    }
+
+    public final void isVolatile(final boolean flag) {
+        setFlag(Const.ACC_VOLATILE, flag);
+    }
+
+    /**
+     * Set access flags aka "modifiers".
+     *
+     * @param accessFlags Access flags of the object.
+     */
+    public final void setAccessFlags(final int accessFlags) {
+        this.access_flags = accessFlags;
+    }
+
+    private void setFlag(final int flag, final boolean set) {
+        if ((access_flags & flag) != 0) { // Flag is set already
+            if (!set) {
+                access_flags ^= flag;
+            }
+        } else if (set) {
+            access_flags |= flag;
+        }
+    }
+
+    /**
+     * Set access flags aka "modifiers".
+     *
+     * @param accessFlags Access flags of the object.
+     */
+    public final void setModifiers(final int accessFlags) {
+        setAccessFlags(accessFlags);
+    }
 }

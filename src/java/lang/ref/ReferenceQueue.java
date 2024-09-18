@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -24,6 +24,8 @@
  */
 
 package java.lang.ref;
+
+import java.util.function.Consumer;
 
 /**
  * Reference queues, to which registered reference objects are appended by the
@@ -63,10 +65,13 @@ public class ReferenceQueue<T> {
                 return false;
             }
             assert queue == this;
-            r.queue = ENQUEUED;
             r.next = (head == null) ? r : head;
             head = r;
             queueLength++;
+            // Update r.queue *after* adding to list, to avoid race
+            // with concurrent enqueued checks and fast-path poll().
+            // Volatiles ensure ordering.
+            r.queue = ENQUEUED;
             if (r instanceof FinalReference) {
                 sun.misc.VM.addFinalRefCount(1);
             }
@@ -75,14 +80,16 @@ public class ReferenceQueue<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Reference<? extends T> reallyPoll() {       /* Must hold lock */
         Reference<? extends T> r = head;
         if (r != null) {
-            head = (r.next == r) ?
-                null :
-                r.next; // Unchecked due to the next field having a raw type in Reference
             r.queue = NULL;
+            // Update r.queue *before* removing from list, to avoid
+            // race with concurrent enqueued checks and fast-path
+            // poll().  Volatiles ensure ordering.
+            @SuppressWarnings("unchecked")
+            Reference<? extends T> rn = r.next;
+            head = (rn == r) ? null : rn;
             r.next = r;
             queueLength--;
             if (r instanceof FinalReference) {
@@ -164,4 +171,32 @@ public class ReferenceQueue<T> {
         return remove(0);
     }
 
+    /**
+     * Iterate queue and invoke given action with each Reference.
+     * Suitable for diagnostic purposes.
+     * WARNING: any use of this method should make sure to not
+     * retain the referents of iterated references (in case of
+     * FinalReference(s)) so that their life is not prolonged more
+     * than necessary.
+     */
+    void forEach(Consumer<? super Reference<? extends T>> action) {
+        for (Reference<? extends T> r = head; r != null;) {
+            action.accept(r);
+            @SuppressWarnings("unchecked")
+            Reference<? extends T> rn = r.next;
+            if (rn == r) {
+                if (r.queue == ENQUEUED) {
+                    // still enqueued -> we reached end of chain
+                    r = null;
+                } else {
+                    // already dequeued: r.queue == NULL; ->
+                    // restart from head when overtaken by queue poller(s)
+                    r = head;
+                }
+            } else {
+                // next in chain
+                r = rn;
+            }
+        }
+    }
 }

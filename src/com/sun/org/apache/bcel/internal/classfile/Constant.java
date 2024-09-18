@@ -1,151 +1,205 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Objects;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.BCELComparator;
 
 /**
  * Abstract superclass for classes to represent the different constant types
  * in the constant pool of a class file. The classes keep closely to
  * the JVM specification.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @LastModified: May 2021
  */
-public abstract class Constant implements Cloneable, Node, Serializable {
-  /* In fact this tag is redundant since we can distinguish different
-   * `Constant' objects by their type, i.e., via `instanceof'. In some
-   * places we will use the tag for switch()es anyway.
-   *
-   * First, we want match the specification as closely as possible. Second we
-   * need the tag as an index to select the corresponding class name from the
-   * `CONSTANT_NAMES' array.
-   */
-  protected byte tag;
+public abstract class Constant implements Cloneable, Node {
 
-  Constant(byte tag) { this.tag = tag; }
+    private static BCELComparator bcelComparator = new BCELComparator() {
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public abstract void accept(Visitor v);
+        @Override
+        public boolean equals(final Object o1, final Object o2) {
+            final Constant THIS = (Constant) o1;
+            final Constant THAT = (Constant) o2;
+            return Objects.equals(THIS.toString(), THAT.toString());
+        }
 
-  public abstract void dump(DataOutputStream file) throws IOException;
+        @Override
+        public int hashCode(final Object o) {
+            final Constant THIS = (Constant) o;
+            return THIS.toString().hashCode();
+        }
+    };
 
-  /**
-   * @return Tag of constant, i.e., its type. No setTag() method to avoid
-   * confusion.
-   */
-  public final byte getTag() { return tag; }
-
-  /**
-   * @return String representation.
-   */
-  public String toString() {
-    return Constants.CONSTANT_NAMES[tag] + "[" + tag + "]";
-  }
-
-  /**
-   * @return deep copy of this constant
-   */
-  public Constant copy() {
-    try {
-      return (Constant)super.clone();
-    } catch(CloneNotSupportedException e) {}
-
-    return null;
-  }
-
-  public Object clone() throws CloneNotSupportedException {
-    return super.clone();
-  }
-
-  /**
-   * Read one constant from the given file, the type depends on a tag byte.
-   *
-   * @param file Input stream
-   * @return Constant object
-   */
-  static final Constant readConstant(DataInputStream file)
-    throws IOException, ClassFormatException
-  {
-    byte b = file.readByte(); // Read tag byte
-
-    switch(b) {
-    case Constants.CONSTANT_Class:              return new ConstantClass(file);
-    case Constants.CONSTANT_Fieldref:           return new ConstantFieldref(file);
-    case Constants.CONSTANT_Methodref:          return new ConstantMethodref(file);
-    case Constants.CONSTANT_InterfaceMethodref: return new
-                                        ConstantInterfaceMethodref(file);
-    case Constants.CONSTANT_String:             return new ConstantString(file);
-    case Constants.CONSTANT_Integer:            return new ConstantInteger(file);
-    case Constants.CONSTANT_Float:              return new ConstantFloat(file);
-    case Constants.CONSTANT_Long:               return new ConstantLong(file);
-    case Constants.CONSTANT_Double:             return new ConstantDouble(file);
-    case Constants.CONSTANT_NameAndType:        return new ConstantNameAndType(file);
-    case Constants.CONSTANT_Utf8:               return new ConstantUtf8(file);
-    default:
-      throw new ClassFormatException("Invalid byte tag in constant pool: " + b);
+    /**
+     * @return Comparison strategy object
+     */
+    public static BCELComparator getComparator() {
+        return bcelComparator;
     }
-  }
+
+    /**
+     * Reads one constant from the given input, the type depends on a tag byte.
+     *
+     * @param dataInput Input stream
+     * @return Constant object
+     * @throws IOException if an I/O error occurs reading from the given {@code dataInput}.
+     * @throws ClassFormatException if the next byte is not recognized
+     * @since 6.0 made public
+     */
+    public static Constant readConstant(final DataInput dataInput) throws IOException, ClassFormatException {
+        final byte b = dataInput.readByte(); // Read tag byte
+        switch (b) {
+        case Const.CONSTANT_Class:
+            return new ConstantClass(dataInput);
+        case Const.CONSTANT_Fieldref:
+            return new ConstantFieldref(dataInput);
+        case Const.CONSTANT_Methodref:
+            return new ConstantMethodref(dataInput);
+        case Const.CONSTANT_InterfaceMethodref:
+            return new ConstantInterfaceMethodref(dataInput);
+        case Const.CONSTANT_String:
+            return new ConstantString(dataInput);
+        case Const.CONSTANT_Integer:
+            return new ConstantInteger(dataInput);
+        case Const.CONSTANT_Float:
+            return new ConstantFloat(dataInput);
+        case Const.CONSTANT_Long:
+            return new ConstantLong(dataInput);
+        case Const.CONSTANT_Double:
+            return new ConstantDouble(dataInput);
+        case Const.CONSTANT_NameAndType:
+            return new ConstantNameAndType(dataInput);
+        case Const.CONSTANT_Utf8:
+            return ConstantUtf8.getInstance(dataInput);
+        case Const.CONSTANT_MethodHandle:
+            return new ConstantMethodHandle(dataInput);
+        case Const.CONSTANT_MethodType:
+            return new ConstantMethodType(dataInput);
+        case Const.CONSTANT_Dynamic:
+            return new ConstantDynamic(dataInput);
+        case Const.CONSTANT_InvokeDynamic:
+            return new ConstantInvokeDynamic(dataInput);
+        case Const.CONSTANT_Module:
+            return new ConstantModule(dataInput);
+        case Const.CONSTANT_Package:
+            return new ConstantPackage(dataInput);
+        default:
+            throw new ClassFormatException("Invalid byte tag in constant pool: " + b);
+        }
+    }
+
+    /**
+     * @param comparator Comparison strategy object
+     */
+    public static void setComparator(final BCELComparator comparator) {
+        bcelComparator = comparator;
+    }
+
+    /*
+     * In fact this tag is redundant since we can distinguish different 'Constant' objects by their type, i.e., via
+     * 'instanceof'. In some places we will use the tag for switch()es anyway.
+     *
+     * First, we want match the specification as closely as possible. Second we need the tag as an index to select the
+     * corresponding class name from the 'CONSTANT_NAMES' array.
+     */
+    /**
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     */
+    @java.lang.Deprecated
+    protected byte tag; // TODO should be private & final
+
+    Constant(final byte tag) {
+        this.tag = tag;
+    }
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public abstract void accept(Visitor v);
+
+    @Override
+    public Object clone() {
+        try {
+            return super.clone();
+        } catch (final CloneNotSupportedException e) {
+            throw new Error("Clone Not Supported"); // never happens
+        }
+    }
+
+    /**
+     * @return deep copy of this constant
+     */
+    public Constant copy() {
+        try {
+            return (Constant) super.clone();
+        } catch (final CloneNotSupportedException e) {
+            // TODO should this throw?
+        }
+        return null;
+    }
+
+    public abstract void dump(DataOutputStream file) throws IOException;
+
+    /**
+     * Returns value as defined by given BCELComparator strategy. By default two Constant objects are said to be equal when
+     * the result of toString() is equal.
+     *
+     * @see Object#equals(Object)
+     */
+    @Override
+    public boolean equals(final Object obj) {
+        return bcelComparator.equals(this, obj);
+    }
+
+    /**
+     * @return Tag of constant, i.e., its type. No setTag() method to avoid confusion.
+     */
+    public final byte getTag() {
+        return tag;
+    }
+
+    /**
+     * Returns value as defined by given BCELComparator strategy. By default return the hashcode of the result of
+     * toString().
+     *
+     * @see Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return bcelComparator.hashCode(this);
+    }
+
+    /**
+     * @return String representation.
+     */
+    @Override
+    public String toString() {
+        return Const.getConstantName(tag) + "[" + tag + "]";
+    }
 }

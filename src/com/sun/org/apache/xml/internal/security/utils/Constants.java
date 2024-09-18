@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -29,9 +29,8 @@ package com.sun.org.apache.xml.internal.security.utils;
  * <A HREF="http://www.w3.org/TR/xmldsig-core/#sec-TransformAlg">XML
  * Signature specification</A>.
  *
- * @author $Author: coheigea $
  */
-public class Constants {
+public final class Constants {
 
     /** Field configurationFile */
     public static final String configurationFile = "data/websig.conf";
@@ -41,9 +40,9 @@ public class Constants {
 
     /** Field exceptionMessagesResourceBundleDir */
     public static final String exceptionMessagesResourceBundleDir =
-        "com/sun/org/apache/xml/internal/security/resource";
+        "com.sun.org.apache.xml.internal.security/resource";
 
-    /** Field exceptionMessagesResourceBundleBase is the location of the <CODE>ResourceBundle</CODE> */
+    /** Field exceptionMessagesResourceBundleBase is the location of the {@code ResourceBundle} */
     public static final String exceptionMessagesResourceBundleBase =
         exceptionMessagesResourceBundleDir + "/" + "xmlsecurity";
 
@@ -68,6 +67,9 @@ public class Constants {
 
     /** The URL for more algorithms **/
     public static final String MoreAlgorithmsSpecNS = "http://www.w3.org/2001/04/xmldsig-more#";
+
+    /** The (newer) URL for more algorithms **/
+    public static final String XML_DSIG_NS_MORE_07_05 = "http://www.w3.org/2007/05/xmldsig-more#";
 
     /** The URI for XML spec*/
     public static final String XML_LANG_SPACE_SpecNS = "http://www.w3.org/XML/1998/namespace";
@@ -136,6 +138,15 @@ public class Constants {
     /** Tag of Element HMACOutputLength **/
     public static final String _TAG_HMACOUTPUTLENGTH = "HMACOutputLength";
 
+    /** Tag of Element RSAPSSParams **/
+    public static final String _TAG_RSAPSSPARAMS = "RSAPSSParams";
+
+    /** Tag of Element SaltLength **/
+    public static final String _TAG_SALTLENGTH = "SaltLength";
+
+    /** Tag of Element TrailerField **/
+    public static final String _TAG_TRAILERFIELD = "TrailerField";
+
     /** Tag of Element SignatureProperties **/
     public static final String _TAG_SIGNATUREPROPERTIES = "SignatureProperties";
 
@@ -197,7 +208,7 @@ public class Constants {
     public static final String _TAG_P = "P";
 
     /** Tag of Element Q **/
-    public static final String _TAG_Q   = "Q";
+    public static final String _TAG_Q = "Q";
 
     /** Tag of Element G **/
     public static final String _TAG_G = "G";
@@ -207,6 +218,9 @@ public class Constants {
 
     /** Tag of Element J **/
     public static final String _TAG_J = "J";
+
+    /** Tag of Element ECKeyValue **/
+    public static final String _TAG_ECKEYVALUE = "ECKeyValue";
 
     /** Tag of Element Seed **/
     public static final String _TAG_SEED = "Seed";
@@ -244,13 +258,13 @@ public class Constants {
     /** Tag of Element PGPKeyPacket **/
     public static final String _TAG_PGPKEYPACKET = "PGPKeyPacket";
 
-    /** Tag of Element PGPKeyPacket **/
+    /** Tag of Element DEREncodedKeyValue **/
     public static final String _TAG_DERENCODEDKEYVALUE = "DEREncodedKeyValue";
 
-    /** Tag of Element PGPKeyPacket **/
+    /** Tag of Element KeyInfoReference **/
     public static final String _TAG_KEYINFOREFERENCE = "KeyInfoReference";
 
-    /** Tag of Element PGPKeyPacket **/
+    /** Tag of Element X509Digest **/
     public static final String _TAG_X509DIGEST = "X509Digest";
 
     /** Tag of Element SPKISexp **/

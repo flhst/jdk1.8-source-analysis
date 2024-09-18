@@ -1,150 +1,270 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import com.sun.org.apache.bcel.internal.Const;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * This class is derived from the abstract
- * <A HREF="com.sun.org.apache.bcel.internal.classfile.Constant.html">Constant</A> class
- * and represents a reference to a Utf8 encoded string.
+ * Extends the abstract {@link Constant} to represent a reference to a UTF-8 encoded string.
+ * <p>
+ * The following system properties govern caching this class performs.
+ * </p>
+ * <ul>
+ * <li>{@value #SYS_PROP_CACHE_MAX_ENTRIES} (since 6.4): The size of the cache, by default 0, meaning caching is
+ * disabled.</li>
+ * <li>{@value #SYS_PROP_CACHE_MAX_ENTRY_SIZE} (since 6.0): The maximum size of the values to cache, by default 200, 0
+ * disables caching. Values larger than this are <em>not</em> cached.</li>
+ * <li>{@value #SYS_PROP_STATISTICS} (since 6.0): Prints statistics on the console when the JVM exits.</li>
+ * </ul>
+ * <p>
+ * Here is a sample Maven invocation with caching disabled:
+ * </p>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     Constant
+ * <pre>
+ * mvn test -Dbcel.statistics=true -Dbcel.maxcached.size=0 -Dbcel.maxcached=0
+ * </pre>
+ * <p>
+ * Here is a sample Maven invocation with caching enabled:
+ * </p>
+ *
+ * <pre>
+ * mvn test -Dbcel.statistics=true -Dbcel.maxcached.size=100000 -Dbcel.maxcached=5000000
+ * </pre>
+ *
+ * @see Constant
+ * @LastModified: Feb 2023
  */
 public final class ConstantUtf8 extends Constant {
-  private String bytes;
 
-  /**
-   * Initialize from another object.
-   */
-  public ConstantUtf8(ConstantUtf8 c) {
-    this(c.getBytes());
-  }
+    private static class Cache {
 
-  /**
-   * Initialize instance from file data.
-   *
-   * @param file Input stream
-   * @throws IOException
-   */
-  ConstantUtf8(DataInputStream file) throws IOException
-  {
-    super(Constants.CONSTANT_Utf8);
+        private static final boolean BCEL_STATISTICS = false;
+        private static final int MAX_ENTRIES = 20000;
+        private static final int INITIAL_CAPACITY = (int) (MAX_ENTRIES / 0.75);
 
-    bytes = file.readUTF();
-  }
+        private static final HashMap<String, ConstantUtf8> CACHE = new LinkedHashMap<String, ConstantUtf8>(INITIAL_CAPACITY, 0.75f, true) {
 
-  /**
-   * @param bytes Data
-   */
-  public ConstantUtf8(String bytes)
-  {
-    super(Constants.CONSTANT_Utf8);
+            private static final long serialVersionUID = -8506975356158971766L;
 
-    if(bytes == null)
-      throw new IllegalArgumentException("bytes must not be null!");
+            @Override
+            protected boolean removeEldestEntry(final Map.Entry<String, ConstantUtf8> eldest) {
+                return size() > MAX_ENTRIES;
+            }
+        };
 
-    this.bytes  = bytes;
-  }
+        // Set the size to 0 or below to skip caching entirely
+        private static final int MAX_ENTRY_SIZE = 200;
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitConstantUtf8(this);
-  }
+        static boolean isEnabled() {
+            return Cache.MAX_ENTRIES > 0 && MAX_ENTRY_SIZE > 0;
+        }
 
-  /**
-   * Dump String in Utf8 format to file stream.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeByte(tag);
-    file.writeUTF(bytes);
-  }
+    }
 
-  /**
-   * @return Data converted to string.
-   */
-  public final String getBytes() { return bytes; }
+    // TODO these should perhaps be AtomicInt?
+    private static volatile int considered;
+    private static volatile int created;
+    private static volatile int hits;
+    private static volatile int skipped;
 
-  /**
-   * @param bytes.
-   */
-  public final void setBytes(String bytes) {
-    this.bytes = bytes;
-  }
+    private static final String SYS_PROP_CACHE_MAX_ENTRIES = "bcel.maxcached";
+    private static final String SYS_PROP_CACHE_MAX_ENTRY_SIZE = "bcel.maxcached.size";
+    private static final String SYS_PROP_STATISTICS = "bcel.statistics";
 
-  /**
-   * @return String representation
-   */
-  public final String toString()
-  {
-    return super.toString() + "(\"" + Utility.replace(bytes, "\n", "\\n") + "\")";
-  }
+    static {
+        if (Cache.BCEL_STATISTICS) {
+            Runtime.getRuntime().addShutdownHook(
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            printStats();
+                        }
+                    });
+        }
+    }
+
+    /**
+     * Clears the cache.
+     *
+     * @since 6.4.0
+     */
+    public static synchronized void clearCache() {
+        Cache.CACHE.clear();
+    }
+
+    // for access by test code
+    static synchronized void clearStats() {
+        hits = considered = skipped = created = 0;
+    }
+
+    /**
+     * Gets a new or cached instance of the given value.
+     * <p>
+     * See {@link ConstantUtf8} class Javadoc for details.
+     * </p>
+     *
+     * @param value the value.
+     * @return a new or cached instance of the given value.
+     * @since 6.0
+     */
+    public static ConstantUtf8 getCachedInstance(final String value) {
+        if (value.length() > Cache.MAX_ENTRY_SIZE) {
+            skipped++;
+            return new ConstantUtf8(value);
+        }
+        considered++;
+        synchronized (ConstantUtf8.class) { // might be better with a specific lock object
+            ConstantUtf8 result = Cache.CACHE.get(value);
+            if (result != null) {
+                hits++;
+                return result;
+            }
+            result = new ConstantUtf8(value);
+            Cache.CACHE.put(value, result);
+            return result;
+        }
+    }
+
+    /**
+     * Gets a new or cached instance of the given value.
+     * <p>
+     * See {@link ConstantUtf8} class Javadoc for details.
+     * </p>
+     *
+     * @param dataInput the value.
+     * @return a new or cached instance of the given value.
+     * @throws IOException if an I/O error occurs.
+     * @since 6.0
+     */
+    public static ConstantUtf8 getInstance(final DataInput dataInput) throws IOException {
+        return getInstance(dataInput.readUTF());
+    }
+
+    /**
+     * Gets a new or cached instance of the given value.
+     * <p>
+     * See {@link ConstantUtf8} class Javadoc for details.
+     * </p>
+     *
+     * @param value the value.
+     * @return a new or cached instance of the given value.
+     * @since 6.0
+     */
+    public static ConstantUtf8 getInstance(final String value) {
+        return Cache.isEnabled() ? getCachedInstance(value) : new ConstantUtf8(value);
+    }
+
+    // for access by test code
+    static void printStats() {
+        final String prefix = "[Apache Commons BCEL]";
+        System.err.printf("%s Cache hit %,d/%,d, %d skipped.%n", prefix, hits, considered, skipped);
+        System.err.printf("%s Total of %,d ConstantUtf8 objects created.%n", prefix, created);
+        System.err.printf("%s Configuration: %s=%,d, %s=%,d.%n", prefix, SYS_PROP_CACHE_MAX_ENTRIES, Cache.MAX_ENTRIES, SYS_PROP_CACHE_MAX_ENTRY_SIZE,
+            Cache.MAX_ENTRY_SIZE);
+    }
+
+    private final String value;
+
+    /**
+     * Initializes from another object.
+     *
+     * @param constantUtf8 the value.
+     */
+    public ConstantUtf8(final ConstantUtf8 constantUtf8) {
+        this(constantUtf8.getBytes());
+    }
+
+    /**
+     * Initializes instance from file data.
+     *
+     * @param dataInput Input stream
+     * @throws IOException if an I/O error occurs.
+     */
+    ConstantUtf8(final DataInput dataInput) throws IOException {
+        super(Const.CONSTANT_Utf8);
+        value = dataInput.readUTF();
+        created++;
+    }
+
+    /**
+     * @param value Data
+     */
+    public ConstantUtf8(final String value) {
+        super(Const.CONSTANT_Utf8);
+        this.value = Objects.requireNonNull(value, "value");
+        created++;
+    }
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitConstantUtf8(this);
+    }
+
+    /**
+     * Dumps String in Utf8 format to file stream.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void dump(final DataOutputStream file) throws IOException {
+        file.writeByte(super.getTag());
+        file.writeUTF(value);
+    }
+
+    /**
+     * @return Data converted to string.
+     */
+    public String getBytes() {
+        return value;
+    }
+
+    /**
+     * @param bytes the raw bytes of this UTF-8
+     * @deprecated (since 6.0)
+     */
+    @java.lang.Deprecated
+    public void setBytes(final String bytes) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @return String representation
+     */
+    @Override
+    public String toString() {
+        return super.toString() + "(\"" + Utility.replace(value, "\n", "\\n") + "\")";
+    }
 }

@@ -1,192 +1,157 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * This class is derived from <em>Attribute</em> and represents a reference
- * to a <a href="http://www.inf.fu-berlin.de/~bokowski/pmgjava/index.html">PMG</a>
- * attribute.
+ * This class is derived from <em>Attribute</em> and represents a reference to a PMG attribute.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     Attribute
+ * @see Attribute
  */
 public final class PMGClass extends Attribute {
-  private int pmg_class_index, pmg_index;
 
-  /**
-   * Initialize from another object. Note that both objects use the same
-   * references (shallow copy). Use clone() for a physical copy.
-   */
-  public PMGClass(PMGClass c) {
-    this(c.getNameIndex(), c.getLength(), c.getPMGIndex(), c.getPMGClassIndex(),
-         c.getConstantPool());
-  }
+    private int pmgClassIndex;
+    private int pmgIndex;
 
-  /**
-   * Construct object from file stream.
-   * @param name_index Index in constant pool to CONSTANT_Utf8
-   * @param length Content length in bytes
-   * @param file Input stream
-   * @param constant_pool Array of constants
-   * @throws IOException
-   */
-  PMGClass(int name_index, int length, DataInputStream file,
-           ConstantPool constant_pool) throws IOException
-  {
-    this(name_index, length, file.readUnsignedShort(), file.readUnsignedShort(),
-         constant_pool);
-  }
+    /**
+     * Construct object from input stream.
+     *
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O error occurs.
+     */
+    PMGClass(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, input.readUnsignedShort(), input.readUnsignedShort(), constantPool);
+    }
 
-  /**
-   * @param name_index Index in constant pool to CONSTANT_Utf8
-   * @param length Content length in bytes
-   * @param constant_pool Array of constants
-   * @param PMGClass_index Index in constant pool to CONSTANT_Utf8
-   */
-  public PMGClass(int name_index, int length, int pmg_index, int pmg_class_index,
-                  ConstantPool constant_pool)
-  {
-    super(Constants.ATTR_PMG, name_index, length, constant_pool);
-    this.pmg_index       = pmg_index;
-    this.pmg_class_index = pmg_class_index;
-  }
+    /**
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8
+     * @param length Content length in bytes
+     * @param pmgIndex index in constant pool for source file name
+     * @param pmgClassIndex Index in constant pool to CONSTANT_Utf8
+     * @param constantPool Array of constants
+     */
+    public PMGClass(final int nameIndex, final int length, final int pmgIndex, final int pmgClassIndex, final ConstantPool constantPool) {
+        super(Const.ATTR_PMG, nameIndex, length, constantPool);
+        this.pmgIndex = pmgIndex;
+        this.pmgClassIndex = pmgClassIndex;
+    }
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-   public void accept(Visitor v) {
-     System.err.println("Visiting non-standard PMGClass object");
-   }
+    /**
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use copy() for a
+     * physical copy.
+     *
+     * @param pgmClass Source to copy.
+     */
+    public PMGClass(final PMGClass pgmClass) {
+        this(pgmClass.getNameIndex(), pgmClass.getLength(), pgmClass.getPMGIndex(), pgmClass.getPMGClassIndex(), pgmClass.getConstantPool());
+    }
 
-  /**
-   * Dump source file attribute to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    super.dump(file);
-    file.writeShort(pmg_index);
-    file.writeShort(pmg_class_index);
-  }
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        println("Visiting non-standard PMGClass object");
+    }
 
-  /**
-   * @return Index in constant pool of source file name.
-   */
-  public final int getPMGClassIndex() { return pmg_class_index; }
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        return (Attribute) clone();
+    }
 
-  /**
-   * @param PMGClass_index.
-   */
-  public final void setPMGClassIndex(int pmg_class_index) {
-    this.pmg_class_index = pmg_class_index;
-  }
+    /**
+     * Dump source file attribute to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void dump(final DataOutputStream file) throws IOException {
+        super.dump(file);
+        file.writeShort(pmgIndex);
+        file.writeShort(pmgClassIndex);
+    }
 
-  /**
-   * @return Index in constant pool of source file name.
-   */
-  public final int getPMGIndex() { return pmg_index; }
+    /**
+     * @return Index in constant pool of source file name.
+     */
+    public int getPMGClassIndex() {
+        return pmgClassIndex;
+    }
 
-  /**
-   * @param PMGClass_index.
-   */
-  public final void setPMGIndex(int pmg_index) {
-    this.pmg_index = pmg_index;
-  }
+    /**
+     * @return PMG class name.
+     */
+    public String getPMGClassName() {
+        return super.getConstantPool().getConstantUtf8(pmgClassIndex).getBytes();
+    }
 
-  /**
-   * @return PMG name.
-   */
-  public final String getPMGName() {
-    ConstantUtf8 c = (ConstantUtf8)constant_pool.getConstant(pmg_index,
-                                                             Constants.CONSTANT_Utf8);
-    return c.getBytes();
-  }
+    /**
+     * @return Index in constant pool of source file name.
+     */
+    public int getPMGIndex() {
+        return pmgIndex;
+    }
 
-  /**
-   * @return PMG class name.
-   */
-  public final String getPMGClassName() {
-    ConstantUtf8 c = (ConstantUtf8)constant_pool.getConstant(pmg_class_index,
-                                                             Constants.CONSTANT_Utf8);
-    return c.getBytes();
-  }
+    /**
+     * @return PMG name.
+     */
+    public String getPMGName() {
+        return super.getConstantPool().getConstantUtf8(pmgIndex).getBytes();
+    }
 
-  /**
-   * @return String representation
-   */
-  public final String toString() {
-    return "PMGClass(" + getPMGName() + ", " + getPMGClassName() + ")";
-  }
+    /**
+     * @param pmgClassIndex
+     */
+    public void setPMGClassIndex(final int pmgClassIndex) {
+        this.pmgClassIndex = pmgClassIndex;
+    }
 
-  /**
-   * @return deep copy of this attribute
-   */
-  public Attribute copy(ConstantPool constant_pool) {
-    return (PMGClass)clone();
-  }
+    /**
+     * @param pmgIndex
+     */
+    public void setPMGIndex(final int pmgIndex) {
+        this.pmgIndex = pmgIndex;
+    }
+
+    /**
+     * @return String representation
+     */
+    @Override
+    public String toString() {
+        return "PMGClass(" + getPMGName() + ", " + getPMGClassName() + ")";
+    }
 }

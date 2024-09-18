@@ -51,6 +51,9 @@ import java.text.MessageFormat;
 
 import javax.print.attribute.*;
 import javax.print.PrintService;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.reflect.misc.ReflectUtil;
 
 import sun.swing.SwingUtilities2;
@@ -3404,6 +3407,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                                           event.getClickCount(),
                                           event.isPopupTrigger(),
                                           MouseEvent.NOBUTTON);
+                MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+                meAccessor.setCausedByTouchEvent(newEvent,
+                    meAccessor.isCausedByTouchEvent(event));
 
                 tip = ((JComponent)component).getToolTipText(newEvent);
             }
@@ -5273,7 +5279,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // Don't start when just a modifier is pressed
                 int code = e.getKeyCode();
                 if (code == KeyEvent.VK_SHIFT || code == KeyEvent.VK_CONTROL ||
-                    code == KeyEvent.VK_ALT) {
+                    code == KeyEvent.VK_ALT || code == KeyEvent.VK_META ||
+                    code == KeyEvent.VK_ALT_GRAPH) {
                     return false;
                 }
                 // Try to install the editor
@@ -5297,7 +5304,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // If we have started an editor as a result of the user
                 // pressing a key and the surrendersFocusOnKeystroke property
                 // is true, give the focus to the new editor.
-                if (getSurrendersFocusOnKeystroke()) {
+                Object prop = getClientProperty("JTable.forceAutoStartsEdit");
+                if (getSurrendersFocusOnKeystroke()
+                        || Boolean.TRUE.equals(prop)) {
                     editorComponent.requestFocus();
                 }
             }
@@ -5407,6 +5416,21 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             }
 
             return this;
+        }
+
+        @Override
+        public AccessibleContext getAccessibleContext() {
+            if (accessibleContext == null) {
+                accessibleContext = new AccessibleBooleanRenderer();
+            }
+            return accessibleContext;
+        }
+
+        class AccessibleBooleanRenderer extends JCheckBox.AccessibleJCheckBox {
+            @Override
+            public AccessibleAction getAccessibleAction() {
+                return null;
+            }
         }
     }
 
@@ -6584,6 +6608,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          */
         protected AccessibleJTable() {
             super();
+            JTable.this.putClientProperty("JTable.forceAutoStartsEdit", true);
             JTable.this.addPropertyChangeListener(this);
             JTable.this.getSelectionModel().addListSelectionListener(this);
             TableColumnModel tcm = JTable.this.getColumnModel();
@@ -6981,15 +7006,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             int row = rowAtPoint(p);
 
             if ((column != -1) && (row != -1)) {
-                TableColumn aColumn = getColumnModel().getColumn(column);
-                TableCellRenderer renderer = aColumn.getCellRenderer();
-                if (renderer == null) {
-                    Class<?> columnClass = getColumnClass(column);
-                    renderer = getDefaultRenderer(columnClass);
+                if (row == getEditingRow() && column == getEditingColumn()) {
+                    Component editor = getEditorComponent();
+                    if (editor instanceof Accessible) {
+                        return (Accessible) editor;
+                    }
                 }
-                Component component = renderer.getTableCellRendererComponent(
-                                  JTable.this, null, false, false,
-                                  row, column);
                 return new AccessibleJTableCell(JTable.this, row, column,
                       getAccessibleIndexAt(row, column));
             }
@@ -7022,15 +7044,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 int column = getAccessibleColumnAtIndex(i);
                 int row = getAccessibleRowAtIndex(i);
 
-                TableColumn aColumn = getColumnModel().getColumn(column);
-                TableCellRenderer renderer = aColumn.getCellRenderer();
-                if (renderer == null) {
-                    Class<?> columnClass = getColumnClass(column);
-                    renderer = getDefaultRenderer(columnClass);
+                if (row == getEditingRow() && column == getEditingColumn()) {
+                    Component editor = getEditorComponent();
+                    if (editor instanceof Accessible) {
+                        return (Accessible) editor;
+                    }
                 }
-                Component component = renderer.getTableCellRendererComponent(
-                                  JTable.this, null, false, false,
-                                  row, column);
                 return new AccessibleJTableCell(JTable.this, row, column,
                       getAccessibleIndexAt(row, column));
             }
@@ -8218,7 +8237,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
              * @return the <code>AccessibleAction</code>, or <code>null</code>
              */
             public AccessibleAction getAccessibleAction() {
-                return getCurrentAccessibleContext().getAccessibleAction();
+                AccessibleContext ac = getCurrentAccessibleContext();
+                if (ac != null) {
+                    return ac.getAccessibleAction();
+                }
+                return null;
             }
 
             /**

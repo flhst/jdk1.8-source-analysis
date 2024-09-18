@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -36,6 +36,7 @@ import sun.security.util.Debug;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
+import sun.security.util.KnownOIDs;
 import sun.security.x509.*;
 
 /**
@@ -88,7 +89,7 @@ public class X509CertSelector implements CertSelector {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private final static ObjectIdentifier ANY_EXTENDED_KEY_USAGE =
-        ObjectIdentifier.newInternal(new int[] {2, 5, 29, 37, 0});
+        ObjectIdentifier.of(KnownOIDs.anyExtendedKeyUsage);
 
     static {
         CertPathHelperImpl.initialize();
@@ -130,11 +131,11 @@ public class X509CertSelector implements CertSelector {
     private static final String[] EXTENSION_OIDS = new String[NUM_OF_EXTENSIONS];
 
     static {
-        EXTENSION_OIDS[PRIVATE_KEY_USAGE_ID]  = "2.5.29.16";
-        EXTENSION_OIDS[SUBJECT_ALT_NAME_ID]   = "2.5.29.17";
-        EXTENSION_OIDS[NAME_CONSTRAINTS_ID]   = "2.5.29.30";
-        EXTENSION_OIDS[CERT_POLICIES_ID]      = "2.5.29.32";
-        EXTENSION_OIDS[EXTENDED_KEY_USAGE_ID] = "2.5.29.37";
+        EXTENSION_OIDS[PRIVATE_KEY_USAGE_ID]  = KnownOIDs.PrivateKeyUsage.value();
+        EXTENSION_OIDS[SUBJECT_ALT_NAME_ID]   = KnownOIDs.SubjectAlternativeName.value();
+        EXTENSION_OIDS[NAME_CONSTRAINTS_ID]   = KnownOIDs.NameConstraints.value();
+        EXTENSION_OIDS[CERT_POLICIES_ID]      = KnownOIDs.CertificatePolicies.value();
+        EXTENSION_OIDS[EXTENDED_KEY_USAGE_ID] = KnownOIDs.extendedKeyUsage.value();
     };
 
     /* Constants representing the GeneralName types */
@@ -506,7 +507,7 @@ public class X509CertSelector implements CertSelector {
         if (oid == null) {
             subjectPublicKeyAlgID = null;
         } else {
-            subjectPublicKeyAlgID = new ObjectIdentifier(oid);
+            subjectPublicKeyAlgID = ObjectIdentifier.of(oid);
         }
     }
 
@@ -622,7 +623,7 @@ public class X509CertSelector implements CertSelector {
                 Collections.unmodifiableSet(new HashSet<String>(keyPurposeSet));
             keyPurposeOIDSet = new HashSet<ObjectIdentifier>();
             for (String s : this.keyPurposeSet) {
-                keyPurposeOIDSet.add(new ObjectIdentifier(s));
+                keyPurposeOIDSet.add(ObjectIdentifier.of(s));
             }
         }
     }
@@ -1105,8 +1106,8 @@ public class X509CertSelector implements CertSelector {
                 if (!(o instanceof String)) {
                     throw new IOException("non String in certPolicySet");
                 }
-                polIdVector.add(new CertificatePolicyId(new ObjectIdentifier(
-                  (String)o)));
+                polIdVector.add(new CertificatePolicyId
+                        (ObjectIdentifier.of((String)o)));
             }
             // If everything went OK, make the changes
             policySet = tempSet;
@@ -2102,7 +2103,7 @@ public class X509CertSelector implements CertSelector {
             return true;
         }
         try {
-            byte[] extVal = xcert.getExtensionValue("2.5.29.14");
+            byte[] extVal = xcert.getExtensionValue(KnownOIDs.SubjectKeyID.value());
             if (extVal == null) {
                 if (debug != null) {
                     debug.println("X509CertSelector.match: "
@@ -2115,8 +2116,11 @@ public class X509CertSelector implements CertSelector {
             if (certSubjectKeyID == null ||
                     !Arrays.equals(subjectKeyID, certSubjectKeyID)) {
                 if (debug != null) {
-                    debug.println("X509CertSelector.match: "
-                        + "subject key IDs don't match");
+                    debug.println("X509CertSelector.match: subject key IDs " +
+                        "don't match\nX509CertSelector.match: subjectKeyID: " +
+                        Arrays.toString(subjectKeyID) +
+                        "\nX509CertSelector.match: certSubjectKeyID: " +
+                        Arrays.toString(certSubjectKeyID));
                 }
                 return false;
             }
@@ -2136,7 +2140,7 @@ public class X509CertSelector implements CertSelector {
             return true;
         }
         try {
-            byte[] extVal = xcert.getExtensionValue("2.5.29.35");
+            byte[] extVal = xcert.getExtensionValue(KnownOIDs.AuthorityKeyID.value());
             if (extVal == null) {
                 if (debug != null) {
                     debug.println("X509CertSelector.match: "

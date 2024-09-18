@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -75,7 +75,7 @@ public class TextOutputCallback implements Callback, java.io.Serializable {
     public TextOutputCallback(int messageType, String message) {
         if ((messageType != INFORMATION &&
                 messageType != WARNING && messageType != ERROR) ||
-            message == null || message.length() == 0)
+            message == null || message.isEmpty())
             throw new IllegalArgumentException();
 
         this.messageType = messageType;

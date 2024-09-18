@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -305,7 +305,8 @@ public class UIDefaults extends Hashtable<Object,Object>
                     if (c != null) {
                         b = ResourceBundle.getBundle(bundleName, l, c);
                     } else {
-                        b = ResourceBundle.getBundle(bundleName, l);
+                        b = ResourceBundle.getBundle(bundleName, l,
+                                ClassLoader.getSystemClassLoader());
                     }
                     Enumeration keys = b.getKeys();
 

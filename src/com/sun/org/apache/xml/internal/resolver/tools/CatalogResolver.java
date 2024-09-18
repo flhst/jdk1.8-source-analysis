@@ -1,16 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
-// CatalogResolver.java - A SAX EntityResolver/JAXP URI Resolver
-
 /*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -44,6 +41,7 @@ import javax.xml.parsers.SAXParserFactory;
 import com.sun.org.apache.xml.internal.resolver.Catalog;
 import com.sun.org.apache.xml.internal.resolver.CatalogManager;
 import com.sun.org.apache.xml.internal.resolver.helpers.FileURL;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  * A SAX EntityResolver/JAXP URIResolver that uses catalogs.
@@ -218,7 +216,10 @@ public class CatalogResolver implements EntityResolver, URIResolver {
 
         return iSource;
       } catch (Exception e) {
-        catalogManager.debug.message(1, "Failed to create InputSource", resolved);
+        catalogManager.debug.message(1,
+                                     "Failed to create InputSource ("
+                                     + e.toString()
+                                     + ")", resolved);
         return null;
       }
     }
@@ -304,11 +305,9 @@ public class CatalogResolver implements EntityResolver, URIResolver {
   private void setEntityResolver(SAXSource source) throws TransformerException {
     XMLReader reader = source.getXMLReader();
     if (reader == null) {
-      SAXParserFactory spFactory = catalogManager.useServicesMechanism() ?
-                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
-      spFactory.setNamespaceAware(true);
+      SAXParserFactory spf = JdkXmlUtils.getSAXFactory(catalogManager.overrideDefaultParser());
       try {
-        reader = spFactory.newSAXParser().getXMLReader();
+        reader = spf.newSAXParser().getXMLReader();
       }
       catch (ParserConfigurationException ex) {
         throw new TransformerException(ex);

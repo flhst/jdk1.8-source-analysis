@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -197,6 +199,97 @@ public class SerializerMessages_pt_BR extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Advert\u00EAncia: a codifica\u00E7\u00E3o ''{0}'' n\u00E3o \u00E9 suportada pelo Java runtime." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "O par\u00E2metro ''{0}'' n\u00E3o \u00E9 reconhecido."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "O par\u00E2metro ''{0}'' \u00E9 reconhecido, mas o valor solicitado n\u00E3o pode ser definido."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "A string resultante \u00E9 muito longa para se ajustar a uma DOMString: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "O tipo de valor do nome deste par\u00E2metro \u00E9 incompat\u00EDvel com o tipo de valor esperado."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "O destino da sa\u00EDda dos dados a serem gravados era nulo."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "Uma codifica\u00E7\u00E3o n\u00E3o suportada foi encontrada."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "N\u00E3o foi poss\u00EDvel serializar o n\u00F3."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "A Se\u00E7\u00E3o CDATA cont\u00E9m um ou mais marcadores de t\u00E9rmino ']]>'."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "N\u00E3o foi poss\u00EDvel criar uma inst\u00E2ncia do verificador de Formato Correto. O par\u00E2metro formatado corretamente foi definido como verdadeiro, mas a verifica\u00E7\u00E3o de formato correto n\u00E3o pode ser executada."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "O n\u00F3 ''{0}'' cont\u00E9m caracteres XML inv\u00E1lidos."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x{0}) foi encontrado no coment\u00E1rio."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x{0}) foi encontrado nos dados da instru\u00E7\u00E3o de processamento."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x {0}) foi encontrado no conte\u00FAdo da Se\u00E7\u00E3o CDATA."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "Um caractere XML inv\u00E1lido (Unicode: 0x {0}) foi encontrado no conte\u00FAdo dos dados de caracteres do n\u00F3."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "Um ou mais caracteres XML inv\u00E1lidos foram encontrados no n\u00F3 {0} chamado ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "A string \"--\" n\u00E3o \u00E9 permitida nos coment\u00E1rios."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "O valor do atributo \"{1}\" associado a um tipo de elemento \"{0}\" n\u00E3o deve conter o caractere ''<''."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "A refer\u00EAncia da entidade n\u00E3o submetida a parsing \"&{0};\" n\u00E3o \u00E9 permitida."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "A refer\u00EAncia da entidade externa \"&{0};\" n\u00E3o \u00E9 permitida em um valor do atributo."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "O prefixo \"{0}\" n\u00E3o pode ser vinculado ao namespace \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "O nome local do elemento \"{0}\" \u00E9 nulo."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "O nome local do atributo \"{0}\" \u00E9 nulo."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "O texto de substitui\u00E7\u00E3o do n\u00F3 \"{0}\" de entidade cont\u00E9m um n\u00F3 \"{1}\" de elemento com um prefixo desvinculado \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "O texto de substitui\u00E7\u00E3o do n\u00F3 \"{0}\" de entidade cont\u00E9m um n\u00F3 \"{1}\" de atributo com um prefixo desvinculado \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Ocorreu um erro ao gravar o subconjunto interno."
+             },
 
         };
 

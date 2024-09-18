@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -30,6 +30,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
+
+import jdk.internal.event.EventHelper;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
@@ -42,6 +44,9 @@ import sun.security.jca.*;
  * <p>The default values of security properties are read from an
  * implementation-specific location, which is typically the properties file
  * {@code lib/security/java.security} in the Java installation directory.
+ *
+ * @implNote If the properties file fails to load, the JDK implementation will
+ * throw an unspecified error when initializing the {@code Security} class.
  *
  * @author Benjamin Renaud
  */
@@ -76,130 +81,83 @@ public final class Security {
 
     private static void initialize() {
         props = new Properties();
-        boolean loadedProps = false;
         boolean overrideAll = false;
 
         // first load the system properties file
         // to determine the value of security.overridePropertiesFile
         File propFile = securityPropFile("java.security");
-        if (propFile.exists()) {
-            InputStream is = null;
-            try {
-                FileInputStream fis = new FileInputStream(propFile);
-                is = new BufferedInputStream(fis);
-                props.load(is);
-                loadedProps = true;
-
-                if (sdebug != null) {
-                    sdebug.println("reading security properties file: " +
-                                propFile);
-                }
-            } catch (IOException e) {
-                if (sdebug != null) {
-                    sdebug.println("unable to load security properties from " +
-                                propFile);
-                    e.printStackTrace();
-                }
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (IOException ioe) {
-                        if (sdebug != null) {
-                            sdebug.println("unable to close input stream");
-                        }
-                    }
-                }
-            }
+        boolean success = loadProps(propFile, null, false);
+        if (!success) {
+            throw new InternalError("Error loading java.security file");
         }
 
         if ("true".equalsIgnoreCase(props.getProperty
                 ("security.overridePropertiesFile"))) {
 
             String extraPropFile = System.getProperty
-                                        ("java.security.properties");
+                    ("java.security.properties");
             if (extraPropFile != null && extraPropFile.startsWith("=")) {
                 overrideAll = true;
                 extraPropFile = extraPropFile.substring(1);
             }
-
-            if (overrideAll) {
-                props = new Properties();
-                if (sdebug != null) {
-                    sdebug.println
-                        ("overriding other security properties files!");
-                }
-            }
-
-            // now load the user-specified file so its values
-            // will win if they conflict with the earlier values
-            if (extraPropFile != null) {
-                BufferedInputStream bis = null;
-                try {
-                    URL propURL;
-
-                    extraPropFile = PropertyExpander.expand(extraPropFile);
-                    propFile = new File(extraPropFile);
-                    if (propFile.exists()) {
-                        propURL = new URL
-                                ("file:" + propFile.getCanonicalPath());
-                    } else {
-                        propURL = new URL(extraPropFile);
-                    }
-                    bis = new BufferedInputStream(propURL.openStream());
-                    props.load(bis);
-                    loadedProps = true;
-
-                    if (sdebug != null) {
-                        sdebug.println("reading security properties file: " +
-                                        propURL);
-                        if (overrideAll) {
-                            sdebug.println
-                                ("overriding other security properties files!");
-                        }
-                    }
-                } catch (Exception e) {
-                    if (sdebug != null) {
-                        sdebug.println
-                                ("unable to load security properties from " +
-                                extraPropFile);
-                        e.printStackTrace();
-                    }
-                } finally {
-                    if (bis != null) {
-                        try {
-                            bis.close();
-                        } catch (IOException ioe) {
-                            if (sdebug != null) {
-                                sdebug.println("unable to close input stream");
-                            }
-                        }
-                    }
-                }
-            }
+            loadProps(null, extraPropFile, overrideAll);
         }
-
-        if (!loadedProps) {
-            initializeStatic();
-            if (sdebug != null) {
-                sdebug.println("unable to load security properties " +
-                        "-- using defaults");
-            }
-        }
-
     }
 
-    /*
-     * Initialize to default values, if <java.home>/lib/java.security
-     * is not found.
-     */
-    private static void initializeStatic() {
-        props.put("security.provider.1", "sun.security.provider.Sun");
-        props.put("security.provider.2", "sun.security.rsa.SunRsaSign");
-        props.put("security.provider.3", "com.sun.net.ssl.internal.ssl.Provider");
-        props.put("security.provider.4", "com.sun.crypto.provider.SunJCE");
-        props.put("security.provider.5", "sun.security.jgss.SunProvider");
-        props.put("security.provider.6", "com.sun.security.sasl.Provider");
+    private static boolean loadProps(File masterFile, String extraPropFile, boolean overrideAll) {
+        InputStream is = null;
+        try {
+            if (masterFile != null && masterFile.exists()) {
+                is = new FileInputStream(masterFile);
+            } else if (extraPropFile != null) {
+                extraPropFile = PropertyExpander.expand(extraPropFile);
+                File propFile = new File(extraPropFile);
+                URL propURL;
+                if (propFile.exists()) {
+                    propURL = new URL
+                            ("file:" + propFile.getCanonicalPath());
+                } else {
+                    propURL = new URL(extraPropFile);
+                }
+
+                is = propURL.openStream();
+                if (overrideAll) {
+                    props = new Properties();
+                    if (sdebug != null) {
+                        sdebug.println
+                                ("overriding other security properties files!");
+                    }
+                }
+            } else {
+                // unexpected
+                return false;
+            }
+            props.load(is);
+            if (sdebug != null) {
+                // ExceptionInInitializerError if masterFile.getName() is
+                // called here (NPE!). Leave as is (and few lines down)
+                sdebug.println("reading security properties file: " +
+                        masterFile == null ? extraPropFile : "java.security");
+            }
+            return true;
+        } catch (IOException | PropertyExpander.ExpandException e) {
+            if (sdebug != null) {
+                sdebug.println("unable to load security properties from " +
+                        masterFile == null ? extraPropFile : "java.security");
+                e.printStackTrace();
+            }
+            return false;
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ioe) {
+                    if (sdebug != null) {
+                        sdebug.println("unable to close input stream");
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -644,7 +602,7 @@ public final class Security {
             }
         }
 
-        if ((candidates == null) || (candidates.isEmpty()))
+        if (candidates == null || candidates.isEmpty())
             return null;
 
         Object[] candidatesArray = candidates.toArray();
@@ -792,6 +750,11 @@ public final class Security {
         check("setProperty."+key);
         props.put(key, datum);
         invalidateSMCache(key);  /* See below. */
+
+        // JFR code instrumentation may occur here
+        if (EventHelper.isLoggingSecurity()) {
+            EventHelper.logSecurityPropertyEvent(key, datum);
+        }
     }
 
     /*
@@ -1027,11 +990,11 @@ public final class Security {
         String algName = null;
         String attrName = null;
 
-        if (filterValue.length() == 0) {
+        if (filterValue.isEmpty()) {
             // The filterValue is an empty string. So the filterKey
             // should be in the format of <crypto_service>.<algorithm_or_type>.
             algName = filterKey.substring(algIndex + 1).trim();
-            if (algName.length() == 0) {
+            if (algName.isEmpty()) {
                 // There must be a algorithm or type name.
                 throw new InvalidParameterException("Invalid filter");
             }
@@ -1046,7 +1009,7 @@ public final class Security {
                 throw new InvalidParameterException("Invalid filter");
             } else {
                 attrName = filterKey.substring(attrIndex + 1).trim();
-                if (attrName.length() == 0) {
+                if (attrName.isEmpty()) {
                     // There is no attribute name in the filter.
                     throw new InvalidParameterException("Invalid filter");
                 }
@@ -1092,7 +1055,7 @@ public final class Security {
      **/
     public static Set<String> getAlgorithms(String serviceName) {
 
-        if ((serviceName == null) || (serviceName.length() == 0) ||
+        if ((serviceName == null) || (serviceName.isEmpty()) ||
             (serviceName.endsWith("."))) {
             return Collections.emptySet();
         }

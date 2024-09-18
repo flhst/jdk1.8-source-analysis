@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -911,6 +911,10 @@ public class GIFImageReader extends ImageReader {
         try {
             // Read and decode the image data, fill in theImage
             this.initCodeSize = stream.readUnsignedByte();
+            // GIF allows max 8 bpp, so anything larger is bogus for the roots.
+            if (this.initCodeSize < 1 || this.initCodeSize > 8) {
+                throw new IIOException("Bad code size:" + this.initCodeSize);
+            }
 
             // Read first data block
             this.blockLength = stream.readUnsignedByte();
@@ -933,7 +937,8 @@ public class GIFImageReader extends ImageReader {
             this.clearCode = 1 << initCodeSize;
             this.eofCode = clearCode + 1;
 
-            int code, oldCode = 0;
+            final int NULL_CODE = -1;
+            int code, oldCode = NULL_CODE;
 
             int[] prefix = new int[4096];
             byte[] suffix = new byte[4096];
@@ -956,6 +961,7 @@ public class GIFImageReader extends ImageReader {
                     codeMask = (1 << codeSize) - 1;
 
                     code = getCode(codeSize, codeMask);
+                    oldCode = NULL_CODE;
                     if (code == eofCode) {
                         // Inform IIOReadProgressListeners of end of image
                         processImageComplete();
@@ -978,19 +984,21 @@ public class GIFImageReader extends ImageReader {
                         }
                     }
 
-                    int ti = tableIndex;
-                    int oc = oldCode;
+                    if (NULL_CODE != oldCode && tableIndex < 4096) {
+                        int ti = tableIndex;
+                        int oc = oldCode;
 
-                    prefix[ti] = oc;
-                    suffix[ti] = initial[newSuffixIndex];
-                    initial[ti] = initial[oc];
-                    length[ti] = length[oc] + 1;
+                        prefix[ti] = oc;
+                        suffix[ti] = initial[newSuffixIndex];
+                        initial[ti] = initial[oc];
+                        length[ti] = length[oc] + 1;
 
-                    ++tableIndex;
-                    if ((tableIndex == (1 << codeSize)) &&
-                        (tableIndex < 4096)) {
-                        ++codeSize;
-                        codeMask = (1 << codeSize) - 1;
+                        ++tableIndex;
+                        if ((tableIndex == (1 << codeSize)) &&
+                            (tableIndex < 4096)) {
+                            ++codeSize;
+                            codeMask = (1 << codeSize) - 1;
+                        }
                     }
                 }
 
@@ -1009,7 +1017,6 @@ public class GIFImageReader extends ImageReader {
             processReadAborted();
             return theImage;
         } catch (IOException e) {
-            e.printStackTrace();
             throw new IIOException("I/O error reading image!", e);
         }
     }

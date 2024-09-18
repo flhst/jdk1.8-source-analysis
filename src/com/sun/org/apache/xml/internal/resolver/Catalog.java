@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,10 +17,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// Catalog.java - Represents OASIS Open Catalog files.
+
 package com.sun.org.apache.xml.internal.resolver;
 
-import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xml.internal.resolver.helpers.FileURL;
 import com.sun.org.apache.xml.internal.resolver.helpers.PublicId;
@@ -38,9 +37,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 import javax.xml.parsers.SAXParserFactory;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  * Represents OASIS Open Catalog files.
@@ -148,8 +149,6 @@ import javax.xml.parsers.SAXParserFactory;
  *
  * <p>Additional catalogs may also be loaded with the
  * {@link #parseCatalog} method.</p>
- * </dd>
- * </dl>
  *
  * <p><b>Change Log:</b></p>
  * <dl>
@@ -395,9 +394,7 @@ public class Catalog {
    * Setup readers.
    */
   public void setupReaders() {
-    SAXParserFactory spf = catalogManager.useServicesMechanism() ?
-                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
-    spf.setNamespaceAware(true);
+    SAXParserFactory spf = JdkXmlUtils.getSAXFactory(catalogManager.overrideDefaultParser());
     spf.setValidating(false);
 
     SAXCatalogReader saxReader = new SAXCatalogReader(spf);
@@ -2102,66 +2099,113 @@ public class Catalog {
     }
   }
 
-  /**
-   * Perform character normalization on a URI reference.
-   *
-   * @param uriref The URI reference
-   * @return The normalized URI reference.
-   */
-  protected String normalizeURI(String uriref) {
-    if (uriref == null) {
-      return null;
+
+    /**
+     * Perform character normalization on a URI reference.
+     *
+     * @param uriref The URI reference
+     * @return The normalized URI reference.
+     */
+    protected String normalizeURI(String uriref) {
+        if (uriref == null) {
+            return null;
+        }
+        final int length = uriref.length();
+        for (int i = 0; i < length; ++i) {
+            char c = uriref.charAt(i);
+            if ((c <= 0x20)    // ctrl
+                    || (c > 0x7F)  // high ascii
+                    || (c == 0x22) // "
+                    || (c == 0x3C) // <
+                    || (c == 0x3E) // >
+                    || (c == 0x5C) // \
+                    || (c == 0x5E) // ^
+                    || (c == 0x60) // `
+                    || (c == 0x7B) // {
+                    || (c == 0x7C) // |
+                    || (c == 0x7D) // }
+                    || (c == 0x7F)) {
+                return normalizeURI(uriref, i);
+            }
+        }
+        return uriref;
     }
 
-    byte[] bytes;
-    try {
-      bytes = uriref.getBytes("UTF-8");
-    } catch (UnsupportedEncodingException uee) {
-      // this can't happen
-      catalogManager.debug.message(1, "UTF-8 is an unsupported encoding!?");
-      return uriref;
+    /**
+     * Perform character normalization on a URI reference.
+     *
+     * @param uriref The URI reference
+     * @param index The index of the first character which requires escaping.
+     * @return The normalized URI reference.
+     */
+    private String normalizeURI(String uriref, int index) {
+        final StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < index; ++i) {
+            buffer.append(uriref.charAt(i));
+        }
+        final byte[] bytes;
+        try {
+            bytes = uriref.substring(index).getBytes("UTF-8");
+        }
+        catch (UnsupportedEncodingException uee) {
+            // this can't happen
+            catalogManager.debug.message(1, "UTF-8 is an unsupported encoding!?");
+            return uriref;
+        }
+        for (int count = 0; count < bytes.length; ++count) {
+            int ch = bytes[count] & 0xFF;
+            if ((ch <= 0x20)    // ctrl
+                    || (ch > 0x7F)  // high ascii
+                    || (ch == 0x22) // "
+                    || (ch == 0x3C) // <
+                    || (ch == 0x3E) // >
+                    || (ch == 0x5C) // \
+                    || (ch == 0x5E) // ^
+                    || (ch == 0x60) // `
+                    || (ch == 0x7B) // {
+                    || (ch == 0x7C) // |
+                    || (ch == 0x7D) // }
+                    || (ch == 0x7F)) {
+                writeEncodedByte(ch, buffer);
+            }
+            else {
+                buffer.append((char) bytes[count]);
+            }
+        }
+        return buffer.toString();
     }
 
-    StringBuilder newRef = new StringBuilder(bytes.length);
-    for (int count = 0; count < bytes.length; count++) {
-      int ch = bytes[count] & 0xFF;
-
-      if ((ch <= 0x20)    // ctrl
-          || (ch > 0x7F)  // high ascii
-          || (ch == 0x22) // "
-          || (ch == 0x3C) // <
-          || (ch == 0x3E) // >
-          || (ch == 0x5C) // \
-          || (ch == 0x5E) // ^
-          || (ch == 0x60) // `
-          || (ch == 0x7B) // {
-          || (ch == 0x7C) // |
-          || (ch == 0x7D) // }
-          || (ch == 0x7F)) {
-        newRef.append(encodedByte(ch));
-      } else {
-        newRef.append((char) bytes[count]);
-      }
+    /**
+     * Perform %-encoding on a single byte.
+     *
+     * @param b The 8-bit integer that represents the byte. (Bytes are signed
+     *          but encoding needs to look at the bytes unsigned.)
+     * @return The %-encoded string for the byte in question.
+     */
+    protected String encodedByte(int b) {
+        StringBuilder buffer = new StringBuilder(3);
+        writeEncodedByte(b, buffer);
+        return buffer.toString();
     }
 
-    return newRef.toString();
-  }
-
-  /**
-   * Perform %-encoding on a single byte.
-   *
-   * @param b The 8-bit integer that represents th byte. (Bytes are signed
-              but encoding needs to look at the bytes unsigned.)
-   * @return The %-encoded string for the byte in question.
-   */
-  protected String encodedByte (int b) {
-    String hex = Integer.toHexString(b).toUpperCase();
-    if (hex.length() < 2) {
-      return "%0" + hex;
-    } else {
-      return "%" + hex;
+    /**
+     * Perform %-encoding on a single byte.
+     *
+     * @param b The 8-bit integer that represents the byte. (Bytes are signed
+     *          but encoding needs to look at the bytes unsigned.)
+     * @param buffer The target for the %-encoded string for the byte in question.
+     */
+    private void writeEncodedByte(int b, StringBuilder buffer) {
+        String hex = Integer.toHexString(b).toUpperCase(Locale.ENGLISH);
+        if (hex.length() < 2) {
+            buffer.append("%0");
+            buffer.append(hex);
+        }
+        else {
+            buffer.append('%');
+            buffer.append(hex);
+        }
     }
-  }
 
   // -----------------------------------------------------------------
 

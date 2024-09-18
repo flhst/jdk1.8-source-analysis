@@ -1,109 +1,95 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.generic;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
-import com.sun.org.apache.bcel.internal.Constants;
+import com.sun.org.apache.bcel.internal.Const;
+
 /**
  * Super class for the family of arithmetic instructions.
- *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
  */
-public abstract class ArithmeticInstruction extends Instruction
-  implements TypedInstruction, StackProducer, StackConsumer {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  ArithmeticInstruction() {}
+public abstract class ArithmeticInstruction extends Instruction implements TypedInstruction, StackProducer, StackConsumer {
 
-  /**
-   * @param opcode of instruction
-   */
-  protected ArithmeticInstruction(short opcode) {
-    super(opcode, (short)1);
-  }
-
-  /** @return type associated with the instruction
-   */
-  public Type getType(ConstantPoolGen cp) {
-    switch(opcode) {
-    case Constants.DADD: case Constants.DDIV: case Constants.DMUL:
-    case Constants.DNEG: case Constants.DREM: case Constants.DSUB:
-      return Type.DOUBLE;
-
-    case Constants.FADD: case Constants.FDIV: case Constants.FMUL:
-    case Constants.FNEG: case Constants.FREM: case Constants.FSUB:
-      return Type.FLOAT;
-
-    case Constants.IADD: case Constants.IAND: case Constants.IDIV:
-    case Constants.IMUL: case Constants.INEG: case Constants.IOR: case Constants.IREM:
-    case Constants.ISHL: case Constants.ISHR: case Constants.ISUB:
-    case Constants.IUSHR: case Constants.IXOR:
-      return Type.INT;
-
-    case Constants.LADD: case Constants.LAND: case Constants.LDIV:
-    case Constants.LMUL: case Constants.LNEG: case Constants.LOR: case Constants.LREM:
-    case Constants.LSHL: case Constants.LSHR: case Constants.LSUB:
-    case Constants.LUSHR: case Constants.LXOR:
-      return Type.LONG;
-
-    default: // Never reached
-      throw new ClassGenException("Unknown type " + opcode);
+    /**
+     * Empty constructor needed for Instruction.readInstruction. Not to be used otherwise.
+     */
+    ArithmeticInstruction() {
     }
-  }
+
+    /**
+     * @param opcode of instruction
+     */
+    protected ArithmeticInstruction(final short opcode) {
+        super(opcode, (short) 1);
+    }
+
+    /**
+     * @return type associated with the instruction
+     */
+    @Override
+    public Type getType(final ConstantPoolGen cp) {
+        final short opcode = super.getOpcode();
+        switch (opcode) {
+        case Const.DADD:
+        case Const.DDIV:
+        case Const.DMUL:
+        case Const.DNEG:
+        case Const.DREM:
+        case Const.DSUB:
+            return Type.DOUBLE;
+        case Const.FADD:
+        case Const.FDIV:
+        case Const.FMUL:
+        case Const.FNEG:
+        case Const.FREM:
+        case Const.FSUB:
+            return Type.FLOAT;
+        case Const.IADD:
+        case Const.IAND:
+        case Const.IDIV:
+        case Const.IMUL:
+        case Const.INEG:
+        case Const.IOR:
+        case Const.IREM:
+        case Const.ISHL:
+        case Const.ISHR:
+        case Const.ISUB:
+        case Const.IUSHR:
+        case Const.IXOR:
+            return Type.INT;
+        case Const.LADD:
+        case Const.LAND:
+        case Const.LDIV:
+        case Const.LMUL:
+        case Const.LNEG:
+        case Const.LOR:
+        case Const.LREM:
+        case Const.LSHL:
+        case Const.LSHR:
+        case Const.LSUB:
+        case Const.LUSHR:
+        case Const.LXOR:
+            return Type.LONG;
+        default: // Never reached
+            throw new ClassGenException("Unknown type " + opcode);
+        }
+    }
 }

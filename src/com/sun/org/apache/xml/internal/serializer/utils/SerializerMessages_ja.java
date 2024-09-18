@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -197,6 +199,97 @@ public class SerializerMessages_ja extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "\u8B66\u544A:  \u30A8\u30F3\u30B3\u30FC\u30C7\u30A3\u30F3\u30B0''{0}''\u306F\u3001Java\u30E9\u30F3\u30BF\u30A4\u30E0\u3067\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002" },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "\u30D1\u30E9\u30E1\u30FC\u30BF''{0}''\u306F\u8A8D\u8B58\u3055\u308C\u307E\u305B\u3093\u3002"},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "\u30D1\u30E9\u30E1\u30FC\u30BF''{0}''\u306F\u8A8D\u8B58\u3055\u308C\u307E\u3059\u304C\u3001\u30EA\u30AF\u30A8\u30B9\u30C8\u3057\u305F\u5024\u306F\u8A2D\u5B9A\u3067\u304D\u307E\u305B\u3093\u3002"},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "\u7D50\u679C\u306E\u6587\u5B57\u5217\u306F\u9577\u3059\u304E\u308B\u305F\u3081\u3001DOMString\u306B\u53CE\u307E\u308A\u307E\u305B\u3093: ''{0}''\u3002"},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "\u3053\u306E\u30D1\u30E9\u30E1\u30FC\u30BF\u540D\u306E\u5024\u30BF\u30A4\u30D7\u306F\u3001\u4E88\u60F3\u3057\u305F\u5024\u30BF\u30A4\u30D7\u3068\u4E92\u63DB\u6027\u304C\u3042\u308A\u307E\u305B\u3093\u3002 "},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "\u66F8\u304D\u8FBC\u307E\u308C\u308B\u30C7\u30FC\u30BF\u306E\u51FA\u529B\u5148\u304Cnull\u306B\u306A\u3063\u3066\u3044\u307E\u3059\u3002"},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u306A\u3044\u30A8\u30F3\u30B3\u30FC\u30C7\u30A3\u30F3\u30B0\u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\u3002"},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "\u30CE\u30FC\u30C9\u3092\u30B7\u30EA\u30A2\u30E9\u30A4\u30BA\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "CDATA\u30BB\u30AF\u30B7\u30E7\u30F3\u306B1\u3064\u4EE5\u4E0A\u306E\u7D42\u4E86\u30DE\u30FC\u30AB\u30FC']]>'\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002"},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "\u6574\u5F62\u5F0F\u30C1\u30A7\u30C3\u30AB\u306E\u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u6574\u5F62\u5F0F\u30D1\u30E9\u30E1\u30FC\u30BF\u306Ftrue\u306B\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u3059\u304C\u3001\u6574\u5F62\u5F0F\u30C1\u30A7\u30C3\u30AF\u3092\u5B9F\u884C\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "\u30CE\u30FC\u30C9''{0}''\u306B\u7121\u52B9\u306AXML\u6587\u5B57\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002"
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "\u30B3\u30E1\u30F3\u30C8\u306B\u7121\u52B9\u306AXML\u6587\u5B57(Unicode: 0x{0})\u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\u3002"
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "\u51E6\u7406\u547D\u4EE4\u30C7\u30FC\u30BF\u306B\u7121\u52B9\u306AXML\u6587\u5B57(Unicode: 0x{0})\u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\u3002"
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "CDATASection\u306E\u30B3\u30F3\u30C6\u30F3\u30C4\u306B\u7121\u52B9\u306AXML\u6587\u5B57(Unicode: 0x{0})\u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\u3002"
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "\u30CE\u30FC\u30C9\u306E\u6587\u5B57\u30C7\u30FC\u30BF\u30FB\u30B3\u30F3\u30C6\u30F3\u30C4\u306B\u7121\u52B9\u306AXML\u6587\u5B57(Unicode: 0x{0})\u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\u3002"
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "''{1}''\u3068\u3044\u3046\u540D\u524D\u306E{0}\u30CE\u30FC\u30C9\u306B\u7121\u52B9\u306AXML\u6587\u5B57\u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\u3002"
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "\u30B3\u30E1\u30F3\u30C8\u5185\u3067\u306F\u6587\u5B57\u5217\"--\"\u306F\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "\u8981\u7D20\u30BF\u30A4\u30D7\"{0}\"\u306B\u95A2\u9023\u4ED8\u3051\u3089\u308C\u3066\u3044\u308B\u5C5E\u6027\"{1}\"\u306E\u5024\u306B\u306F\u3001''<''\u6587\u5B57\u3092\u542B\u3081\u308B\u3053\u3068\u306F\u3067\u304D\u307E\u305B\u3093\u3002"
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "\u672A\u89E3\u6790\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u53C2\u7167\"&{0};\"\u306F\u8A31\u53EF\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "\u5916\u90E8\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u53C2\u7167\"&{0};\"\u306F\u3001\u5C5E\u6027\u5024\u3067\u306F\u8A31\u53EF\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "\u63A5\u982D\u8F9E\"{0}\"\u306F\u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9\"{1}\"\u306B\u30D0\u30A4\u30F3\u30C9\u3067\u304D\u307E\u305B\u3093\u3002"
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "\u8981\u7D20\"{0}\"\u306E\u30ED\u30FC\u30AB\u30EB\u540D\u304Cnull\u3067\u3059\u3002"
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "\u5C5E\u6027\"{0}\"\u306E\u30ED\u30FC\u30AB\u30EB\u540D\u304Cnull\u3067\u3059\u3002"
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u30FB\u30CE\u30FC\u30C9\"{0}\"\u306E\u7F6E\u63DB\u30C6\u30AD\u30B9\u30C8\u306B\u306F\u3001\u30D0\u30A4\u30F3\u30C9\u3055\u308C\u3066\u3044\u306A\u3044\u63A5\u982D\u8F9E\"{2}\"\u3092\u6301\u3064\u8981\u7D20\u30CE\u30FC\u30C9\"{1}\"\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002"
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u30FB\u30CE\u30FC\u30C9\"{0}\"\u306E\u7F6E\u63DB\u30C6\u30AD\u30B9\u30C8\u306B\u306F\u3001\u30D0\u30A4\u30F3\u30C9\u3055\u308C\u3066\u3044\u306A\u3044\u63A5\u982D\u8F9E\"{2}\"\u3092\u6301\u3064\u5C5E\u6027\u30CE\u30FC\u30C9\"{1}\"\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002"
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "\u5185\u90E8\u30B5\u30D6\u30BB\u30C3\u30C8\u306E\u66F8\u8FBC\u307F\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"
+             },
 
         };
 

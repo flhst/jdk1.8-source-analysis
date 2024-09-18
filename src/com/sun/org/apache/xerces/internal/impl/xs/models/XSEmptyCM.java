@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -18,14 +18,14 @@
  * limitations under the License.
  */
 
+
 package com.sun.org.apache.xerces.internal.impl.xs.models;
 
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.impl.xs.SubstitutionGroupHandler;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaException;
-
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * XSEmptyCM is a derivative of the abstract content model base class that
@@ -48,7 +48,7 @@ public class XSEmptyCM  implements XSCMValidator {
     // start the content model: did not see any children
     private static final short STATE_START = 0;
 
-    private static final Vector EMPTY = new Vector(0);
+    private static final List<Object> EMPTY = new ArrayList<>(0);
 
     //
     // Data
@@ -127,10 +127,10 @@ public class XSEmptyCM  implements XSCMValidator {
      * have been seen.
      *
      * @param state  the current state
-     * @return       a Vector whose entries are instances of
+     * @return       a list whose entries are instances of
      *               either XSWildcardDecl or XSElementDecl.
      */
-    public Vector whatCanGoHere(int[] state) {
+    public List<Object> whatCanGoHere(int[] state) {
         return EMPTY;
     }
 
@@ -138,4 +138,15 @@ public class XSEmptyCM  implements XSCMValidator {
         return null;
     }
 
+    public int [] occurenceInfo(int[] state) {
+        return null;
+    }
+
+    public String getTermName(int termId) {
+        return null;
+    }
+
+    public boolean isCompactedForUPA() {
+        return false;
+    }
 } // class XSEmptyCM

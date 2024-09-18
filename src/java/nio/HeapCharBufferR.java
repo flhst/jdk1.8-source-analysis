@@ -95,12 +95,15 @@ class HeapCharBufferR
     }
 
     public CharBuffer slice() {
+        int pos = this.position();
+        int lim = this.limit();
+        int rem = (pos <= lim ? lim - pos : 0);
         return new HeapCharBufferR(hb,
                                         -1,
                                         0,
-                                        this.remaining(),
-                                        this.remaining(),
-                                        this.position() + offset);
+                                        rem,
+                                        rem,
+                                        pos + offset);
     }
 
     public CharBuffer duplicate() {
@@ -196,6 +199,8 @@ class HeapCharBufferR
     }
 
     public CharBuffer put(CharBuffer src) {
+
+
 
 
 

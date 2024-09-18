@@ -105,7 +105,7 @@ public final class FileSystems {
 
         // returns default provider
         private static FileSystemProvider getDefaultProvider() {
-            FileSystemProvider provider = sun.nio.fs.DefaultFileSystemProvider.create();
+            FileSystemProvider provider = sun.nio.fs.DefaultFileSystemProvider.instance();
 
             // if the property java.nio.file.spi.DefaultFileSystemProvider is
             // set then its value is the name of the default provider (or a list)

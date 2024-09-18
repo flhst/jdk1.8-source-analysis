@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -141,7 +141,7 @@ public final class HttpCookie implements Cloneable {
 
     private HttpCookie(String name, String value, String header) {
         name = name.trim();
-        if (name.length() == 0 || !isToken(name) || name.charAt(0) == '$') {
+        if (name.isEmpty() || !isToken(name) || name.charAt(0) == '$') {
             throw new IllegalArgumentException("Illegal cookie name");
         }
 

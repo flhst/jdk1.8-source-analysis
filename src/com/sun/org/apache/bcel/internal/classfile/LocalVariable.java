@@ -1,262 +1,282 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
- * This class represents a local variable within a method. It contains its
- * scope, name, signature and index on the method's frame.
+ * This class represents a local variable within a method. It contains its scope, name, signature and index on the
+ * method's frame. It is used both to represent an element of the LocalVariableTable as well as an element of the
+ * LocalVariableTypeTable. The nomenclature used here may be a bit confusing; while the two items have the same layout
+ * in a class file, a LocalVariableTable attribute contains a descriptor_index, not a signatureIndex. The
+ * LocalVariableTypeTable attribute does have a signatureIndex.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     LocalVariableTable
+ * @see com.sun.org.apache.bcel.internal.classfile.Utility for more details on the difference.
+ *
+ * @see LocalVariableTable
+ * @see LocalVariableTypeTable
+ * @LastModified: Feb 2023
  */
-public final class LocalVariable
-  implements Constants, Cloneable, Node, Serializable
-{
-  private int start_pc;        // Range in which the variable is valid
-  private int length;
-  private int name_index;      // Index in constant pool of variable name
-  private int signature_index; // Index of variable signature
-  private int index;            /* Variable is `index'th local variable on
-                                * this method's frame.
-                                */
+public final class LocalVariable implements Cloneable, Node {
 
-  private ConstantPool constant_pool;
+    static final LocalVariable[] EMPTY_ARRAY = {};
 
-  /**
-   * Initialize from another object. Note that both objects use the same
-   * references (shallow copy). Use copy() for a physical copy.
-   */
-  public LocalVariable(LocalVariable c) {
-    this(c.getStartPC(), c.getLength(), c.getNameIndex(),
-         c.getSignatureIndex(), c.getIndex(), c.getConstantPool());
-  }
+    /** Range in which the variable is valid. */
+    private int startPc;
 
-  /**
-   * Construct object from file stream.
-   * @param file Input stream
-   * @throws IOException
-   */
-  LocalVariable(DataInputStream file, ConstantPool constant_pool)
-       throws IOException
-  {
-    this(file.readUnsignedShort(), file.readUnsignedShort(),
-         file.readUnsignedShort(), file.readUnsignedShort(),
-         file.readUnsignedShort(), constant_pool);
-  }
+    private int length;
 
-  /**
-   * @param start_pc Range in which the variable
-   * @param length ... is valid
-   * @param name_index Index in constant pool of variable name
-   * @param signature_index Index of variable's signature
-   * @param index Variable is `index'th local variable on the method's frame
-   * @param constant_pool Array of constants
-   */
-  public LocalVariable(int start_pc, int length, int name_index,
-                       int signature_index, int index,
-                       ConstantPool constant_pool)
-  {
-    this.start_pc        = start_pc;
-    this.length          = length;
-    this.name_index      = name_index;
-    this.signature_index = signature_index;
-    this.index           = index;
-    this.constant_pool   = constant_pool;
-  }
+    /** Index in constant pool of variable name. */
+    private int nameIndex;
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitLocalVariable(this);
-  }
+    /**
+     * Technically, a decscriptor_index for a local variable table entry and a signatureIndex for a local variable type table entry. Index of variable signature
+     */
+    private int signatureIndex;
 
-  /**
-   * Dump local variable to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeShort(start_pc);
-    file.writeShort(length);
-    file.writeShort(name_index);
-    file.writeShort(signature_index);
-    file.writeShort(index);
-  }
+    /*
+     * Variable is index'th local variable on this method's frame.
+     */
+    private int index;
 
-  /**
-   * @return Constant pool used by this object.
-   */
-  public final ConstantPool getConstantPool() { return constant_pool; }
+    private ConstantPool constantPool;
 
-  /**
-   * @return Variable is valid within getStartPC() .. getStartPC()+getLength()
-   */
-  public final int getLength()         { return length; }
+    /** Never changes; used to match up with LocalVariableTypeTable entries. */
+    private final int origIndex;
 
-  /**
-   * @return Variable name.
-   */
-  public final String getName() {
-    ConstantUtf8  c;
+    /**
+     * Constructs object from file stream.
+     *
+     * @param file Input stream
+     * @throws IOException if an I/O error occurs.
+     */
+    LocalVariable(final DataInput file, final ConstantPool constantPool) throws IOException {
+        this(file.readUnsignedShort(), file.readUnsignedShort(), file.readUnsignedShort(), file.readUnsignedShort(), file.readUnsignedShort(), constantPool);
+    }
 
-    c = (ConstantUtf8)constant_pool.getConstant(name_index, CONSTANT_Utf8);
-    return c.getBytes();
-  }
+    /**
+     * @param startPc Range in which the variable
+     * @param length ... is valid
+     * @param nameIndex Index in constant pool of variable name
+     * @param signatureIndex Index of variable's signature
+     * @param index Variable is 'index'th local variable on the method's frame
+     * @param constantPool Array of constants
+     */
+    public LocalVariable(final int startPc, final int length, final int nameIndex, final int signatureIndex, final int index, final ConstantPool constantPool) {
+        this(startPc, length, nameIndex, signatureIndex, index, constantPool, index);
+    }
 
-  /**
-   * @return Index in constant pool of variable name.
-   */
-  public final int getNameIndex()      { return name_index; }
+    /**
+     * @param startPc Range in which the variable
+     * @param length ... is valid
+     * @param nameIndex Index in constant pool of variable name
+     * @param signatureIndex Index of variable's signature
+     * @param index Variable is 'index'th local variable on the method's frame
+     * @param constantPool Array of constants
+     * @param origIndex Variable is 'index'th local variable on the method's frame prior to any changes
+     */
+    public LocalVariable(final int startPc, final int length, final int nameIndex, final int signatureIndex, final int index, final ConstantPool constantPool,
+        final int origIndex) {
+        this.startPc = Args.requireU2(startPc, "startPc");
+        this.length = Args.requireU2(length, "length");
+        this.nameIndex = Args.requireU2(nameIndex, "nameIndex");
+        this.signatureIndex = Args.requireU2(signatureIndex, "signatureIndex");
+        this.index = Args.requireU2(index, "index");
+        this.origIndex = Args.requireU2(origIndex, "origIndex");
+        this.constantPool = constantPool;
+    }
 
-  /**
-   * @return Signature.
-   */
-  public final String getSignature() {
-    ConstantUtf8  c;
-    c = (ConstantUtf8)constant_pool.getConstant(signature_index,
-                                                CONSTANT_Utf8);
-    return c.getBytes();
-  }
+    /**
+     * Initializes from another LocalVariable. Note that both objects use the same references (shallow copy). Use copy() for
+     * a physical copy.
+     *
+     * @param localVariable Another LocalVariable.
+     */
+    public LocalVariable(final LocalVariable localVariable) {
+        this(localVariable.getStartPC(), localVariable.getLength(), localVariable.getNameIndex(), localVariable.getSignatureIndex(), localVariable.getIndex(),
+            localVariable.getConstantPool());
+    }
 
-  /**
-   * @return Index in constant pool of variable signature.
-   */
-  public final int getSignatureIndex() { return signature_index; }
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitLocalVariable(this);
+    }
 
-  /**
-   * @return index of register where variable is stored
-   */
-  public final int getIndex()           { return index; }
+    /**
+     * @return deep copy of this object
+     */
+    public LocalVariable copy() {
+        try {
+            return (LocalVariable) clone();
+        } catch (final CloneNotSupportedException e) {
+            // TODO should this throw?
+        }
+        return null;
+    }
 
-  /**
-   * @return Start of range where he variable is valid
-   */
-  public final int getStartPC()        { return start_pc; }
+    /**
+     * Dumps local variable to file stream in binary format.
+     *
+     * @param dataOutputStream Output file stream
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
+     */
+    public void dump(final DataOutputStream dataOutputStream) throws IOException {
+        dataOutputStream.writeShort(startPc);
+        dataOutputStream.writeShort(length);
+        dataOutputStream.writeShort(nameIndex);
+        dataOutputStream.writeShort(signatureIndex);
+        dataOutputStream.writeShort(index);
+    }
 
-  /**
-   * @param constant_pool Constant pool to be used for this object.
-   */
-  public final void setConstantPool(ConstantPool constant_pool) {
-    this.constant_pool = constant_pool;
-  }
+    /**
+     * @return Constant pool used by this object.
+     */
+    public ConstantPool getConstantPool() {
+        return constantPool;
+    }
 
-  /**
-   * @param length.
-   */
-  public final void setLength(int length) {
-    this.length = length;
-  }
+    /**
+     * @return index of register where variable is stored
+     */
+    public int getIndex() {
+        return index;
+    }
 
-  /**
-   * @param name_index.
-   */
-  public final void setNameIndex(int name_index) {
-    this.name_index = name_index;
-  }
+    /**
+     * @return Variable is valid within getStartPC() .. getStartPC()+getLength()
+     */
+    public int getLength() {
+        return length;
+    }
 
-  /**
-   * @param signature_index.
-   */
-  public final void setSignatureIndex(int signature_index) {
-    this.signature_index = signature_index;
-  }
+    /**
+     * @return Variable name.
+     */
+    public String getName() {
+        return constantPool.getConstantUtf8(nameIndex).getBytes();
+    }
 
-  /**
-   * @param index.
-   */
-  public final void setIndex(int index) { this.index = index; }
+    /**
+     * @return Index in constant pool of variable name.
+     */
+    public int getNameIndex() {
+        return nameIndex;
+    }
 
-  /**
-   * @param start_pc Specify range where the local variable is valid.
-   */
-  public final void setStartPC(int start_pc) {
-    this.start_pc = start_pc;
-  }
+    /**
+     * @return index of register where variable was originally stored
+     */
+    public int getOrigIndex() {
+        return origIndex;
+    }
 
-  /**
-   * @return string representation.
-   */
-  public final String toString() {
-    String name = getName(), signature = Utility.signatureToString(getSignature());
+    /**
+     * @return Signature.
+     */
+    public String getSignature() {
+        return constantPool.getConstantUtf8(signatureIndex).getBytes();
+    }
 
-    return "LocalVariable(start_pc = " + start_pc + ", length = " + length +
-      ", index = " + index + ":" + signature + " " + name + ")";
-  }
+    /**
+     * @return Index in constant pool of variable signature.
+     */
+    public int getSignatureIndex() {
+        return signatureIndex;
+    }
 
-  /**
-   * @return deep copy of this object
-   */
-  public LocalVariable copy() {
-    try {
-      return (LocalVariable)clone();
-    } catch(CloneNotSupportedException e) {}
+    /**
+     * @return Start of range where the variable is valid
+     */
+    public int getStartPC() {
+        return startPc;
+    }
 
-    return null;
-  }
+    /**
+     * @param constantPool Constant pool to be used for this object.
+     */
+    public void setConstantPool(final ConstantPool constantPool) {
+        this.constantPool = constantPool;
+    }
+
+    /**
+     * @param index the index in the local variable table of this variable
+     */
+    public void setIndex(final int index) { // TODO unused
+        this.index = index;
+    }
+
+    /**
+     * @param length the length of this local variable
+     */
+    public void setLength(final int length) {
+        this.length = length;
+    }
+
+    /**
+     * @param nameIndex the index into the constant pool for the name of this variable
+     */
+    public void setNameIndex(final int nameIndex) { // TODO unused
+        this.nameIndex = nameIndex;
+    }
+
+    /**
+     * @param signatureIndex the index into the constant pool for the signature of this variable
+     */
+    public void setSignatureIndex(final int signatureIndex) { // TODO unused
+        this.signatureIndex = signatureIndex;
+    }
+
+    /**
+     * @param startPc Specify range where the local variable is valid.
+     */
+    public void setStartPC(final int startPc) { // TODO unused
+        this.startPc = startPc;
+    }
+
+    /**
+     * @return string representation.
+     */
+    @Override
+    public String toString() {
+        return toStringShared(false);
+    }
+
+    /*
+     * Helper method shared with LocalVariableTypeTable
+     */
+    String toStringShared(final boolean typeTable) {
+        final String name = getName();
+        final String signature = Utility.signatureToString(getSignature(), false);
+        final String label = "LocalVariable" + (typeTable ? "Types" : "");
+        return label + "(startPc = " + startPc + ", length = " + length + ", index = " + index + ":" + signature + " " + name + ")";
+    }
 }

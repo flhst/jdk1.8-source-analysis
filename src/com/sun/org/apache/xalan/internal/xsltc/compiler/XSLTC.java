@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,18 +17,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XSLTC.java,v 1.2.4.1 2005/09/05 09:51:38 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager.Feature;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.dtm.DTM;
@@ -39,6 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -50,6 +45,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.JdkXmlFeatures;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -101,7 +98,6 @@ public final class XSLTC {
     private Vector m_characterData;
 
     // These define the various methods for outputting the translet
-    public static final int FILE_OUTPUT        = 0;
     public static final int JAR_OUTPUT         = 1;
     public static final int BYTEARRAY_OUTPUT   = 2;
     public static final int CLASSLOADER_OUTPUT = 3;
@@ -115,7 +111,7 @@ public final class XSLTC {
     private String  _className = null;   // -o <class-name>
     private String  _packageName = null; // -p <package-name>
     private File    _destDir = null;     // -d <directory-name>
-    private int     _outputType = FILE_OUTPUT; // by default
+    private int     _outputType = BYTEARRAY_OUTPUT; // by default
 
     private Vector  _classes;
     private Vector  _bcelClasses;
@@ -136,7 +132,7 @@ public final class XSLTC {
      */
     private boolean _isSecureProcessing = false;
 
-    private boolean _useServicesMechanism = true;
+    private boolean _overrideDefaultParser;
 
     /**
      * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
@@ -149,7 +145,7 @@ public final class XSLTC {
 
     private XMLSecurityManager _xmlSecurityManager;
 
-    private final FeatureManager _featureManager;
+    private final JdkXmlFeatures _xmlFeatures;
 
     /**
     *  Extension function class loader variables
@@ -166,9 +162,11 @@ public final class XSLTC {
     /**
      * XSLTC compiler constructor
      */
-    public XSLTC(boolean useServicesMechanism, FeatureManager featureManager) {
-        _parser = new Parser(this, useServicesMechanism);
-        _featureManager = featureManager;
+    public XSLTC(JdkXmlFeatures featureManager) {
+        _overrideDefaultParser = featureManager.getFeature(
+                JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
+        _parser = new Parser(this, _overrideDefaultParser);
+        _xmlFeatures = featureManager;
         _extensionClassLoader = null;
         _externalExtensionFunctions = new HashMap<>();
     }
@@ -186,27 +184,14 @@ public final class XSLTC {
     public boolean isSecureProcessing() {
         return _isSecureProcessing;
     }
-    /**
-     * Return the state of the services mechanism feature.
-     */
-    public boolean useServicesMechnism() {
-        return _useServicesMechanism;
-    }
-
-    /**
-     * Set the state of the services mechanism feature.
-     */
-    public void setServicesMechnism(boolean flag) {
-        _useServicesMechanism = flag;
-    }
 
      /**
      * Return the value of the specified feature
      * @param name name of the feature
      * @return true if the feature is enabled, false otherwise
      */
-    public boolean getFeature(Feature name) {
-        return _featureManager.isFeatureEnabled(name);
+    public boolean getFeature(JdkXmlFeatures.XmlFeature name) {
+        return _xmlFeatures.getFeature(name);
     }
 
     /**
@@ -283,7 +268,7 @@ public final class XSLTC {
     }
 
     /*
-     * Function loads an external extension functions.
+     * Function loads an external extension function.
      * The filtering of function types (external,internal) takes place in FunctionCall class
      *
      */
@@ -319,7 +304,7 @@ public final class XSLTC {
         _elements       = new HashMap<>();
         _attributes     = new HashMap<>();
         _namespaces     = new HashMap<>();
-        _namespaces.put("",new Integer(_nextNSType));
+        _namespaces.put("", _nextNSType);
         _namesIndex     = new Vector(128);
         _namespaceIndex = new Vector(32);
         _namespacePrefixes = new HashMap<>();
@@ -495,7 +480,10 @@ public final class XSLTC {
             }
         }
         catch (Exception e) {
-            /*if (_debug)*/ e.printStackTrace();
+            if (_debug) e.printStackTrace();
+            if (ErrorMsg.XPATH_LIMIT.equals(e.getMessage())) {
+                return !_parser.errorsFound();
+            }
             _parser.reportError(Constants.FATAL, new ErrorMsg(ErrorMsg.JAXP_COMPILE_ERR, e));
         }
         catch (Error e) {
@@ -598,18 +586,18 @@ public final class XSLTC {
     }
 
     /**
-     * Get a Vector containing all compile error messages
-     * @return A Vector containing all compile error messages
+     * Get a list of all compile error messages
+     * @return A List containing all compile error messages
      */
-    public Vector getErrors() {
+    public ArrayList<ErrorMsg> getErrors() {
         return _parser.getErrors();
     }
 
     /**
-     * Get a Vector containing all compile warning messages
-     * @return A Vector containing all compile error messages
+     * Get a list of all compile warning messages
+     * @return A List containing all compile error messages
      */
-    public Vector getWarnings() {
+    public ArrayList<ErrorMsg> getWarnings() {
         return _parser.getWarnings();
     }
 
@@ -829,7 +817,7 @@ public final class XSLTC {
             _namespaces.put(namespaceURI,code);
             _namespaceIndex.addElement(namespaceURI);
         }
-        return code.intValue();
+        return code;
     }
 
     public int nextModeSerial() {
@@ -874,8 +862,7 @@ public final class XSLTC {
 
     public void dumpClass(JavaClass clazz) {
 
-        if (_outputType == FILE_OUTPUT ||
-            _outputType == BYTEARRAY_AND_FILE_OUTPUT)
+        if (_outputType == BYTEARRAY_AND_FILE_OUTPUT)
         {
             File outFile = getOutputFile(clazz.getClassName());
             String parentDir = outFile.getParent();
@@ -888,12 +875,6 @@ public final class XSLTC {
 
         try {
             switch (_outputType) {
-            case FILE_OUTPUT:
-                clazz.dump(
-                    new BufferedOutputStream(
-                        new FileOutputStream(
-                            getOutputFile(clazz.getClassName()))));
-                break;
             case JAR_OUTPUT:
                 _bcelClasses.addElement(clazz);
                 break;
@@ -906,8 +887,7 @@ public final class XSLTC {
                 _classes.addElement(out.toByteArray());
 
                 if (_outputType == BYTEARRAY_AND_FILE_OUTPUT)
-                  clazz.dump(new BufferedOutputStream(
-                        new FileOutputStream(getOutputFile(clazz.getClassName()))));
+                  clazz.dump(getOutputFile(clazz.getClassName()));
                 else if (_outputType == BYTEARRAY_AND_JAR_OUTPUT)
                   _bcelClasses.addElement(clazz);
 

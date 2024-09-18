@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2003-2005 The Apache Software Foundation.
@@ -44,6 +43,7 @@ import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
+import com.sun.org.apache.xerces.internal.util.XMLLocatorWrapper;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
@@ -149,8 +149,8 @@ public class XIncludeHandler
     public final static String CURRENT_BASE_URI = "currentBaseURI";
 
     // used for adding [base URI] attributes
-    public final static String XINCLUDE_BASE = "base".intern();
-    public final static QName XML_BASE_QNAME =
+    private final static String XINCLUDE_BASE = "base".intern();
+    private final static QName XML_BASE_QNAME =
         new QName(
             XMLSymbols.PREFIX_XML,
             XINCLUDE_BASE,
@@ -158,15 +158,15 @@ public class XIncludeHandler
             NamespaceContext.XML_URI);
 
     // used for adding [language] attributes
-    public final static String XINCLUDE_LANG = "lang".intern();
-    public final static QName XML_LANG_QNAME =
+    private final static String XINCLUDE_LANG = "lang".intern();
+    private final static QName XML_LANG_QNAME =
         new QName(
             XMLSymbols.PREFIX_XML,
             XINCLUDE_LANG,
             (XMLSymbols.PREFIX_XML + ":" + XINCLUDE_LANG).intern(),
             NamespaceContext.XML_URI);
 
-    public final static QName NEW_NS_ATTR_QNAME =
+    private final static QName NEW_NS_ATTR_QNAME =
         new QName(
             XMLSymbols.PREFIX_XMLNS,
             "",
@@ -209,6 +209,10 @@ public class XIncludeHandler
     protected static final String XINCLUDE_FIXUP_LANGUAGE =
         Constants.XERCES_FEATURE_PREFIX + Constants.XINCLUDE_FIXUP_LANGUAGE_FEATURE;
 
+    /** Property identifier: JAXP schema language. */
+    protected static final String JAXP_SCHEMA_LANGUAGE =
+        Constants.JAXP_PROPERTY_PREFIX + Constants.SCHEMA_LANGUAGE;
+
     /** Property identifier: symbol table. */
     protected static final String SYMBOL_TABLE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SYMBOL_TABLE_PROPERTY;
@@ -226,7 +230,7 @@ public class XIncludeHandler
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
 
     /** property identifier: buffer size. */
-    public static final String BUFFER_SIZE =
+    protected static final String BUFFER_SIZE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.BUFFER_SIZE_PROPERTY;
 
     protected static final String PARSER_SETTINGS =
@@ -284,6 +288,7 @@ public class XIncludeHandler
     protected XPointerProcessor fXPtrProcessor = null;
 
     protected XMLLocator fDocLocation;
+    protected XMLLocatorWrapper fXIncludeLocator = new XMLLocatorWrapper();
     protected XIncludeMessageFormatter fXIncludeMessageFormatter = new XIncludeMessageFormatter();
     protected XIncludeNamespaceSupport fNamespaceContext;
     protected SymbolTable fSymbolTable;
@@ -307,6 +312,8 @@ public class XIncludeHandler
     protected IntStack fLanguageScope;
     protected Stack fLanguageStack;
     protected String fCurrentLanguage;
+
+    protected String fHrefFromParent;
 
     // used for passing features on to child XIncludeHandler objects
     protected ParserConfigurationSettings fSettings;
@@ -352,6 +359,9 @@ public class XIncludeHandler
 
     // track whether a DTD is being parsed
     private boolean fInDTD;
+
+    // tracks whether content has been reported on the child pipeline
+    boolean fHasIncludeReportedContent;
 
     // track whether the root element of the result infoset has been processed
     private boolean fSeenRootElement;
@@ -568,15 +578,21 @@ public class XIncludeHandler
         copyFeatures(componentManager, fSettings);
 
         // We don't want a schema validator on the new pipeline,
-        // so if it was enabled, we set the feature to false. If
-        // the validation feature was also enabled we turn on
-        // dynamic validation, so that DTD validation is performed
-        // on the included documents only if they have a DOCTYPE.
-        // This is consistent with the behaviour on the main pipeline.
+        // so if it was enabled, we set the feature to false.
         try {
             if (componentManager.getFeature(SCHEMA_VALIDATION)) {
                 fSettings.setFeature(SCHEMA_VALIDATION, false);
-                if (componentManager.getFeature(VALIDATION)) {
+                // If the value of the JAXP 1.2 schema language property
+                // is http://www.w3.org/2001/XMLSchema we're only validating
+                // against XML schema so we disable validation on the new pipeline.
+                if (Constants.NS_XMLSCHEMA.equals(componentManager.getProperty(JAXP_SCHEMA_LANGUAGE))) {
+                    fSettings.setFeature(VALIDATION, false);
+                }
+                // If the validation feature was also enabled we turn on
+                // dynamic validation, so that DTD validation is performed
+                // on the included documents only if they have a DOCTYPE.
+                // This is consistent with the behaviour on the main pipeline.
+                else if (componentManager.getFeature(VALIDATION)) {
                     fSettings.setFeature(DYNAMIC_VALIDATION, true);
                 }
             }
@@ -751,7 +767,15 @@ public class XIncludeHandler
 
     @Override
     public void setDocumentHandler(XMLDocumentHandler handler) {
-        fDocumentHandler = handler;
+        if (fDocumentHandler != handler) {
+            fDocumentHandler = handler;
+            if (fXIncludeChildConfig != null) {
+                fXIncludeChildConfig.setDocumentHandler(handler);
+            }
+            if (fXPointerChildConfig != null) {
+                fXPointerChildConfig.setDocumentHandler(handler);
+            }
+        }
     }
 
     @Override
@@ -781,28 +805,31 @@ public class XIncludeHandler
         // otherwise, the locator from the root document would always be used
         fErrorReporter.setDocumentLocator(locator);
 
-        if (!isRootDocument()
-            && fParentXIncludeHandler.searchForRecursiveIncludes(locator)) {
-            reportFatalError(
-                "RecursiveInclude",
-                new Object[] { locator.getExpandedSystemId()});
-        }
-
         if (!(namespaceContext instanceof XIncludeNamespaceSupport)) {
             reportFatalError("IncompatibleNamespaceContext");
         }
         fNamespaceContext = (XIncludeNamespaceSupport)namespaceContext;
         fDocLocation = locator;
+        fXIncludeLocator.setLocator(fDocLocation);
 
         // initialize the current base URI
-        fCurrentBaseURI.setBaseSystemId(locator.getBaseSystemId());
-        fCurrentBaseURI.setExpandedSystemId(locator.getExpandedSystemId());
-        fCurrentBaseURI.setLiteralSystemId(locator.getLiteralSystemId());
+        setupCurrentBaseURI(locator);
         saveBaseURI();
         if (augs == null) {
             augs = new AugmentationsImpl();
         }
         augs.putItem(CURRENT_BASE_URI, fCurrentBaseURI);
+
+        // abort here if we detect a recursive include
+        if (!isRootDocument()) {
+            fParentXIncludeHandler.fHasIncludeReportedContent = true;
+            if (fParentXIncludeHandler.searchForRecursiveIncludes(
+                fCurrentBaseURI.getExpandedSystemId())) {
+                reportFatalError(
+                        "RecursiveInclude",
+                        new Object[] { fCurrentBaseURI.getExpandedSystemId()});
+            }
+        }
 
         // initialize the current language
         fCurrentLanguage = XMLSymbols.EMPTY_STRING;
@@ -810,7 +837,7 @@ public class XIncludeHandler
 
         if (isRootDocument() && fDocumentHandler != null) {
             fDocumentHandler.startDocument(
-                locator,
+                fXIncludeLocator,
                 encoding,
                 namespaceContext,
                 augs);
@@ -1613,7 +1640,7 @@ public class XIncludeHandler
             catch (IOException e) {
                 reportResourceError(
                     "XMLResourceError",
-                    new Object[] { href, e.getMessage()});
+                    new Object[] { href, e.getMessage()}, e);
                 return false;
             }
         }
@@ -1624,7 +1651,7 @@ public class XIncludeHandler
                 includedSource = createInputSource(null, href, fCurrentBaseURI.getExpandedSystemId(), accept, acceptLanguage);
             }
             else {
-                includedSource = new XMLInputSource(null, href, fCurrentBaseURI.getExpandedSystemId());
+                includedSource = new XMLInputSource(null, href, fCurrentBaseURI.getExpandedSystemId(), false);
             }
         }
 
@@ -1648,7 +1675,7 @@ public class XIncludeHandler
                 if (fEntityResolver != null) fChildConfig.setProperty(ENTITY_RESOLVER, fEntityResolver);
                 fChildConfig.setProperty(SECURITY_MANAGER, fSecurityManager);
                 fChildConfig.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
-                fChildConfig.setProperty(BUFFER_SIZE, new Integer(fBufferSize));
+                fChildConfig.setProperty(BUFFER_SIZE, fBufferSize);
 
                 // features must be copied to child configuration
                 fNeedCopyFeatures = true;
@@ -1695,6 +1722,8 @@ public class XIncludeHandler
                         // ???
 
                     newHandler.setParent(this);
+                    newHandler.setHref(href);
+                    newHandler.setXIncludeLocator(fXIncludeLocator);
                     newHandler.setDocumentHandler(this.getDocumentHandler());
                     fXPointerChildConfig = fChildConfig;
                 } else {
@@ -1703,7 +1732,8 @@ public class XIncludeHandler
                             Constants.XERCES_PROPERTY_PREFIX
                                 + Constants.XINCLUDE_HANDLER_PROPERTY);
 
-                        newHandler.setParent(this);
+                    newHandler.setParent(this);
+                    newHandler.setHref(href);
                     newHandler.setDocumentHandler(this.getDocumentHandler());
                     fXIncludeChildConfig = fChildConfig;
                 }
@@ -1711,7 +1741,7 @@ public class XIncludeHandler
 
             // If an xpointer attribute is present
             if (xpointer != null ) {
-                fChildConfig = fXPointerChildConfig ;
+                fChildConfig = fXPointerChildConfig;
 
                 // Parse the XPointer expression
                 try {
@@ -1735,10 +1765,12 @@ public class XIncludeHandler
             fNeedCopyFeatures = false;
 
             try {
+                fHasIncludeReportedContent = false;
                 fNamespaceContext.pushScope();
 
                 fChildConfig.parse(includedSource);
-                // necessary to make sure proper location is reported in errors
+                // necessary to make sure proper location is reported to the application and in errors
+                fXIncludeLocator.setLocator(fDocLocation);
                 if (fErrorReporter != null) {
                     fErrorReporter.setDocumentLocator(fDocLocation);
                 }
@@ -1756,23 +1788,32 @@ public class XIncludeHandler
                 }
             }
             catch (XNIException e) {
-                // necessary to make sure proper location is reported in errors
+                // necessary to make sure proper location is reported to the application and in errors
+                fXIncludeLocator.setLocator(fDocLocation);
                 if (fErrorReporter != null) {
                     fErrorReporter.setDocumentLocator(fDocLocation);
                 }
                 reportFatalError("XMLParseError", new Object[] { href, e.getMessage() });
             }
             catch (IOException e) {
-                // necessary to make sure proper location is reported in errors
+                // necessary to make sure proper location is reported to the application and in errors
+                fXIncludeLocator.setLocator(fDocLocation);
                 if (fErrorReporter != null) {
                     fErrorReporter.setDocumentLocator(fDocLocation);
                 }
-                // An IOException indicates that we had trouble reading the file, not
-                // that it was an invalid XML file.  So we send a resource error, not a
-                // fatal error.
+                // If the start document event has been seen on the child pipeline it
+                // means the resource was successfully opened and we started reporting
+                // document events. If an IOException is thrown after the start document
+                // event we had a failure midstream and cannot recover.
+                if (fHasIncludeReportedContent) {
+                    throw new XNIException(e);
+                }
+                // In other circumstances an IOException indicates that we had trouble
+                // accessing or opening the file, not that it was an invalid XML file. So we
+                // send a resource error, not a fatal error.
                 reportResourceError(
                     "XMLResourceError",
-                    new Object[] { href, e.getMessage()});
+                    new Object[] { href, e.getMessage()}, e);
                 return false;
             }
             finally {
@@ -1786,6 +1827,8 @@ public class XIncludeHandler
             XIncludeTextReader textReader = null;
 
             try {
+                fHasIncludeReportedContent = false;
+
                 // Setup the appropriate text reader.
                 if (!fIsXML11) {
                     if (fXInclude10TextReader == null) {
@@ -1811,16 +1854,22 @@ public class XIncludeHandler
             // encoding errors
             catch (MalformedByteSequenceException ex) {
                 fErrorReporter.reportError(ex.getDomain(), ex.getKey(),
-                    ex.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR);
+                    ex.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR, ex);
             }
             catch (CharConversionException e) {
                 fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
-                    "CharConversionFailure", null, XMLErrorReporter.SEVERITY_FATAL_ERROR);
+                    "CharConversionFailure", null, XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
             }
             catch (IOException e) {
+                // If a characters event has already been sent down the pipeline it
+                // means the resource was successfully opened and that this IOException
+                // is from a failure midstream from which we cannot recover.
+                if (fHasIncludeReportedContent) {
+                    throw new XNIException(e);
+                }
                 reportResourceError(
                     "TextResourceError",
-                    new Object[] { href, e.getMessage()});
+                    new Object[] { href, e.getMessage()}, e);
                 return false;
             }
             finally {
@@ -1831,7 +1880,7 @@ public class XIncludeHandler
                     catch (IOException e) {
                         reportResourceError(
                             "TextResourceError",
-                            new Object[] { href, e.getMessage()});
+                            new Object[] { href, e.getMessage()}, e);
                         return false;
                     }
                 }
@@ -1922,37 +1971,51 @@ public class XIncludeHandler
         return parentLanguage != null && parentLanguage.equalsIgnoreCase(fCurrentLanguage);
     }
 
-    /**
-     * Checks if the file indicated by the given XMLLocator has already been included
-     * in the current stack.
-     * @param includedSource the source to check for inclusion
-     * @return true if the source has already been included
-     */
-    protected boolean searchForRecursiveIncludes(XMLLocator includedSource) {
-        String includedSystemId = includedSource.getExpandedSystemId();
+    private void setupCurrentBaseURI(XMLLocator locator) {
+        fCurrentBaseURI.setBaseSystemId(locator.getBaseSystemId());
+        if (locator.getLiteralSystemId() != null) {
+            fCurrentBaseURI.setLiteralSystemId(locator.getLiteralSystemId());
+        }
+        else {
+            fCurrentBaseURI.setLiteralSystemId(fHrefFromParent);
+        }
 
-        if (includedSystemId == null) {
+        String expandedSystemId = locator.getExpandedSystemId();
+        if (expandedSystemId == null) {
+            // attempt to expand it ourselves
             try {
-                includedSystemId =
+                expandedSystemId =
                     XMLEntityManager.expandSystemId(
-                        includedSource.getLiteralSystemId(),
-                        includedSource.getBaseSystemId(),
+                        fCurrentBaseURI.getLiteralSystemId(),
+                        fCurrentBaseURI.getBaseSystemId(),
                         false);
+                if (expandedSystemId == null) {
+                    expandedSystemId = fCurrentBaseURI.getLiteralSystemId();
+                }
             }
             catch (MalformedURIException e) {
                 reportFatalError("ExpandedSystemId");
             }
         }
+        fCurrentBaseURI.setExpandedSystemId(expandedSystemId);
+    }
 
-        if (includedSystemId.equals(fCurrentBaseURI.getExpandedSystemId())) {
+    /**
+     * Checks if the file indicated by the given system id has already been
+     * included in the current stack.
+     * @param includedSysId the system id to check for inclusion
+     * @return true if the source has already been included
+     */
+    protected boolean searchForRecursiveIncludes(String includedSysId) {
+        if (includedSysId.equals(fCurrentBaseURI.getExpandedSystemId())) {
             return true;
         }
-
-        if (fParentXIncludeHandler == null) {
+        else if (fParentXIncludeHandler == null) {
             return false;
         }
-        return fParentXIncludeHandler.searchForRecursiveIncludes(
-            includedSource);
+        else {
+            return fParentXIncludeHandler.searchForRecursiveIncludes(includedSysId);
+        }
     }
 
     /**
@@ -1990,7 +2053,7 @@ public class XIncludeHandler
      * unparsed entities are processed as described in the spec, sections 4.5.1 and 4.5.2
      * </ul>
      * @param attributes
-     * @return
+     * @return the processed XMLAttributes
      */
     protected XMLAttributes processAttributes(XMLAttributes attributes) {
         if (isTopLevelIncludedItem()) {
@@ -2143,7 +2206,7 @@ public class XIncludeHandler
             return relativeURI;
         }
         else {
-            if (relativeURI.equals("")) {
+            if (relativeURI.length() == 0) {
                 relativeURI = fCurrentBaseURI.getLiteralSystemId();
             }
 
@@ -2152,7 +2215,7 @@ public class XIncludeHandler
                     fParentRelativeURI =
                         fParentXIncludeHandler.getRelativeBaseURI();
                 }
-                if (fParentRelativeURI.equals("")) {
+                if (fParentRelativeURI.length() == 0) {
                     return relativeURI;
                 }
 
@@ -2365,7 +2428,7 @@ public class XIncludeHandler
      * as an ancestor of the current item.
      *
      * @param depth
-     * @return
+     * @return true if an include was seen at the given depth, false otherwise
      */
     protected boolean getSawInclude(int depth) {
         if (depth >= fSawInclude.length) {
@@ -2375,11 +2438,15 @@ public class XIncludeHandler
     }
 
     protected void reportResourceError(String key) {
-        this.reportFatalError(key, null);
+        this.reportResourceError(key, null);
     }
 
     protected void reportResourceError(String key, Object[] args) {
-        this.reportError(key, args, XMLErrorReporter.SEVERITY_WARNING);
+        this.reportResourceError(key, args, null);
+    }
+
+    protected void reportResourceError(String key, Object[] args, Exception exception) {
+        this.reportError(key, args, XMLErrorReporter.SEVERITY_WARNING, exception);
     }
 
     protected void reportFatalError(String key) {
@@ -2387,16 +2454,21 @@ public class XIncludeHandler
     }
 
     protected void reportFatalError(String key, Object[] args) {
-        this.reportError(key, args, XMLErrorReporter.SEVERITY_FATAL_ERROR);
+        this.reportFatalError(key, args, null);
     }
 
-    private void reportError(String key, Object[] args, short severity) {
+    protected void reportFatalError(String key, Object[] args, Exception exception) {
+        this.reportError(key, args, XMLErrorReporter.SEVERITY_FATAL_ERROR, exception);
+    }
+
+    private void reportError(String key, Object[] args, short severity, Exception exception) {
         if (fErrorReporter != null) {
             fErrorReporter.reportError(
                 XIncludeMessageFormatter.XINCLUDE_DOMAIN,
                 key,
                 args,
-                severity);
+                severity,
+                exception);
         }
         // we won't worry about when error reporter is null, since there should always be
         // at least the default error reporter
@@ -2408,6 +2480,14 @@ public class XIncludeHandler
      */
     protected void setParent(XIncludeHandler parent) {
         fParentXIncludeHandler = parent;
+    }
+
+    protected void setHref(String href) {
+       fHrefFromParent = href;
+    }
+
+    protected void setXIncludeLocator(XMLLocatorWrapper locator) {
+        fXIncludeLocator = locator;
     }
 
     // used to know whether to pass declarations to the document handler
@@ -2795,7 +2875,7 @@ public class XIncludeHandler
     /**
      * Saves the given language on the top of the stack.
      *
-     * @param lanaguage the language to push onto the stack.
+     * @param language the language to push onto the stack.
      */
     protected void saveLanguage(String language) {
         fLanguageScope.push(fDepth);
@@ -2959,7 +3039,7 @@ public class XIncludeHandler
     // the second hex character if a character needs to be escaped
     private static final char gAfterEscaping2[] = new char[128];
     private static final char[] gHexChs = {'0', '1', '2', '3', '4', '5', '6', '7',
-                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+                                           '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     // initialize the above 3 arrays
     static {
         char[] escChs = {' ', '<', '>', '"', '{', '}', '|', '\\', '^', '`'};
@@ -3050,7 +3130,7 @@ public class XIncludeHandler
             // for each byte
             for (i = 0; i < len; i++) {
                 b = bytes[i];
-                // for non-ascii character: make it positive, then escape
+                // for non-ASCII character: make it positive, then escape
                 if (b < 0) {
                     ch = b + 256;
                     buffer.append('%');
@@ -3069,7 +3149,7 @@ public class XIncludeHandler
         }
 
         // If escaping happened, create a new string;
-        // otherwise, return the orginal one.
+        // otherwise, return the original one.
         if (buffer.length() != len) {
             return buffer.toString();
         }

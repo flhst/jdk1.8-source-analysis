@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -25,12 +25,12 @@ package com.sun.org.apache.xml.internal.security.transforms.implementations;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -39,7 +39,6 @@ import javax.xml.transform.stream.StreamSource;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -49,44 +48,44 @@ import org.w3c.dom.Element;
 /**
  * Class TransformXSLT
  *
- * Implements the <CODE>http://www.w3.org/TR/1999/REC-xslt-19991116</CODE>
+ * Implements the {@code http://www.w3.org/TR/1999/REC-xslt-19991116}
  * transform.
  *
- * @author Christian Geuer-Pollmann
  */
 public class TransformXSLT extends TransformSpi {
 
-    /** Field implementedTransformURI */
-    public static final String implementedTransformURI =
-        Transforms.TRANSFORM_XSLT;
-
-    static final String XSLTSpecNS              = "http://www.w3.org/1999/XSL/Transform";
+    static final String XSLTSpecNS = "http://www.w3.org/1999/XSL/Transform";
     static final String defaultXSLTSpecNSprefix = "xslt";
-    static final String XSLTSTYLESHEET          = "stylesheet";
+    static final String XSLTSTYLESHEET = "stylesheet";
 
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(TransformXSLT.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(TransformXSLT.class);
 
     /**
-     * Method engineGetURI
-     *
-     * @inheritDoc
+     * {@inheritDoc}
      */
+    @Override
     protected String engineGetURI() {
-        return implementedTransformURI;
+        return Transforms.TRANSFORM_XSLT;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, OutputStream baos, Transform transformObject
+        XMLSignatureInput input, OutputStream baos, Element transformElement,
+        String baseURI, boolean secureValidation
     ) throws IOException, TransformationException {
         try {
-            Element transformElement = transformObject.getElement();
-
             Element xsltElement =
                 XMLUtils.selectNode(transformElement.getFirstChild(), XSLTSpecNS, "stylesheet", 0);
-
             if (xsltElement == null) {
-                Object exArgs[] = { "xslt:stylesheet", "Transform" };
+                xsltElement =
+                    XMLUtils.selectNode(transformElement.getFirstChild(), XSLTSpecNS, "transform", 0);
+            }
+            if (xsltElement == null) {
+                Object[] exArgs = { "xslt:stylesheet", "Transform" };
 
                 throw new TransformationException("xml.WrongContent", exArgs);
             }
@@ -94,6 +93,14 @@ public class TransformXSLT extends TransformSpi {
             TransformerFactory tFactory = TransformerFactory.newInstance();
             // Process XSLT stylesheets in a secure manner
             tFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+            if (secureValidation) {
+                try {
+                    tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+                    tFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+                } catch (IllegalArgumentException ex) {
+                    // ignore
+                }
+            }
 
             /*
              * This transform requires an octet stream as input. If the actual
@@ -101,8 +108,6 @@ public class TransformXSLT extends TransformSpi {
              * attempt to convert it to octets (apply Canonical XML]) as described
              * in the Reference Processing Model (section 4.3.3.2).
              */
-            Source xmlSource =
-                new StreamSource(new ByteArrayInputStream(input.getBytes()));
             Source stylesheet;
 
             /*
@@ -114,15 +119,16 @@ public class TransformXSLT extends TransformSpi {
              * so we convert the stylesheet to byte[] and use this as input stream
              */
             {
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                Transformer transformer = tFactory.newTransformer();
-                DOMSource source = new DOMSource(xsltElement);
-                StreamResult result = new StreamResult(os);
+                try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+                    Transformer transformer = tFactory.newTransformer();
+                    DOMSource source = new DOMSource(xsltElement);
+                    StreamResult result = new StreamResult(os);
 
-                transformer.transform(source, result);
+                    transformer.transform(source, result);
 
-                stylesheet =
-                    new StreamSource(new ByteArrayInputStream(os.toByteArray()));
+                    stylesheet =
+                        new StreamSource(new ByteArrayInputStream(os.toByteArray()));
+                }
             }
 
             Transformer transformer = tFactory.newTransformer(stylesheet);
@@ -135,33 +141,30 @@ public class TransformXSLT extends TransformSpi {
             try {
                 transformer.setOutputProperty("{http://xml.apache.org/xalan}line-separator", "\n");
             } catch (Exception e) {
-                log.log(java.util.logging.Level.WARNING, "Unable to set Xalan line-separator property: " + e.getMessage());
+                LOG.warn("Unable to set Xalan line-separator property: " + e.getMessage());
             }
 
-            if (baos == null) {
-                ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
-                StreamResult outputTarget = new StreamResult(baos1);
+            try (InputStream is = new ByteArrayInputStream(input.getBytes())) {
+                Source xmlSource = new StreamSource(is);
+                if (baos == null) {
+                    try (ByteArrayOutputStream baos1 = new ByteArrayOutputStream()) {
+                        StreamResult outputTarget = new StreamResult(baos1);
+                        transformer.transform(xmlSource, outputTarget);
+                        XMLSignatureInput output = new XMLSignatureInput(baos1.toByteArray());
+                        output.setSecureValidation(secureValidation);
+                        return output;
+                    }
+                }
+                StreamResult outputTarget = new StreamResult(baos);
+
                 transformer.transform(xmlSource, outputTarget);
-                return new XMLSignatureInput(baos1.toByteArray());
             }
-            StreamResult outputTarget = new StreamResult(baos);
-
-            transformer.transform(xmlSource, outputTarget);
             XMLSignatureInput output = new XMLSignatureInput((byte[])null);
+            output.setSecureValidation(secureValidation);
             output.setOutputStream(baos);
             return output;
-        } catch (XMLSecurityException ex) {
-            Object exArgs[] = { ex.getMessage() };
-
-            throw new TransformationException("generic.EmptyMessage", exArgs, ex);
-        } catch (TransformerConfigurationException ex) {
-            Object exArgs[] = { ex.getMessage() };
-
-            throw new TransformationException("generic.EmptyMessage", exArgs, ex);
-        } catch (TransformerException ex) {
-            Object exArgs[] = { ex.getMessage() };
-
-            throw new TransformationException("generic.EmptyMessage", exArgs, ex);
+        } catch (XMLSecurityException | TransformerException ex) {
+            throw new TransformationException(ex);
         }
     }
 }

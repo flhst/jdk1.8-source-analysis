@@ -206,7 +206,6 @@ class DirectCharBufferRU
     public CharBuffer slice() {
         int pos = this.position();
         int lim = this.limit();
-        assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         int off = (pos << 1);
         assert (off >= 0);
@@ -311,8 +310,6 @@ class DirectCharBufferRU
     }
 
     public CharBuffer put(CharBuffer src) {
-
-
 
 
 

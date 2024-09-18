@@ -72,7 +72,6 @@ class ByteBufferAsDoubleBufferL                  // package-private
     public DoubleBuffer slice() {
         int pos = this.position();
         int lim = this.limit();
-        assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         int off = (pos << 3) + offset;
         assert (off >= 0);

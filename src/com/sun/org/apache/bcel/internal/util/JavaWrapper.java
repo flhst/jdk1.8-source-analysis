@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 package com.sun.org.apache.bcel.internal.util;
@@ -58,6 +58,7 @@ package com.sun.org.apache.bcel.internal.util;
  * <http://www.apache.org/>.
  */
 
+import jdk.xml.internal.SecuritySupport;
 import java.lang.reflect.*;
 
 /**

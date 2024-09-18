@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: ToTextStream.java,v 1.2.4.1 2005/09/21 10:35:34 pvedula Exp $
- */
+
 package com.sun.org.apache.xml.internal.serializer;
 
 import java.io.IOException;
@@ -35,6 +33,7 @@ import org.xml.sax.SAXException;
  * This class converts SAX or SAX-like calls to a
  * serialized document for xsl:output method of "text".
  * @xsl.usage internal
+ * @LastModified: Sept 2018
  */
 public final class ToTextStream extends ToStream
 {
@@ -296,23 +295,32 @@ public final class ToTextStream extends ToStream
             } else if (m_encodingInfo.isInEncoding(c)) {
                 writer.write(c);
                 // one input char processed
-            } else if (Encodings.isHighUTF16Surrogate(c)) {
+            } else if (Encodings.isHighUTF16Surrogate(c) ||
+                       Encodings.isLowUTF16Surrogate(c)) {
                 final int codePoint = writeUTF16Surrogate(c, ch, i, end);
-                if (codePoint != 0) {
-                    // I think we can just emit the message,
-                    // not crash and burn.
-                    final String integralValue = Integer.toString(codePoint);
-                    final String msg = Utils.messages.createMessage(
-                        MsgKey.ER_ILLEGAL_CHARACTER,
-                        new Object[] { integralValue, encoding });
+                if (codePoint >= 0) {
+                    // move the index if the low surrogate is consumed
+                    // as writeUTF16Surrogate has written the pair
+                    if (Encodings.isHighUTF16Surrogate(c)) {
+                        i++;
+                    }
 
-                    //Older behavior was to throw the message,
-                    //but newer gentler behavior is to write a message to System.err
-                    //throw new SAXException(msg);
-                    System.err.println(msg);
+                    // printing to the console is not appropriate, but will leave
+                    // it as is for compatibility.
+                    if (codePoint >0) {
+                        // I think we can just emit the message,
+                        // not crash and burn.
+                        final String integralValue = Integer.toString(codePoint);
+                        final String msg = Utils.messages.createMessage(
+                            MsgKey.ER_ILLEGAL_CHARACTER,
+                            new Object[] { integralValue, encoding });
 
+                        //Older behavior was to throw the message,
+                        //but newer gentler behavior is to write a message to System.err
+                        //throw new SAXException(msg);
+                        System.err.println(msg);
+                    }
                 }
-                i++; // two input chars processed
             } else {
                 // Don't know what to do with this char, it is
                 // not in the encoding and not a high char in

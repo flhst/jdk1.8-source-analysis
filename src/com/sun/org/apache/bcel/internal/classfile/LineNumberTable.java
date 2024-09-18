@@ -1,243 +1,218 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
+import jdk.xml.internal.SecuritySupport;
 
 /**
- * This class represents a table of line numbers for debugging
- * purposes. This attribute is used by the <em>Code</em> attribute. It
- * contains pairs of PCs and line numbers.
+ * This class represents a table of line numbers for debugging purposes. This attribute is used by the <em>Code</em>
+ * attribute. It contains pairs of PCs and line numbers.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     Code
+ * @see Code
  * @see LineNumber
+ * @LastModified: May 2021
  */
-public final class LineNumberTable extends Attribute {
-  private int          line_number_table_length;
-  private LineNumber[] line_number_table; // Table of line/numbers pairs
+public final class LineNumberTable extends Attribute implements Iterable<LineNumber> {
 
-  /*
-   * Initialize from another object. Note that both objects use the same
-   * references (shallow copy). Use copy() for a physical copy.
-   */
-  public LineNumberTable(LineNumberTable c) {
-    this(c.getNameIndex(), c.getLength(), c.getLineNumberTable(),
-         c.getConstantPool());
-  }
+    private static final int MAX_LINE_LENGTH = 72;
+    private LineNumber[] lineNumberTable; // Table of line/numbers pairs
 
-  /*
-   * @param name_index Index of name
-   * @param length Content length in bytes
-   * @param line_number_table Table of line/numbers pairs
-   * @param constant_pool Array of constants
-   */
-  public LineNumberTable(int name_index, int length,
-                         LineNumber[] line_number_table,
-                         ConstantPool constant_pool)
-  {
-    super(Constants.ATTR_LINE_NUMBER_TABLE, name_index, length, constant_pool);
-    setLineNumberTable(line_number_table);
-  }
-
-  /**
-   * Construct object from file stream.
-   * @param name_index Index of name
-   * @param length Content length in bytes
-   * @param file Input stream
-   * @throws IOException
-   * @param constant_pool Array of constants
-   */
-  LineNumberTable(int name_index, int length, DataInputStream file,
-                  ConstantPool constant_pool) throws IOException
-  {
-    this(name_index, length, (LineNumber[])null, constant_pool);
-    line_number_table_length = (file.readUnsignedShort());
-    line_number_table = new LineNumber[line_number_table_length];
-
-    for(int i=0; i < line_number_table_length; i++)
-      line_number_table[i] = new LineNumber(file);
-  }
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitLineNumberTable(this);
-  }
-  /**
-   * Dump line number table attribute to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    super.dump(file);
-    file.writeShort(line_number_table_length);
-    for(int i=0; i < line_number_table_length; i++)
-      line_number_table[i].dump(file);
-  }
-
-  /**
-   * @return Array of (pc offset, line number) pairs.
-   */
-  public final LineNumber[] getLineNumberTable() { return line_number_table; }
-
-  /**
-   * @param line_number_table.
-   */
-  public final void setLineNumberTable(LineNumber[] line_number_table) {
-    this.line_number_table = line_number_table;
-
-    line_number_table_length = (line_number_table == null)? 0 :
-      line_number_table.length;
-  }
-
-  /**
-   * @return String representation.
-   */
-  public final String toString() {
-    StringBuffer buf  = new StringBuffer();
-    StringBuffer line = new StringBuffer();
-
-    for(int i=0; i < line_number_table_length; i++) {
-      line.append(line_number_table[i].toString());
-
-      if(i < line_number_table_length - 1)
-        line.append(", ");
-
-      if(line.length() > 72) {
-        line.append('\n');
-        buf.append(line);
-        line.setLength(0);
-      }
+    /**
+     * Construct object from input stream.
+     *
+     * @param nameIndex Index of name
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O Exception occurs in readUnsignedShort
+     */
+    LineNumberTable(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, (LineNumber[]) null, constantPool);
+        final int lineNumberTableLength = input.readUnsignedShort();
+        lineNumberTable = new LineNumber[lineNumberTableLength];
+        for (int i = 0; i < lineNumberTableLength; i++) {
+            lineNumberTable[i] = new LineNumber(input);
+        }
     }
 
-    buf.append(line);
-
-    return buf.toString();
-  }
-
-  /**
-   * Map byte code positions to source code lines.
-   *
-   * @param pos byte code offset
-   * @return corresponding line in source code
-   */
-  public int getSourceLine(int pos) {
-    int l = 0, r = line_number_table_length-1;
-
-    if(r < 0) // array is empty
-      return -1;
-
-    int min_index = -1, min=-1;
-
-    /* Do a binary search since the array is ordered.
+    /*
+     * @param nameIndex Index of name
+     *
+     * @param length Content length in bytes
+     *
+     * @param lineNumberTable Table of line/numbers pairs
+     *
+     * @param constantPool Array of constants
      */
-    do {
-      int i = (l + r) / 2;
-      int j = line_number_table[i].getStartPC();
+    public LineNumberTable(final int nameIndex, final int length, final LineNumber[] lineNumberTable, final ConstantPool constantPool) {
+        super(Const.ATTR_LINE_NUMBER_TABLE, nameIndex, length, constantPool);
+        this.lineNumberTable = lineNumberTable != null ? lineNumberTable : LineNumber.EMPTY_ARRAY;
+        Args.requireU2(this.lineNumberTable.length, "lineNumberTable.length");
+    }
 
-      if(j == pos)
-        return line_number_table[i].getLineNumber();
-      else if(pos < j) // else constrain search area
-        r = i - 1;
-      else // pos > j
-        l = i + 1;
-
-      /* If exact match can't be found (which is the most common case)
-       * return the line number that corresponds to the greatest index less
-       * than pos.
-       */
-      if(j < pos && j > min) {
-        min       = j;
-        min_index = i;
-      }
-    } while(l <= r);
-
-    /* It's possible that we did not find any valid entry for the bytecode
-     * offset we were looking for.
+    /*
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use copy() for a
+     * physical copy.
      */
-    if (min_index < 0)
-      return -1;
+    public LineNumberTable(final LineNumberTable c) {
+        this(c.getNameIndex(), c.getLength(), c.getLineNumberTable(), c.getConstantPool());
+    }
 
-    return line_number_table[min_index].getLineNumber();
-  }
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitLineNumberTable(this);
+    }
 
-  /**
-   * @return deep copy of this attribute
-   */
-  public Attribute copy(ConstantPool constant_pool) {
-    LineNumberTable c = (LineNumberTable)clone();
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        // TODO could use the lower level constructor and thereby allow
+        // lineNumberTable to be made final
+        final LineNumberTable c = (LineNumberTable) clone();
+        c.lineNumberTable = new LineNumber[lineNumberTable.length];
+        for (int i = 0; i < lineNumberTable.length; i++) {
+            c.lineNumberTable[i] = lineNumberTable[i].copy();
+        }
+        c.setConstantPool(constantPool);
+        return c;
+    }
 
-    c.line_number_table = new LineNumber[line_number_table_length];
-    for(int i=0; i < line_number_table_length; i++)
-      c.line_number_table[i] = line_number_table[i].copy();
+    /**
+     * Dump line number table attribute to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O Exception occurs in writeShort
+     */
+    @Override
+    public void dump(final DataOutputStream file) throws IOException {
+        super.dump(file);
+        file.writeShort(lineNumberTable.length);
+        for (final LineNumber lineNumber : lineNumberTable) {
+            lineNumber.dump(file);
+        }
+    }
 
-    c.constant_pool = constant_pool;
-    return c;
-  }
+    /**
+     * @return Array of (pc offset, line number) pairs.
+     */
+    public LineNumber[] getLineNumberTable() {
+        return lineNumberTable;
+    }
 
-  public final int getTableLength() { return line_number_table_length; }
+    /**
+     * Map byte code positions to source code lines.
+     *
+     * @param pos byte code offset
+     * @return corresponding line in source code
+     */
+    public int getSourceLine(final int pos) {
+        int l = 0;
+        int r = lineNumberTable.length - 1;
+        if (r < 0) {
+            return -1;
+        }
+        int minIndex = -1;
+        int min = -1;
+        /*
+         * Do a binary search since the array is ordered.
+         */
+        do {
+            final int i = l + r >>> 1;
+            final int j = lineNumberTable[i].getStartPC();
+            if (j == pos) {
+                return lineNumberTable[i].getLineNumber();
+            }
+            if (pos < j) {
+                r = i - 1;
+            } else {
+                l = i + 1;
+            }
+            /*
+             * If exact match can't be found (which is the most common case) return the line number that corresponds to the greatest
+             * index less than pos.
+             */
+            if (j < pos && j > min) {
+                min = j;
+                minIndex = i;
+            }
+        } while (l <= r);
+        /*
+         * It's possible that we did not find any valid entry for the bytecode offset we were looking for.
+         */
+        if (minIndex < 0) {
+            return -1;
+        }
+        return lineNumberTable[minIndex].getLineNumber();
+    }
+
+    public int getTableLength() {
+        return lineNumberTable == null ? 0 : lineNumberTable.length;
+    }
+
+    @Override
+    public Iterator<LineNumber> iterator() {
+        return Arrays.asList(lineNumberTable).iterator();
+    }
+
+    /**
+     * @param lineNumberTable the line number entries for this table
+     */
+    public void setLineNumberTable(final LineNumber[] lineNumberTable) {
+        this.lineNumberTable = lineNumberTable;
+    }
+
+    /**
+     * @return String representation.
+     */
+    @Override
+    public String toString() {
+        final StringBuilder buf = new StringBuilder();
+        final StringBuilder line = new StringBuilder();
+        for (int i = 0; i < lineNumberTable.length; i++) {
+            line.append(lineNumberTable[i].toString());
+            if (i < lineNumberTable.length - 1) {
+                line.append(", ");
+            }
+            if (line.length() > MAX_LINE_LENGTH && i < lineNumberTable.length - 1) {
+                line.append(SecuritySupport.NEWLINE);
+                buf.append(line);
+                line.setLength(0);
+            }
+        }
+        buf.append(line);
+        return buf.toString();
+    }
 }

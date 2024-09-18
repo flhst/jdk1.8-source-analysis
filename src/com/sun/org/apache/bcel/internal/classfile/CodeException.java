@@ -1,232 +1,233 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
- * This class represents an entry in the exception table of the <em>Code</em>
- * attribute and is used only there. It contains a range in which a
- * particular exception handler is active.
+ * This class represents an entry in the exception table of the <em>Code</em> attribute and is used only there. It
+ * contains a range in which a particular exception handler is active.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     Code
+ * <pre>
+ * Code_attribute {
+ *   u2 attribute_name_index;
+ *   u4 attribute_length;
+ *   u2 max_stack;
+ *   u2 max_locals;
+ *   u4 code_length;
+ *   u1 code[code_length];
+ *   u2 exception_table_length;
+ *   {
+ *     u2 start_pc;
+ *     u2 end_pc;
+ *     u2 handler_pc;
+ *     u2 catch_type;
+ *   } exception_table[exception_table_length];
+ *   u2 attributes_count;
+ *   attribute_info attributes[attributes_count];
+ * }
+ * </pre>
+ *
+ * @see Code
+ * @LastModified: Feb 2023
  */
-public final class CodeException
-  implements Cloneable, Constants, Node, Serializable
-{
-  private int start_pc;   // Range in the code the exception handler is
-  private int end_pc;     // active. start_pc is inclusive, end_pc exclusive
-  private int handler_pc; /* Starting address of exception handler, i.e.,
-                           * an offset from start of code.
-                           */
-  private int catch_type; /* If this is zero the handler catches any
-                           * exception, otherwise it points to the
-                           * exception class which is to be caught.
-                           */
-  /**
-   * Initialize from another object.
-   */
-  public CodeException(CodeException c) {
-    this(c.getStartPC(), c.getEndPC(), c.getHandlerPC(), c.getCatchType());
-  }
+public final class CodeException implements Cloneable, Node {
 
-  /**
-   * Construct object from file stream.
-   * @param file Input stream
-   * @throws IOException
-   */
-  CodeException(DataInputStream file) throws IOException
-  {
-    this(file.readUnsignedShort(), file.readUnsignedShort(),
-         file.readUnsignedShort(), file.readUnsignedShort());
-  }
+    /**
+     * Empty array.
+     */
+    static final CodeException[] EMPTY_CODE_EXCEPTION_ARRAY = {};
 
-  /**
-   * @param start_pc Range in the code the exception handler is active,
-   * start_pc is inclusive while
-   * @param end_pc is exclusive
-   * @param handler_pc Starting address of exception handler, i.e.,
-   * an offset from start of code.
-   * @param catch_type If zero the handler catches any
-   * exception, otherwise it points to the exception class which is
-   * to be caught.
-   */
-  public CodeException(int start_pc, int end_pc, int handler_pc,
-                       int catch_type)
-  {
-    this.start_pc   = start_pc;
-    this.end_pc     = end_pc;
-    this.handler_pc = handler_pc;
-    this.catch_type = catch_type;
-  }
+    /** Range in the code the exception handler. */
+    private int startPc;
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitCodeException(this);
-  }
-  /**
-   * Dump code exception to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeShort(start_pc);
-    file.writeShort(end_pc);
-    file.writeShort(handler_pc);
-    file.writeShort(catch_type);
-  }
+    /** active. startPc is inclusive, endPc exclusive. */
+    private int endPc;
 
-  /**
-   * @return 0, if the handler catches any exception, otherwise it points to
-   * the exception class which is to be caught.
-   */
-  public final int getCatchType() { return catch_type; }
+    /**
+     * Starting address of exception handler, i.e., an offset from start of code.
+     */
+    private int handlerPc;
 
-  /**
-   * @return Exclusive end index of the region where the handler is active.
-   */
-  public final int getEndPC() { return end_pc; }
+    /*
+     * If this is zero the handler catches any exception, otherwise it points to the exception class which is to be caught.
+     */
+    private int catchType;
 
-  /**
-   * @return Starting address of exception handler, relative to the code.
-   */
-  public final int getHandlerPC() { return handler_pc; }
+    /**
+     * Constructs a new instance from another instance.
+     *
+     * @param c Source for copying.
+     */
+    public CodeException(final CodeException c) {
+        this(c.getStartPC(), c.getEndPC(), c.getHandlerPC(), c.getCatchType());
+    }
 
-  /**
-   * @return Inclusive start index of the region where the handler is active.
-   */
-  public final int getStartPC() { return start_pc; }
+    /**
+     * Constructs a new instance from a DataInput.
+     *
+     * @param file Input stream
+     * @throws IOException if an I/O error occurs.
+     */
+    CodeException(final DataInput file) throws IOException {
+        this(file.readUnsignedShort(), file.readUnsignedShort(), file.readUnsignedShort(), file.readUnsignedShort());
+    }
 
-  /**
-   * @param catch_type.
-   */
-  public final void setCatchType(int catch_type) {
-    this.catch_type = catch_type;
-  }
+    /**
+     * Constructs a new instance.
+     *
+     * @param startPc Range in the code the exception handler is active, startPc is inclusive while
+     * @param endPc is exclusive
+     * @param handlerPc Starting address of exception handler, i.e., an offset from start of code.
+     * @param catchType If zero the handler catches any exception, otherwise it points to the exception class which is to be
+     *        caught.
+     */
+    public CodeException(final int startPc, final int endPc, final int handlerPc, final int catchType) {
+        this.startPc = Args.requireU2(startPc, "startPc");
+        this.endPc = Args.requireU2(endPc, "endPc");
+        this.handlerPc = Args.requireU2(handlerPc, "handlerPc");
+        this.catchType = Args.requireU2(catchType, "catchType");
+    }
 
-  /**
-   * @param end_pc end of handled block
-   */
-  public final void setEndPC(int end_pc) {
-    this.end_pc = end_pc;
-  }
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitCodeException(this);
+    }
 
-  /**
-   * @param handler_pc where the actual code is
-   */
-  public final void setHandlerPC(int handler_pc) {
-    this.handler_pc = handler_pc;
-  }
+    /**
+     * @return deep copy of this object
+     */
+    public CodeException copy() {
+        try {
+            return (CodeException) clone();
+        } catch (final CloneNotSupportedException e) {
+            // TODO should this throw?
+        }
+        return null;
+    }
 
-  /**
-   * @param start_pc start of handled block
-   */
-  public final void setStartPC(int start_pc) {
-    this.start_pc = start_pc;
-  }
+    /**
+     * Dumps code exception to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    public void dump(final DataOutputStream file) throws IOException {
+        file.writeShort(startPc);
+        file.writeShort(endPc);
+        file.writeShort(handlerPc);
+        file.writeShort(catchType);
+    }
 
-  /**
-   * @return String representation.
-   */
-  public final String toString() {
-    return "CodeException(start_pc = " + start_pc +
-      ", end_pc = " + end_pc +
-      ", handler_pc = " + handler_pc + ", catch_type = " + catch_type + ")";
-  }
+    /**
+     * @return 0, if the handler catches any exception, otherwise it points to the exception class which is to be caught.
+     */
+    public int getCatchType() {
+        return catchType;
+    }
 
-  /**
-   * @return String representation.
-   */
-  public final String toString(ConstantPool cp, boolean verbose) {
-    String str;
+    /**
+     * @return Exclusive end index of the region where the handler is active.
+     */
+    public int getEndPC() {
+        return endPc;
+    }
 
-    if(catch_type == 0)
-      str = "<Any exception>(0)";
-    else
-      str = Utility.compactClassName(cp.getConstantString(catch_type, CONSTANT_Class), false) +
-        (verbose? "(" + catch_type + ")" : "");
+    /**
+     * @return Starting address of exception handler, relative to the code.
+     */
+    public int getHandlerPC() {
+        return handlerPc;
+    }
 
-    return start_pc + "\t" + end_pc + "\t" + handler_pc + "\t" + str;
-  }
+    /**
+     * @return Inclusive start index of the region where the handler is active.
+     */
+    public int getStartPC() {
+        return startPc;
+    }
 
-  public final String toString(ConstantPool cp) {
-    return toString(cp, true);
-  }
+    /**
+     * @param catchType the type of exception that is caught
+     */
+    public void setCatchType(final int catchType) {
+        this.catchType = catchType;
+    }
 
-  /**
-   * @return deep copy of this object
-   */
-  public CodeException copy() {
-    try {
-      return (CodeException)clone();
-    } catch(CloneNotSupportedException e) {}
+    /**
+     * @param endPc end of handled block
+     */
+    public void setEndPC(final int endPc) {
+        this.endPc = endPc;
+    }
 
-    return null;
-  }
+    /**
+     * @param handlerPc where the actual code is
+     */
+    public void setHandlerPC(final int handlerPc) { // TODO unused
+        this.handlerPc = handlerPc;
+    }
+
+    /**
+     * @param startPc start of handled block
+     */
+    public void setStartPC(final int startPc) { // TODO unused
+        this.startPc = startPc;
+    }
+
+    /**
+     * @return String representation.
+     */
+    @Override
+    public String toString() {
+        return "CodeException(startPc = " + startPc + ", endPc = " + endPc + ", handlerPc = " + handlerPc + ", catchType = " + catchType + ")";
+    }
+
+    public String toString(final ConstantPool cp) {
+        return toString(cp, true);
+    }
+
+    /**
+     * @param cp constant pool source.
+     * @param verbose Output more if true.
+     * @return String representation.
+     */
+    public String toString(final ConstantPool cp, final boolean verbose) {
+        String str;
+        if (catchType == 0) {
+            str = "<Any exception>(0)";
+        } else {
+            str = Utility.compactClassName(cp.getConstantString(catchType, Const.CONSTANT_Class), false) + (verbose ? "(" + catchType + ")" : "");
+        }
+        return startPc + "\t" + endPc + "\t" + handlerPc + "\t" + str;
+    }
 }

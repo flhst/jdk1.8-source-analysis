@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -51,31 +51,41 @@ public class AlgorithmAlreadyRegisteredException extends XMLSecurityException {
      * @param msgID
      * @param exArgs
      */
-    public AlgorithmAlreadyRegisteredException(String msgID, Object exArgs[]) {
+    public AlgorithmAlreadyRegisteredException(String msgID, Object[] exArgs) {
         super(msgID, exArgs);
     }
 
     /**
      * Constructor AlgorithmAlreadyRegisteredException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public AlgorithmAlreadyRegisteredException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public AlgorithmAlreadyRegisteredException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor AlgorithmAlreadyRegisteredException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
     public AlgorithmAlreadyRegisteredException(
-        String msgID, Object exArgs[], Exception originalException
+        Exception originalException, String msgID, Object[] exArgs
     ) {
-        super(msgID, exArgs, originalException);
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public AlgorithmAlreadyRegisteredException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 
 }

@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,19 +17,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: SerializerBase.java,v 1.5 2006/04/14 12:09:19 sunithareddy Exp $
- */
+
 package com.sun.org.apache.xml.internal.serializer;
-
-import java.io.IOException;
-import java.util.Vector;
-
-import javax.xml.transform.SourceLocator;
-import javax.xml.transform.Transformer;
 
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Set;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.SourceLocator;
+import javax.xml.transform.Transformer;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -49,7 +47,6 @@ public abstract class SerializerBase
     implements SerializationHandler, SerializerConstants
 {
 
-
     /**
      * To fire off the end element trace event
      * @param name Name of element
@@ -57,8 +54,7 @@ public abstract class SerializerBase
     protected void fireEndElem(String name)
         throws org.xml.sax.SAXException
     {
-        if (m_tracer != null)
-        {
+        if (m_tracer != null) {
             flushMyWriter();
             m_tracer.fireGenerateEvent(SerializerTrace.EVENTTYPE_ENDELEMENT,name, (Attributes)null);
         }
@@ -73,8 +69,7 @@ public abstract class SerializerBase
     protected void fireCharEvent(char[] chars, int start, int length)
         throws org.xml.sax.SAXException
     {
-        if (m_tracer != null)
-        {
+        if (m_tracer != null) {
             flushMyWriter();
             m_tracer.fireGenerateEvent(SerializerTrace.EVENTTYPE_CHARACTERS, chars, start,length);
         }
@@ -82,7 +77,7 @@ public abstract class SerializerBase
 
     /**
      * true if we still need to call startDocumentInternal()
-         */
+     */
     protected boolean m_needToCallStartDocument = true;
 
     /** True if a trailing "]]>" still needs to be written to be
@@ -108,12 +103,12 @@ public abstract class SerializerBase
     /**
      * The System ID for the doc type.
      */
-    private String m_doctypeSystem;
+    protected String m_doctypeSystem;
 
     /**
      * The public ID for the doc type.
      */
-    private String m_doctypePublic;
+    protected String m_doctypePublic;
 
     /**
      * Flag to tell that we need to add the doctype decl, which we can't do
@@ -122,15 +117,9 @@ public abstract class SerializerBase
     boolean m_needToOutputDocTypeDecl = true;
 
     /**
-     * The character encoding.  Must match the encoding used for the
-     * printWriter.
-     */
-    private String m_encoding = null;
-
-    /**
      * Tells if we should write the XML declaration.
      */
-    private boolean m_shouldNotWriteXMLHeader = false;
+    protected boolean m_shouldNotWriteXMLHeader = false;
 
     /**
      * The standalone value for the doctype.
@@ -151,6 +140,7 @@ public abstract class SerializerBase
      * Flag to tell if indenting (pretty-printing) is on.
      */
     protected boolean m_doIndent = false;
+
     /**
      * Amount to indent.
      */
@@ -159,25 +149,18 @@ public abstract class SerializerBase
     /**
      * Tells the XML version, for writing out to the XML decl.
      */
-    private String m_version = null;
+    protected String m_version = null;
 
     /**
      * The mediatype.  Not used right now.
      */
-    private String m_mediatype;
+    protected String m_mediatype;
 
     /**
      * The transformer that was around when this output handler was created (if
      * any).
      */
     private Transformer m_transformer;
-
-    /**
-     * Pairs of local names and corresponding URIs of CDATA sections. This list
-     * comes from the cdata-section-elements attribute. Every second one is a
-     * local name, and every other second one is the URI for the local name.
-     */
-    protected Vector m_cdataSectionElements = null;
 
     /**
      * Namespace support, that keeps track of currently defined
@@ -193,7 +176,6 @@ public abstract class SerializerBase
     protected SerializerTrace m_tracer;
 
     protected SourceLocator m_sourceLocator;
-
 
     /**
      * The writer to send output to. This field is only used in the ToStream
@@ -235,11 +217,9 @@ public abstract class SerializerBase
      *
      * @see ExtendedLexicalHandler#comment(String)
      */
-    public void comment(String data) throws SAXException
-    {
+    public void comment(String data) throws SAXException {
         final int length = data.length();
-        if (length > m_charsBuff.length)
-        {
+        if (length > m_charsBuff.length) {
             m_charsBuff = new char[length * 2 + 1];
         }
         data.getChars(0, length, m_charsBuff, 0);
@@ -256,10 +236,7 @@ public abstract class SerializerBase
      * XML file, it sometimes generates a NS prefix of the form "ns?" for
      * an attribute.
      */
-    protected String patchName(String qname)
-    {
-
-
+    protected String patchName(String qname) {
         final int lastColon = qname.lastIndexOf(':');
 
         if (lastColon > 0) {
@@ -267,12 +244,11 @@ public abstract class SerializerBase
             final String prefix = qname.substring(0, firstColon);
             final String localName = qname.substring(lastColon + 1);
 
-        // If uri is "" then ignore prefix
+            // If uri is "" then ignore prefix
             final String uri = m_prefixMap.lookupNamespace(prefix);
             if (uri != null && uri.length() == 0) {
                 return localName;
-            }
-            else if (firstColon != lastColon) {
+            } else if (firstColon != lastColon) {
                 return prefix + ':' + localName;
             }
         }
@@ -285,8 +261,7 @@ public abstract class SerializerBase
      * @param qname the qualified name
      * @return the name, but excluding any prefix and colon.
      */
-    protected static String getLocalName(String qname)
-    {
+    protected static String getLocalName(String qname) {
         final int col = qname.lastIndexOf(':');
         return (col > 0) ? qname.substring(col + 1) : qname;
     }
@@ -317,8 +292,7 @@ public abstract class SerializerBase
      * during the invocation of the events in this interface.  The
      * application should not attempt to use it at any other time.</p>
      */
-    public void setDocumentLocator(Locator locator)
-    {
+    public void setDocumentLocator(Locator locator) {
         m_locator = locator;
     }
 
@@ -340,20 +314,13 @@ public abstract class SerializerBase
      * @param XSLAttribute true if this attribute is coming from an xsl:attriute element
      * @see ExtendedContentHandler#addAttribute(String, String, String, String, String)
      */
-    public void addAttribute(
-        String uri,
-        String localName,
-        String rawName,
-        String type,
-        String value,
-        boolean XSLAttribute)
+    public void addAttribute(String uri, String localName, String rawName,
+                             String type, String value, boolean XSLAttribute)
         throws SAXException
     {
-        if (m_elemContext.m_startTagOpen)
-        {
+        if (m_elemContext.m_startTagOpen) {
             addAttributeAlways(uri, localName, rawName, type, value, XSLAttribute);
         }
-
     }
 
     /**
@@ -370,50 +337,31 @@ public abstract class SerializerBase
      * @return true if the attribute was added,
      * false if an existing value was replaced.
      */
-    public boolean addAttributeAlways(
-        String uri,
-        String localName,
-        String rawName,
-        String type,
-        String value,
-        boolean XSLAttribute)
+    public boolean addAttributeAlways(String uri, String localName, String rawName,
+                                      String type, String value, boolean XSLAttribute)
     {
         boolean was_added;
-//            final int index =
-//                (localName == null || uri == null) ?
-//                m_attributes.getIndex(rawName):m_attributes.getIndex(uri, localName);
-            int index;
-//            if (localName == null || uri == null){
-//                index = m_attributes.getIndex(rawName);
-//            }
-//            else {
-//                index = m_attributes.getIndex(uri, localName);
-//            }
+        int index;
 
-            if (localName == null || uri == null || uri.length() == 0)
-                index = m_attributes.getIndex(rawName);
-            else {
-                index = m_attributes.getIndex(uri,localName);
-            }
-            if (index >= 0)
-            {
-                /* We've seen the attribute before.
-                 * We may have a null uri or localName, but all
-                 * we really want to re-set is the value anyway.
-                 */
-                m_attributes.setValue(index,value);
-                was_added = false;
-            }
-            else
-            {
-                // the attribute doesn't exist yet, create it
-                m_attributes.addAttribute(uri, localName, rawName, type, value);
-                was_added = true;
-            }
-            return was_added;
-
+        if (localName == null || uri == null || uri.length() == 0)
+            index = m_attributes.getIndex(rawName);
+        else {
+            index = m_attributes.getIndex(uri,localName);
+        }
+        if (index >= 0) {
+            /* We've seen the attribute before.
+             * We may have a null uri or localName, but all
+             * we really want to re-set is the value anyway.
+             */
+            m_attributes.setValue(index,value);
+            was_added = false;
+        } else {
+            // the attribute doesn't exist yet, create it
+            m_attributes.addAttribute(uri, localName, rawName, type, value);
+            was_added = true;
+        }
+        return was_added;
     }
-
 
     /**
      *  Adds  the given attribute to the set of collected attributes,
@@ -422,16 +370,14 @@ public abstract class SerializerBase
      * @param name the attribute's qualified name
      * @param value the value of the attribute
      */
-    public void addAttribute(String name, final String value)
-    {
-        if (m_elemContext.m_startTagOpen)
-        {
+    public void addAttribute(String name, final String value) {
+        if (m_elemContext.m_startTagOpen) {
             final String patchedName = patchName(name);
             final String localName = getLocalName(patchedName);
             final String uri = getNamespaceURI(patchedName, false);
 
             addAttributeAlways(uri,localName, patchedName, "CDATA", value, false);
-         }
+        }
     }
 
     /**
@@ -442,15 +388,13 @@ public abstract class SerializerBase
      * @param value the value of the attribute
      * @param uri the URI that the prefix of the name points to
      */
-    public void addXSLAttribute(String name, final String value, final String uri)
-    {
-        if (m_elemContext.m_startTagOpen)
-        {
+    public void addXSLAttribute(String name, final String value, final String uri) {
+        if (m_elemContext.m_startTagOpen) {
             final String patchedName = patchName(name);
             final String localName = getLocalName(patchedName);
 
             addAttributeAlways(uri,localName, patchedName, "CDATA", value, true);
-         }
+        }
     }
 
     /**
@@ -459,12 +403,9 @@ public abstract class SerializerBase
      * is currently open.
      * @param atts List of attributes to add to this list
      */
-    public void addAttributes(Attributes atts) throws SAXException
-    {
-
+    public void addAttributes(Attributes atts) throws SAXException {
         int nAtts = atts.getLength();
-        for (int i = 0; i < nAtts; i++)
-        {
+        for (int i = 0; i < nAtts; i++) {
             String uri = atts.getURI(i);
 
             if (null == uri)
@@ -477,7 +418,6 @@ public abstract class SerializerBase
                 atts.getType(i),
                 atts.getValue(i),
                 false);
-
         }
     }
 
@@ -490,8 +430,7 @@ public abstract class SerializerBase
      *  or null if the serializer is not SAX 2 capable
      * @throws IOException An I/O exception occured
      */
-    public ContentHandler asContentHandler() throws IOException
-    {
+    public ContentHandler asContentHandler() throws IOException {
         return this;
     }
 
@@ -502,8 +441,7 @@ public abstract class SerializerBase
      * @throws org.xml.sax.SAXException The application may raise an exception.
      * @see #startEntity
      */
-    public void endEntity(String name) throws org.xml.sax.SAXException
-    {
+    public void endEntity(String name) throws org.xml.sax.SAXException {
         if (name.equals("[dtd]"))
             m_inExternalDTD = false;
         m_inEntityRef = false;
@@ -517,37 +455,33 @@ public abstract class SerializerBase
      * ToStream serializers, not ToSAXHandler serializers.
      * @see ToStream
      */
-    public void close()
-    {
+    public void close() {
         // do nothing (base behavior)
     }
 
     /**
      * Initialize global variables
      */
-    protected void initCDATA()
-    {
+    protected void initCDATA() {
         // CDATA stack
-        //        _cdataStack = new Stack();
-        //        _cdataStack.push(new Integer(-1)); // push dummy value
+        // _cdataStack = new Stack();
+        // _cdataStack.push(new Integer(-1)); // push dummy value
     }
 
     /**
      * Returns the character encoding to be used in the output document.
      * @return the character encoding to be used in the output document.
      */
-    public String getEncoding()
-    {
-        return m_encoding;
+    public String getEncoding() {
+        return getOutputProperty(OutputKeys.ENCODING);
     }
 
    /**
      * Sets the character encoding coming from the xsl:output encoding stylesheet attribute.
      * @param m_encoding the character encoding
      */
-    public void setEncoding(String m_encoding)
-    {
-        this.m_encoding = m_encoding;
+    public void setEncoding(String encoding) {
+        setOutputProperty(OutputKeys.ENCODING,encoding);
     }
 
     /**
@@ -555,18 +489,16 @@ public abstract class SerializerBase
      * @param b true if the XML declaration is to be omitted from the output
      * document.
      */
-    public void setOmitXMLDeclaration(boolean b)
-    {
-        this.m_shouldNotWriteXMLHeader = b;
+    public void setOmitXMLDeclaration(boolean b) {
+        String val = b ? "yes":"no";
+        setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,val);
     }
-
 
     /**
      * @return true if the XML declaration is to be omitted from the output
      * document.
      */
-    public boolean getOmitXMLDeclaration()
-    {
+    public boolean getOmitXMLDeclaration() {
         return m_shouldNotWriteXMLHeader;
     }
 
@@ -588,7 +520,7 @@ public abstract class SerializerBase
       */
     public void setDoctypePublic(String doctypePublic)
     {
-        this.m_doctypePublic = doctypePublic;
+        setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, doctypePublic);
     }
 
 
@@ -610,7 +542,7 @@ public abstract class SerializerBase
       */
     public void setDoctypeSystem(String doctypeSystem)
     {
-        this.m_doctypeSystem = doctypeSystem;
+        setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doctypeSystem);
     }
 
     /** Set the value coming from the xsl:output doctype-public and doctype-system stylesheet properties
@@ -621,8 +553,8 @@ public abstract class SerializerBase
      */
     public void setDoctype(String doctypeSystem, String doctypePublic)
     {
-        this.m_doctypeSystem = doctypeSystem;
-        this.m_doctypePublic = doctypePublic;
+        setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doctypeSystem);
+        setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, doctypePublic);
     }
 
     /**
@@ -632,21 +564,16 @@ public abstract class SerializerBase
      * document. This method remembers if the value was explicitly set using
      * this method, verses if the value is the default value.
      */
-    public void setStandalone(String standalone)
-    {
-        if (standalone != null)
-        {
-            m_standaloneWasSpecified = true;
-            setStandaloneInternal(standalone);
-        }
+    public void setStandalone(String standalone) {
+        setOutputProperty(OutputKeys.STANDALONE, standalone);
     }
+
     /**
      * Sets the XSL standalone attribute, but does not remember if this is a
      * default or explicite setting.
      * @param standalone "yes" | "no"
      */
-    protected void setStandaloneInternal(String standalone)
-    {
+    protected void setStandaloneInternal(String standalone) {
         if ("yes".equals(standalone))
             m_standalone = "yes";
         else
@@ -660,8 +587,7 @@ public abstract class SerializerBase
      * be included in the output document.
      *  @see XSLOutputAttributes#getStandalone()
      */
-    public String getStandalone()
-    {
+    public String getStandalone() {
         return m_standalone;
     }
 
@@ -669,8 +595,7 @@ public abstract class SerializerBase
      * @return true if the output document should be indented to visually
      * indicate its structure.
      */
-    public boolean getIndent()
-    {
+    public boolean getIndent() {
         return m_doIndent;
     }
     /**
@@ -679,8 +604,7 @@ public abstract class SerializerBase
      * @return the mediatype the media-type or MIME type associated with the
      * output document.
      */
-    public String getMediaType()
-    {
+    public String getMediaType() {
         return m_mediatype;
     }
 
@@ -688,8 +612,7 @@ public abstract class SerializerBase
      * Gets the version of the output format.
      * @return the version of the output format.
      */
-    public String getVersion()
-    {
+    public String getVersion() {
         return m_version;
     }
 
@@ -698,9 +621,8 @@ public abstract class SerializerBase
      * @param version the version of the output format.
      * @see SerializationHandler#setVersion(String)
      */
-    public void setVersion(String version)
-    {
-        m_version = version;
+    public void setVersion(String version) {
+        setOutputProperty(OutputKeys.VERSION, version);
     }
 
     /**
@@ -710,16 +632,14 @@ public abstract class SerializerBase
      * @see javax.xml.transform.OutputKeys#MEDIA_TYPE
      * @see SerializationHandler#setMediaType(String)
      */
-    public void setMediaType(String mediaType)
-    {
-        m_mediatype = mediaType;
+    public void setMediaType(String mediaType) {
+        setOutputProperty(OutputKeys.MEDIA_TYPE,mediaType);
     }
 
     /**
      * @return the number of spaces to indent for each indentation level.
      */
-    public int getIndentAmount()
-    {
+    public int getIndentAmount() {
         return m_indentAmount;
     }
 
@@ -727,8 +647,7 @@ public abstract class SerializerBase
      * Sets the indentation amount.
      * @param m_indentAmount The m_indentAmount to set
      */
-    public void setIndentAmount(int m_indentAmount)
-    {
+    public void setIndentAmount(int m_indentAmount) {
         this.m_indentAmount = m_indentAmount;
     }
 
@@ -739,9 +658,9 @@ public abstract class SerializerBase
      * visually indicate its structure.
      * @see XSLOutputAttributes#setIndent(boolean)
      */
-    public void setIndent(boolean doIndent)
-    {
-        m_doIndent = doIndent;
+    public void setIndent(boolean doIndent) {
+        String val = doIndent ? "yes":"no";
+        setOutputProperty(OutputKeys.INDENT,val);
     }
 
     /**
@@ -749,8 +668,7 @@ public abstract class SerializerBase
      * @param isStandalone true if the ORACLE_IS_STANDALONE is set to yes
      * @see OutputPropertiesFactory ORACLE_IS_STANDALONE
      */
-    public void setIsStandalone(boolean isStandalone)
-    {
+    public void setIsStandalone(boolean isStandalone) {
        m_isStandalone = isStandalone;
     }
 
@@ -781,62 +699,8 @@ public abstract class SerializerBase
      * @throws IOException An I/O exception occured
      * @see Serializer#asDOMSerializer()
      */
-    public DOMSerializer asDOMSerializer() throws IOException
-    {
+    public DOMSerializer asDOMSerializer() throws IOException {
         return this;
-    }
-
-    /**
-     * Push a boolean state based on if the name of the current element
-     * is found in the list of qnames.  A state is only pushed if
-     * there were some cdata-section-names were specified.
-     * <p>
-     * Hidden parameters are the vector of qualified elements specified in
-     * cdata-section-names attribute, and the m_cdataSectionStates stack
-     * onto which whether the current element is in the list is pushed (true or
-     * false). Other hidden parameters are the current elements namespaceURI,
-     * localName and qName
-     */
-    protected boolean isCdataSection()
-    {
-
-        boolean b = false;
-
-        if (null != m_cdataSectionElements)
-        {
-            if (m_elemContext.m_elementLocalName == null)
-                m_elemContext.m_elementLocalName =
-                    getLocalName(m_elemContext.m_elementName);
-            if (m_elemContext.m_elementURI == null)
-            {
-                String prefix = getPrefixPart(m_elemContext.m_elementName);
-                if (prefix != null)
-                    m_elemContext.m_elementURI =
-                        m_prefixMap.lookupNamespace(prefix);
-
-            }
-
-            if ((null != m_elemContext.m_elementURI)
-                && m_elemContext.m_elementURI.length() == 0)
-                m_elemContext.m_elementURI = null;
-
-            int nElems = m_cdataSectionElements.size();
-
-            // loop through 2 at a time, as these are pairs of URI and localName
-            for (int i = 0; i < nElems; i += 2)
-            {
-                String uri = (String) m_cdataSectionElements.elementAt(i);
-                String loc = (String) m_cdataSectionElements.elementAt(i + 1);
-                if (loc.equals(m_elemContext.m_elementLocalName)
-                    && subPartMatch(m_elemContext.m_elementURI, uri))
-                {
-                    b = true;
-
-                    break;
-                }
-            }
-        }
-        return b;
     }
 
     /**
@@ -847,8 +711,7 @@ public abstract class SerializerBase
      *
      * @return true if strings are equal.
      */
-    private static final boolean subPartMatch(String p, String t)
-    {
+    private static final boolean subPartMatch(String p, String t) {
         return (p == t) || ((null != p) && (p.equals(t)));
     }
 
@@ -861,8 +724,7 @@ public abstract class SerializerBase
      * @return returns the prefix of the qualified name,
      * or null if there is no prefix.
      */
-    protected static final String getPrefixPart(String qname)
-    {
+    protected static final String getPrefixPart(String qname) {
         final int col = qname.indexOf(':');
         return (col > 0) ? qname.substring(0, col) : null;
         //return (col > 0) ? qname.substring(0,col) : "";
@@ -873,8 +735,7 @@ public abstract class SerializerBase
      * @return the current namespace mappings (prefix/uri)
      * @see ExtendedContentHandler#getNamespaceMappings()
      */
-    public NamespaceMappings getNamespaceMappings()
-    {
+    public NamespaceMappings getNamespaceMappings() {
         return m_prefixMap;
     }
 
@@ -884,8 +745,7 @@ public abstract class SerializerBase
      * @return a prefix pointing to the given URI (if any).
      * @see ExtendedContentHandler#getPrefix(String)
      */
-    public String getPrefix(String namespaceURI)
-    {
+    public String getPrefix(String namespaceURI) {
         String prefix = m_prefixMap.lookupPrefix(namespaceURI);
         return prefix;
     }
@@ -898,19 +758,15 @@ public abstract class SerializerBase
      * an element.
      * @return returns the namespace URI associated with the qualified name.
      */
-    public String getNamespaceURI(String qname, boolean isElement)
-    {
+    public String getNamespaceURI(String qname, boolean isElement) {
         String uri = EMPTYSTRING;
         int col = qname.lastIndexOf(':');
         final String prefix = (col > 0) ? qname.substring(0, col) : EMPTYSTRING;
 
-        if (!EMPTYSTRING.equals(prefix) || isElement)
-        {
-            if (m_prefixMap != null)
-            {
+        if (!EMPTYSTRING.equals(prefix) || isElement) {
+            if (m_prefixMap != null) {
                 uri = m_prefixMap.lookupNamespace(prefix);
-                if (uri == null && !prefix.equals(XMLNS_PREFIX))
-                {
+                if (uri == null && !prefix.equals(XMLNS_PREFIX)) {
                     throw new RuntimeException(
                         Utils.messages.createMessage(
                             MsgKey.ER_NAMESPACE_PREFIX,
@@ -928,8 +784,7 @@ public abstract class SerializerBase
      * @return the namespace URI currently associated with the
      * prefix, null if the prefix is undefined.
      */
-    public String getNamespaceURIFromPrefix(String prefix)
-    {
+    public String getNamespaceURIFromPrefix(String prefix) {
         String uri = null;
         if (m_prefixMap != null)
             uri = m_prefixMap.lookupNamespace(prefix);
@@ -943,16 +798,14 @@ public abstract class SerializerBase
      *
      * @throws org.xml.sax.SAXException
      */
-    public void entityReference(String name) throws org.xml.sax.SAXException
-    {
-
+    public void entityReference(String name) throws org.xml.sax.SAXException {
         flushPending();
 
         startEntity(name);
         endEntity(name);
 
         if (m_tracer != null)
-                    fireEntityReference(name);
+            fireEntityReference(name);
     }
 
     /**
@@ -960,8 +813,7 @@ public abstract class SerializerBase
      * @param t the transformer associated with this serializer.
      * @see SerializationHandler#setTransformer(Transformer)
      */
-    public void setTransformer(Transformer t)
-    {
+    public void setTransformer(Transformer t) {
         m_transformer = t;
 
         // If this transformer object implements the SerializerTrace interface
@@ -974,13 +826,13 @@ public abstract class SerializerBase
            m_tracer = null;
         }
     }
+
     /**
      * Gets the transformer associated with this serializer
      * @return returns the transformer associated with this serializer.
      * @see SerializationHandler#getTransformer()
      */
-    public Transformer getTransformer()
-    {
+    public Transformer getTransformer() {
         return m_transformer;
     }
 
@@ -995,11 +847,9 @@ public abstract class SerializerBase
     {
         flushPending();
         String data = node.getNodeValue();
-        if (data != null)
-        {
+        if (data != null) {
             final int length = data.length();
-            if (length > m_charsBuff.length)
-            {
+            if (length > m_charsBuff.length) {
                 m_charsBuff = new char[length * 2 + 1];
             }
             data.getChars(0, length, m_charsBuff, 0);
@@ -1018,16 +868,13 @@ public abstract class SerializerBase
      * @see org.xml.sax.ErrorHandler#fatalError(SAXParseException)
      */
     public void fatalError(SAXParseException exc) throws SAXException {
-
-      m_elemContext.m_startTagOpen = false;
-
+        m_elemContext.m_startTagOpen = false;
     }
 
     /**
      * @see org.xml.sax.ErrorHandler#warning(SAXParseException)
      */
-    public void warning(SAXParseException exc) throws SAXException
-    {
+    public void warning(SAXParseException exc) throws SAXException {
     }
 
     /**
@@ -1045,20 +892,6 @@ public abstract class SerializerBase
     }
 
     /**
-     * Report the characters event
-     * @param chars  content of characters
-     * @param start  starting index of characters to output
-     * @param length  number of characters to output
-     */
-//    protected void fireCharEvent(char[] chars, int start, int length)
-//        throws org.xml.sax.SAXException
-//    {
-//        if (m_tracer != null)
-//            m_tracer.fireGenerateEvent(SerializerTrace.EVENTTYPE_CHARACTERS, chars, start,length);
-//    }
-//
-
-    /**
      * This method is only used internally when flushing the writer from the
      * various fire...() trace events.  Due to the writer being wrapped with
      * SerializerTraceWriter it may cause the flush of these trace events:
@@ -1067,20 +900,15 @@ public abstract class SerializerBase
      * which trace the output written to the output stream.
      *
      */
-    private void flushMyWriter()
-    {
-        if (m_writer != null)
-        {
-            try
-            {
+    private void flushMyWriter() {
+        if (m_writer != null) {
+            try {
                 m_writer.flush();
-            }
-            catch(IOException ioe)
-            {
-
+            } catch(IOException ioe) {
             }
         }
     }
+
     /**
      * Report the CDATA trace event
      * @param chars  content of CDATA
@@ -1090,10 +918,9 @@ public abstract class SerializerBase
     protected void fireCDATAEvent(char[] chars, int start, int length)
         throws org.xml.sax.SAXException
     {
-                if (m_tracer != null)
-        {
+        if (m_tracer != null) {
             flushMyWriter();
-                        m_tracer.fireGenerateEvent(SerializerTrace.EVENTTYPE_CDATA, chars, start,length);
+            m_tracer.fireGenerateEvent(SerializerTrace.EVENTTYPE_CDATA, chars, start,length);
         }
     }
 
@@ -1106,10 +933,9 @@ public abstract class SerializerBase
     protected void fireCommentEvent(char[] chars, int start, int length)
         throws org.xml.sax.SAXException
     {
-                if (m_tracer != null)
-        {
+        if (m_tracer != null) {
             flushMyWriter();
-                        m_tracer.fireGenerateEvent(SerializerTrace.EVENTTYPE_COMMENT, new String(chars, start, length));
+            m_tracer.fireGenerateEvent(SerializerTrace.EVENTTYPE_COMMENT, new String(chars, start, length));
         }
     }
 
@@ -1283,11 +1109,9 @@ public abstract class SerializerBase
      *
      * @see ExtendedContentHandler#setSourceLocator(javax.xml.transform.SourceLocator)
      */
-    public void setSourceLocator(SourceLocator locator)
-    {
+    public void setSourceLocator(SourceLocator locator) {
         m_sourceLocator = locator;
     }
-
 
     /**
      * Used only by TransformerSnapshotImpl to restore the serialization
@@ -1299,8 +1123,7 @@ public abstract class SerializerBase
         m_prefixMap = mappings;
     }
 
-    public boolean reset()
-    {
+    public boolean reset() {
         resetSerializerBase();
         return true;
     }
@@ -1309,15 +1132,13 @@ public abstract class SerializerBase
      * Reset all of the fields owned by SerializerBase
      *
      */
-    private void resetSerializerBase()
-    {
+    private void resetSerializerBase() {
         this.m_attributes.clear();
-        this.m_cdataSectionElements = null;
+        this.m_StringOfCDATASections = null;
         this.m_elemContext = new ElemContext();
         this.m_doctypePublic = null;
         this.m_doctypeSystem = null;
         this.m_doIndent = false;
-        this.m_encoding = null;
         this.m_indentAmount = 0;
         this.m_inEntityRef = false;
         this.m_inExternalDTD = false;
@@ -1343,13 +1164,12 @@ public abstract class SerializerBase
      *
      * This concept is made clear in the XSLT 2.0 draft.
      */
-    final boolean inTemporaryOutputState()
-    {
+    final boolean inTemporaryOutputState() {
         /* This is a hack. We should really be letting the serializer know
          * that it is in temporary output state with an explicit call, but
          * from a pragmatic point of view (for now anyways) having no output
-         * encoding at all, not even the default UTF-8 indicates that the serializer
-         * is being used for temporary RTF.
+         * encoding at all, not even the default UTF-8 indicates that the
+         * serializer is being used for temporary RTF.
          */
         return (getEncoding() == null);
 
@@ -1358,36 +1178,38 @@ public abstract class SerializerBase
     /**
      * This method adds an attribute the the current element,
      * but should not be used for an xsl:attribute child.
-     * @see ExtendedContentHandler#addAttribute(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+     * @see ExtendedContentHandler#addAttribute(java.lang.String, java.lang.String,
+     *          java.lang.String, java.lang.String, java.lang.String)
      */
-    public void addAttribute(String uri, String localName, String rawName, String type, String value) throws SAXException
+    public void addAttribute(String uri, String localName, String rawName,
+                             String type, String value) throws SAXException
     {
-        if (m_elemContext.m_startTagOpen)
-        {
+        if (m_elemContext.m_startTagOpen) {
             addAttributeAlways(uri, localName, rawName, type, value, false);
         }
     }
 
     /**
-     * @see org.xml.sax.DTDHandler#notationDecl(java.lang.String, java.lang.String, java.lang.String)
+     * @see org.xml.sax.DTDHandler#notationDecl(java.lang.String,
+     *          java.lang.String, java.lang.String)
      */
     public void notationDecl(String arg0, String arg1, String arg2)
-        throws SAXException {
+        throws SAXException
+    {
         // This method just provides a definition to satisfy the interface
-        // A particular sub-class of SerializerBase provides the implementation (if desired)
+        // A particular sub-class of SerializerBase provides the implementation
+        // (if desired)
     }
 
     /**
-     * @see org.xml.sax.DTDHandler#unparsedEntityDecl(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+     * @see org.xml.sax.DTDHandler#unparsedEntityDecl(java.lang.String,
+     *          java.lang.String, java.lang.String, java.lang.String)
      */
-    public void unparsedEntityDecl(
-        String arg0,
-        String arg1,
-        String arg2,
-        String arg3)
-        throws SAXException {
+    public void unparsedEntityDecl(String arg0, String arg1, String arg2,
+                                   String arg3) throws SAXException {
         // This method just provides a definition to satisfy the interface
-        // A particular sub-class of SerializerBase provides the implementation (if desired)
+        // A particular sub-class of SerializerBase provides the implementation
+        // (if desired)
     }
 
     /**
@@ -1399,4 +1221,351 @@ public abstract class SerializerBase
         // A particular sub-class of SerializerBase provides the implementation (if desired)
     }
 
+
+    /**
+     * The CDATA section names stored in a whitespace separateed list with
+     * each element being a word of the form "{uri}localName" This list
+     * comes from the cdata-section-elements attribute.
+     *
+     * This field replaces m_cdataSectionElements Vector.
+     */
+    protected String m_StringOfCDATASections = null;
+
+    boolean m_docIsEmpty = true;
+    void initCdataElems(String s)
+    {
+        if (s != null)
+        {
+            int max = s.length();
+
+            // true if we are in the middle of a pair of curly braces that delimit a URI
+            boolean inCurly = false;
+
+            // true if we found a URI but haven't yet processed the local name
+            boolean foundURI = false;
+
+            StringBuilder buf = new StringBuilder();
+            String uri = null;
+            String localName = null;
+
+            // parse through string, breaking on whitespaces.  I do this instead
+            // of a tokenizer so I can track whitespace inside of curly brackets,
+            // which theoretically shouldn't happen if they contain legal URLs.
+            for (int i = 0; i < max; i++)
+            {
+                char c = s.charAt(i);
+
+                if (Character.isWhitespace(c))
+                {
+                    if (!inCurly)
+                    {
+                        if (buf.length() > 0)
+                        {
+                            localName = buf.toString();
+                            if (!foundURI)
+                                uri = "";
+                            addCDATAElement(uri,localName);
+                            buf.setLength(0);
+                            foundURI = false;
+                        }
+                        continue;
+                    }
+                    else
+                        buf.append(c); // add whitespace to the URI
+                }
+                else if ('{' == c) // starting a URI
+                    inCurly = true;
+                else if ('}' == c)
+                {
+                    // we just ended a URI
+                    foundURI = true;
+                    uri = buf.toString();
+                    buf.setLength(0);
+                    inCurly = false;
+                }
+                else
+                {
+                    // append non-whitespace, non-curly to current URI or localName being gathered.
+                    buf.append(c);
+                }
+
+            }
+
+            if (buf.length() > 0)
+            {
+                // We have one last localName to process.
+                localName = buf.toString();
+                if (!foundURI)
+                    uri = "";
+                addCDATAElement(uri,localName);
+            }
+        }
+    }
+
+    protected java.util.HashMap<String, HashMap<String, String>> m_CdataElems = null;
+    private void addCDATAElement(String uri, String localName)
+    {
+        if (m_CdataElems == null) {
+            m_CdataElems = new java.util.HashMap<>();
+        }
+
+        HashMap<String,String> h = m_CdataElems.get(localName);
+        if (h == null) {
+            h = new HashMap<>();
+            m_CdataElems.put(localName,h);
+        }
+        h.put(uri,uri);
+
+    }
+
+
+    /**
+     * Return true if nothing has been sent to this result tree yet.
+     * <p>
+     * This is not a public API.
+     *
+     * @xsl.usage internal
+     */
+    public boolean documentIsEmpty() {
+        // If we haven't called startDocument() yet, then this document is empty
+        return m_docIsEmpty && (m_elemContext.m_currentElemDepth == 0);
+    }
+
+    /**
+     * Return true if the current element in m_elemContext
+     * is a CDATA section.
+     * CDATA sections are specified in the <xsl:output> attribute
+     * cdata-section-names or in the JAXP equivalent property.
+     * In any case the format of the value of such a property is:
+     * <pre>
+     * "{uri1}localName1 {uri2}localName2 . . . "
+     * </pre>
+     *
+     * <p>
+     * This method is not a public API, but is only used internally by the serializer.
+     */
+    protected boolean isCdataSection() {
+        boolean b = false;
+
+        if (null != m_StringOfCDATASections) {
+            if (m_elemContext.m_elementLocalName == null) {
+                String localName =  getLocalName(m_elemContext.m_elementName);
+                m_elemContext.m_elementLocalName = localName;
+            }
+
+            if ( m_elemContext.m_elementURI == null) {
+
+                m_elemContext.m_elementURI = getElementURI();
+            }
+            else if ( m_elemContext.m_elementURI.length() == 0) {
+                if ( m_elemContext.m_elementName == null) {
+                    m_elemContext.m_elementName = m_elemContext.m_elementLocalName;
+                    // leave URI as "", meaning in no namespace
+                }
+                else if (m_elemContext.m_elementLocalName.length() < m_elemContext.m_elementName.length()){
+                    // We were told the URI was "", yet the name has a prefix since the name is longer than the localname.
+                    // So we will fix that incorrect information here.
+                    m_elemContext.m_elementURI = getElementURI();
+                }
+            }
+
+            HashMap<String, String> h = null;
+            if (m_CdataElems != null) {
+                h = m_CdataElems.get(m_elemContext.m_elementLocalName);
+            }
+            if (h != null) {
+                Object obj = h.get(m_elemContext.m_elementURI);
+                if (obj != null)
+                    b = true;
+            }
+
+        }
+        return b;
+    }
+
+    /**
+     * Before this call m_elementContext.m_elementURI is null,
+     * which means it is not yet known. After this call it
+     * is non-null, but possibly "" meaning that it is in the
+     * default namespace.
+     *
+     * @return The URI of the element, never null, but possibly "".
+     */
+    private String getElementURI() {
+        String uri = null;
+        // At this point in processing we have received all the
+        // namespace mappings
+        // As we still don't know the elements namespace,
+        // we now figure it out.
+
+        String prefix = getPrefixPart(m_elemContext.m_elementName);
+
+        if (prefix == null) {
+            // no prefix so lookup the URI of the default namespace
+            uri = m_prefixMap.lookupNamespace("");
+        } else {
+            uri = m_prefixMap.lookupNamespace(prefix);
+        }
+        if (uri == null) {
+            // We didn't find the namespace for the
+            // prefix ... ouch, that shouldn't happen.
+            // This is a hack, we really don't know
+            // the namespace
+            uri = EMPTYSTRING;
+        }
+
+        return uri;
+    }
+
+
+    /**
+     * Get the value of an output property,
+     * the explicit value, if any, otherwise the
+     * default value, if any, otherwise null.
+     */
+    public String getOutputProperty(String name) {
+        String val = getOutputPropertyNonDefault(name);
+        // If no explicit value, try to get the default value
+        if (val == null)
+            val = getOutputPropertyDefault(name);
+        return val;
+
+    }
+    /**
+     * Get the value of an output property,
+     * not the default value. If there is a default
+     * value, but no non-default value this method
+     * will return null.
+     * <p>
+     *
+     */
+    public String getOutputPropertyNonDefault(String name) {
+        return getProp(name,false);
+    }
+
+    /**
+     * Return a {@link DOM3Serializer} interface into this serializer. If the
+     * serializer does not support the {@link DOM3Serializer} interface, it should
+     * return null.
+     *
+     * @return A {@link DOM3Serializer} interface into this serializer,  or null
+     * if the serializer is not DOM capable
+     * @throws IOException An I/O exception occured
+     * @see org.apache.xml.serializer.Serializer#asDOM3Serializer()
+     */
+    public Object asDOM3Serializer() throws IOException
+    {
+        return new com.sun.org.apache.xml.internal.serializer.dom3.DOM3SerializerImpl(this);
+    }
+
+    /**
+     * Get the default value of an xsl:output property,
+     * which would be null only if no default value exists
+     * for the property.
+     */
+    public String getOutputPropertyDefault(String name) {
+        return getProp(name, true);
+    }
+
+    /**
+     * Set the value for the output property, typically from
+     * an xsl:output element, but this does not change what
+     * the default value is.
+     */
+    public void setOutputProperty(String name, String val) {
+        setProp(name,val,false);
+    }
+
+    /**
+     * Set the default value for an output property, but this does
+     * not impact any explicitly set value.
+     */
+    public void setOutputPropertyDefault(String name, String val) {
+        setProp(name,val,true);
+
+    }
+
+    /**
+     * A mapping of keys to explicitly set values, for example if
+     * and <xsl:output/> has an "encoding" attribute, this
+     * map will have what that attribute maps to.
+     */
+    private HashMap<String, String> m_OutputProps;
+
+    /**
+     * A mapping of keys to default values, for example if
+     * the default value of the encoding is "UTF-8" then this
+     * map will have that "encoding" maps to "UTF-8".
+     */
+    private HashMap<String, String> m_OutputPropsDefault;
+
+    Set<String> getOutputPropDefaultKeys() {
+        return m_OutputPropsDefault.keySet();
+    }
+
+    Set<String> getOutputPropKeys() {
+        return m_OutputProps.keySet();
+    }
+
+    private String getProp(String name, boolean defaultVal) {
+        if (m_OutputProps == null) {
+            m_OutputProps = new HashMap<>();
+            m_OutputPropsDefault = new HashMap<>();
+        }
+
+        String val;
+        if (defaultVal)
+            val = m_OutputPropsDefault.get(name);
+        else
+            val = m_OutputProps.get(name);
+
+        return val;
+    }
+
+    /**
+     *
+     * @param name The name of the property, e.g. "{http://myprop}indent-tabs" or "indent".
+     * @param val The value of the property, e.g. "4"
+     * @param defaultVal true if this is a default value being set for the property as
+     * opposed to a user define on, set say explicitly in the stylesheet or via JAXP
+     */
+    void setProp(String name, String val, boolean defaultVal) {
+        if (m_OutputProps == null) {
+            m_OutputProps = new HashMap<>();
+            m_OutputPropsDefault = new HashMap<>();
+        }
+
+        if (defaultVal)
+            m_OutputPropsDefault.put(name,val);
+        else {
+            if (OutputKeys.CDATA_SECTION_ELEMENTS.equals(name) && val != null) {
+                initCdataElems(val);
+                String oldVal = m_OutputProps.get(name);
+                String newVal;
+                if (oldVal == null)
+                    newVal = oldVal + ' ' + val;
+                else
+                    newVal = val;
+                m_OutputProps.put(name,newVal);
+            }
+            else {
+                m_OutputProps.put(name,val);
+            }
+        }
+    }
+
+    /**
+     * Get the first char of the local name
+     * @param name Either a local name, or a local name
+     * preceeded by a uri enclosed in curly braces.
+     */
+    static char getFirstCharLocName(String name) {
+        final char first;
+        int i = name.indexOf('}');
+        if (i < 0)
+            first = name.charAt(0);
+        else
+            first = name.charAt(i+1);
+        return first;
+    }
 }

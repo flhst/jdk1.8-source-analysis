@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xpath.internal.res;
 
 import java.util.ListResourceBundle;
@@ -30,6 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
+ * @LastModified: May 2019
  */
 public class XPATHErrorResources_zh_TW extends ListResourceBundle
 {
@@ -147,6 +149,10 @@ public class XPATHErrorResources_zh_TW extends ListResourceBundle
          "ER_FOUND_COMMA_BUT_NO_FOLLOWING_ARG";
   public static final String ER_PREDICATE_ILLEGAL_SYNTAX =
          "ER_PREDICATE_ILLEGAL_SYNTAX";
+  public static final String ER_PREDICATE_TOO_MANY_OPEN =
+         "ER_PREDICATE_TOO_MANY_OPEN";
+  public static final String ER_COMPILATION_TOO_MANY_OPERATION =
+         "ER_COMPILATION_TOO_MANY_OPERATION";
   public static final String ER_ILLEGAL_AXIS_NAME = "ER_ILLEGAL_AXIS_NAME";
   public static final String ER_UNKNOWN_NODETYPE = "ER_UNKNOWN_NODETYPE";
   public static final String ER_PATTERN_LITERAL_NEEDS_BE_QUOTED =
@@ -457,6 +463,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
       "'..[predicate]' \u6216 '.[predicate]' \u662F\u7121\u6548\u7684\u8A9E\u6CD5\u3002\u8ACB\u6539\u7528 'self::node()[predicate]'\u3002"},
+
+  { ER_PREDICATE_TOO_MANY_OPEN,
+      "\u5256\u6790\u4F4D\u7F6E\u5728 {1} \u7684 {0} \u6642\u767C\u751F\u5806\u758A\u6EA2\u4F4D\u3002\u592A\u591A\u958B\u653E\u6027\u8FF0\u8A5E ({2})\u3002"},
+
+  { ER_COMPILATION_TOO_MANY_OPERATION,
+      "\u7DE8\u8B6F\u8868\u793A\u5F0F\u6642\u767C\u751F\u5806\u758A\u6EA2\u4F4D\u3002\u592A\u591A\u4F5C\u696D ({0})\u3002"},
 
   { ER_ILLEGAL_AXIS_NAME,
      "\u7121\u6548\u7684\u8EF8\u540D\u7A31: {0}"},

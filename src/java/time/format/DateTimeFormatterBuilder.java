@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -772,11 +772,22 @@ public final class DateTimeFormatterBuilder {
         final LocaleStore store = new LocaleStore(map);
         DateTimeTextProvider provider = new DateTimeTextProvider() {
             @Override
+            public String getText(Chronology chrono, TemporalField field,
+                                  long value, TextStyle style, Locale locale) {
+                return store.getText(value, style);
+            }
+            @Override
             public String getText(TemporalField field, long value, TextStyle style, Locale locale) {
                 return store.getText(value, style);
             }
             @Override
-            public Iterator<Entry<String, Long>> getTextIterator(TemporalField field, TextStyle style, Locale locale) {
+            public Iterator<Entry<String, Long>> getTextIterator(Chronology chrono,
+                    TemporalField field, TextStyle style, Locale locale) {
+                return store.getTextIterator(style);
+            }
+            @Override
+            public Iterator<Entry<String, Long>> getTextIterator(TemporalField field,
+                    TextStyle style, Locale locale) {
                 return store.getTextIterator(style);
             }
         };
@@ -1299,7 +1310,7 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendLiteral(String literal) {
         Objects.requireNonNull(literal, "literal");
-        if (literal.length() > 0) {
+        if (!literal.isEmpty()) {
             if (literal.length() == 1) {
                 appendInternal(new CharLiteralPrinterParser(literal.charAt(0)));
             } else {
@@ -1678,7 +1689,7 @@ public final class DateTimeFormatterBuilder {
                     throw new IllegalArgumentException("Pattern ends with an incomplete string literal: " + pattern);
                 }
                 String str = pattern.substring(start + 1, pos);
-                if (str.length() == 0) {
+                if (str.isEmpty()) {
                     appendLiteral('\'');
                 } else {
                     appendLiteral(str.replace("''", "'"));
@@ -3923,7 +3934,7 @@ public final class DateTimeFormatterBuilder {
             this.key = k;
             this.value = v;
             this.child = child;
-            if (k.length() == 0){
+            if (k.isEmpty()) {
                 c0 = 0xffff;
             } else {
                 c0 = key.charAt(0);

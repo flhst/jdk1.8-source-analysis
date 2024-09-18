@@ -95,12 +95,15 @@ class HeapFloatBufferR
     }
 
     public FloatBuffer slice() {
+        int pos = this.position();
+        int lim = this.limit();
+        int rem = (pos <= lim ? lim - pos : 0);
         return new HeapFloatBufferR(hb,
                                         -1,
                                         0,
-                                        this.remaining(),
-                                        this.remaining(),
-                                        this.position() + offset);
+                                        rem,
+                                        rem,
+                                        pos + offset);
     }
 
     public FloatBuffer duplicate() {
@@ -196,6 +199,8 @@ class HeapFloatBufferR
     }
 
     public FloatBuffer put(FloatBuffer src) {
+
+
 
 
 

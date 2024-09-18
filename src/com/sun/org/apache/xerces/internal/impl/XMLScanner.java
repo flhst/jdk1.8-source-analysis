@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -68,6 +68,7 @@ import com.sun.xml.internal.stream.Entity;
  * @author Eric Ye, IBM
  * @author K.Venugopal SUN Microsystems
  * @author Sunitha Reddy, SUN Microsystems
+ * @LastModified: Aug 2021
  * @version $Id: XMLScanner.java,v 1.12 2010-11-01 04:39:41 joehw Exp $
  */
 public abstract class XMLScanner
@@ -957,12 +958,6 @@ public abstract class XMLScanner
                         System.out.println("** valueF: \""
                                 + stringBuffer.toString() + "\"");
                     }
-                } else if (c == '\n' || c == '\r') {
-                    fEntityScanner.scanChar(null);
-                    stringBuffer.append(' ');
-                    if (entityDepth == fEntityDepth && fNeedNonNormalizedValue) {
-                        fStringBuffer2.append('\n');
-                    }
                 } else if (c != -1 && XMLChar.isHighSurrogate(c)) {
                     fStringBuffer3.clear();
                     if (scanSurrogates(fStringBuffer3)) {
@@ -1240,10 +1235,10 @@ public abstract class XMLScanner
      * @throws XNIException Thrown by handler to signal an error.
      */
     public void endEntity(String name, Augmentations augs) throws IOException, XNIException {
-
         // keep track of the entity depth
-        fEntityDepth--;
-
+        if (fEntityDepth > 0) {
+            fEntityDepth--;
+        }
     } // endEntity(String)
 
     /**

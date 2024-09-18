@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -247,6 +247,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     public void closeEntry() throws IOException {
         ensureOpen();
         if (current != null) {
+            try {
             ZipEntry e = current.entry;
             switch (e.method) {
             case DEFLATED:
@@ -300,6 +301,11 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
             }
             crc.reset();
             current = null;
+            } catch (IOException e) {
+                if (def.shouldFinish() && usesDefaultDeflater && !(e instanceof ZipException))
+                    def.end();
+                throw e;
+            }
         }
     }
 

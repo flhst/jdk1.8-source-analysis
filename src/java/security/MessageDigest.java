@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -32,10 +32,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
-
+import java.security.InvalidKeyException;
 import java.nio.ByteBuffer;
 
 import sun.security.util.Debug;
+import sun.security.util.MessageDigestSpi2;
+
+import javax.crypto.SecretKey;
 
 /**
  * This MessageDigest class provides applications the functionality of a
@@ -59,7 +62,7 @@ import sun.security.util.Debug;
  * and catching the CloneNotSupportedException:
  *
  * <pre>{@code
- * MessageDigest md = MessageDigest.getInstance("SHA");
+ * MessageDigest md = MessageDigest.getInstance("SHA-256");
  *
  * try {
  *     md.update(toChapter1);
@@ -222,7 +225,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
     public static MessageDigest getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        if (provider == null || provider.length() == 0)
+        if (provider == null || provider.isEmpty())
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
         if (objs[0] instanceof MessageDigest) {
@@ -411,13 +414,17 @@ public abstract class MessageDigest extends MessageDigestSpi {
         return digest();
     }
 
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
+    }
+
     /**
      * Returns a string representation of this message digest object.
      */
     public String toString() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream p = new PrintStream(baos);
-        p.print(algorithm+" Message Digest from "+provider.getName()+", ");
+        p.print(algorithm+" Message Digest from "+getProviderName()+", ");
         switch (state) {
         case INITIAL:
             p.print("<initialized>");
@@ -440,18 +447,31 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * @return true if the digests are equal, false otherwise.
      */
     public static boolean isEqual(byte[] digesta, byte[] digestb) {
+        /* All bytes in digesta are examined to determine equality.
+         * The calculation time depends only on the length of digesta
+         * It does not depend on the length of digestb or the contents
+         * of digesta and digestb.
+         */
         if (digesta == digestb) return true;
         if (digesta == null || digestb == null) {
             return false;
         }
-        if (digesta.length != digestb.length) {
-            return false;
+
+        int lenA = digesta.length;
+        int lenB = digestb.length;
+
+        if (lenB == 0) {
+            return lenA == 0;
         }
 
         int result = 0;
+        result |= lenA - lenB;
+
         // time-constant comparison
-        for (int i = 0; i < digesta.length; i++) {
-            result |= digesta[i] ^ digestb[i];
+        for (int i = 0; i < lenA; i++) {
+            // If i >= lenB, indexB is 0; otherwise, i.
+            int indexB = ((i - lenB) >>> 31) * i;
+            result |= digesta[i] ^ digestb[indexB];
         }
         return result == 0;
     }
@@ -467,7 +487,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
     /**
      * Returns a string that identifies the algorithm, independent of
      * implementation details. The name should be a standard
-     * Java Security name (such as "SHA", "MD5", and so on).
+     * Java Security name (such as "SHA-256").
      * See the MessageDigest section in the <a href=
      * "{@docRoot}/../technotes/guides/security/StandardNames.html#MessageDigest">
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
@@ -535,7 +555,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * and its original parent (Object).
      */
 
-    static class Delegate extends MessageDigest {
+    static class Delegate extends MessageDigest implements MessageDigestSpi2 {
 
         // The provider implementation (delegate)
         private MessageDigestSpi digestSpi;
@@ -586,6 +606,15 @@ public abstract class MessageDigest extends MessageDigestSpi {
 
         protected void engineUpdate(ByteBuffer input) {
             digestSpi.engineUpdate(input);
+        }
+
+        public void engineUpdate(SecretKey key) throws InvalidKeyException {
+            if (digestSpi instanceof MessageDigestSpi2) {
+                ((MessageDigestSpi2)digestSpi).engineUpdate(key);
+            } else {
+                throw new UnsupportedOperationException
+                ("Digest does not support update of SecretKey object");
+            }
         }
 
         protected byte[] engineDigest() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -27,22 +27,15 @@ package javax.swing;
 
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.EventListener;
 import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.VolatileImage;
-import java.awt.Graphics2D;
 import java.awt.peer.LightweightPeer;
-import java.awt.dnd.DropTarget;
-import java.awt.font.FontRenderContext;
 import java.beans.PropertyChangeListener;
 import java.beans.VetoableChangeListener;
 import java.beans.VetoableChangeSupport;
@@ -64,6 +57,7 @@ import javax.swing.plaf.*;
 import static javax.swing.ClientPropertyKey.*;
 import javax.accessibility.*;
 
+import sun.awt.CausedFocusEvent;
 import sun.awt.SunToolkit;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIClientPropertyKey;
@@ -3606,6 +3600,15 @@ public abstract class JComponent extends Container implements Serializable,
                         }
                     }
                 }
+            }
+
+            @Override
+            public Component getGroupSelection(Component focusCandidate,
+                                               CausedFocusEvent.Cause cause) {
+                if (focusCandidate instanceof JToggleButton) {
+                    return ((JToggleButton) focusCandidate).getGroupSelection(cause);
+                }
+                return null;
             }
         };
 

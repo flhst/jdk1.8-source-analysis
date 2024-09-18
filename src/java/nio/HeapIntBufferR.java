@@ -95,12 +95,15 @@ class HeapIntBufferR
     }
 
     public IntBuffer slice() {
+        int pos = this.position();
+        int lim = this.limit();
+        int rem = (pos <= lim ? lim - pos : 0);
         return new HeapIntBufferR(hb,
                                         -1,
                                         0,
-                                        this.remaining(),
-                                        this.remaining(),
-                                        this.position() + offset);
+                                        rem,
+                                        rem,
+                                        pos + offset);
     }
 
     public IntBuffer duplicate() {
@@ -196,6 +199,8 @@ class HeapIntBufferR
     }
 
     public IntBuffer put(IntBuffer src) {
+
+
 
 
 

@@ -1,175 +1,162 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * This class represents the type of a local variable or item on stack
- * used in the StackMap entries.
+ * This class represents the type of a local variable or item on stack used in the StackMap entries.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     StackMapEntry
- * @see     StackMap
- * @see     Constants
+ * @see StackMapEntry
+ * @see StackMap
+ * @see Const
  */
 public final class StackMapType implements Cloneable {
-  private byte         type;
-  private int          index = -1; // Index to CONSTANT_Class or offset
-  private ConstantPool constant_pool;
 
-  /**
-   * Construct object from file stream.
-   * @param file Input stream
-   * @throws IOException
-   */
-  StackMapType(DataInputStream file, ConstantPool constant_pool) throws IOException
-  {
-    this(file.readByte(), -1, constant_pool);
+    public static final StackMapType[] EMPTY_ARRAY = {}; // must be public because BCELifier code generator writes calls to it
 
-    if(hasIndex())
-      setIndex(file.readShort());
+    private byte type;
+    private int index = -1; // Index to CONSTANT_Class or offset
+    private ConstantPool constantPool;
 
-    setConstantPool(constant_pool);
-  }
+    /**
+     * @param type type tag as defined in the Constants interface
+     * @param index index to constant pool, or byte code offset
+     */
+    public StackMapType(final byte type, final int index, final ConstantPool constantPool) {
+        this.type = checkType(type);
+        this.index = index;
+        this.constantPool = constantPool;
+    }
 
-  /**
-   * @param type type tag as defined in the Constants interface
-   * @param index index to constant pool, or byte code offset
-   */
-  public StackMapType(byte type, int index, ConstantPool constant_pool) {
-    setType(type);
-    setIndex(index);
-    setConstantPool(constant_pool);
-  }
+    /**
+     * Construct object from file stream.
+     *
+     * @param file Input stream
+     * @throws IOException if an I/O error occurs.
+     */
+    StackMapType(final DataInput file, final ConstantPool constantPool) throws IOException {
+        this(file.readByte(), -1, constantPool);
+        if (hasIndex()) {
+            this.index = file.readUnsignedShort();
+        }
+        this.constantPool = constantPool;
+    }
 
-  public void setType(byte t) {
-    if((t < Constants.ITEM_Bogus) || (t > Constants.ITEM_NewObject))
-      throw new RuntimeException("Illegal type for StackMapType: " + t);
-    type = t;
-  }
+    private byte checkType(final byte type) {
+        if (type < Const.ITEM_Bogus || type > Const.ITEM_NewObject) {
+            throw new ClassFormatException("Illegal type for StackMapType: " + type);
+        }
+        return type;
+    }
 
-  public byte getType()       { return type; }
-  public void setIndex(int t) { index = t; }
+    /**
+     * @return deep copy of this object
+     */
+    public StackMapType copy() {
+        try {
+            return (StackMapType) clone();
+        } catch (final CloneNotSupportedException e) {
+            // TODO should this throw?
+        }
+        return null;
+    }
 
-  /** @return index to constant pool if type == ITEM_Object, or offset
-   * in byte code, if type == ITEM_NewObject, and -1 otherwise
-   */
-  public int  getIndex()      { return index; }
+    /**
+     * Dump type entries to file.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    public void dump(final DataOutputStream file) throws IOException {
+        file.writeByte(type);
+        if (hasIndex()) {
+            file.writeShort(getIndex());
+        }
+    }
 
-  /**
-   * Dump type entries to file.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeByte(type);
-    if(hasIndex())
-      file.writeShort(getIndex());
-  }
+    /**
+     * @return Constant pool used by this object.
+     */
+    public ConstantPool getConstantPool() {
+        return constantPool;
+    }
 
-  /** @return true, if type is either ITEM_Object or ITEM_NewObject
-   */
-  public final boolean hasIndex() {
-    return ((type == Constants.ITEM_Object) ||
-            (type == Constants.ITEM_NewObject));
-  }
+    /**
+     * @return index to constant pool if type == ITEM_Object, or offset in byte code, if type == ITEM_NewObject, and -1
+     *         otherwise
+     */
+    public int getIndex() {
+        return index;
+    }
 
-  private String printIndex() {
-    if(type == Constants.ITEM_Object)
-      return ", class=" + constant_pool.constantToString(index, Constants.CONSTANT_Class);
-    else if(type == Constants.ITEM_NewObject)
-      return ", offset=" + index;
-    else
-      return "";
-  }
+    public byte getType() {
+        return type;
+    }
 
-  /**
-   * @return String representation
-   */
-  public final String toString() {
-    return "(type=" + Constants.ITEM_NAMES[type] + printIndex() + ")";
-  }
+    /**
+     * @return true, if type is either ITEM_Object or ITEM_NewObject
+     */
+    public boolean hasIndex() {
+        return type == Const.ITEM_Object || type == Const.ITEM_NewObject;
+    }
 
-  /**
-   * @return deep copy of this object
-   */
-  public StackMapType copy() {
-    try {
-      return (StackMapType)clone();
-    } catch(CloneNotSupportedException e) {}
+    private String printIndex() {
+        if (type == Const.ITEM_Object) {
+            if (index < 0) {
+                return ", class=<unknown>";
+            }
+            return ", class=" + constantPool.constantToString(index, Const.CONSTANT_Class);
+        }
+        if (type == Const.ITEM_NewObject) {
+            return ", offset=" + index;
+        }
+        return "";
+    }
 
-    return null;
-  }
+    /**
+     * @param constantPool Constant pool to be used for this object.
+     */
+    public void setConstantPool(final ConstantPool constantPool) {
+        this.constantPool = constantPool;
+    }
 
-  /**
-   * @return Constant pool used by this object.
-   */
-  public final ConstantPool getConstantPool() { return constant_pool; }
+    public void setIndex(final int index) {
+        this.index = index;
+    }
 
-  /**
-   * @param constant_pool Constant pool to be used for this object.
-   */
-  public final void setConstantPool(ConstantPool constant_pool) {
-    this.constant_pool = constant_pool;
-  }
+    public void setType(final byte type) {
+        this.type = checkType(type);
+    }
+
+    /**
+     * @return String representation
+     */
+    @Override
+    public String toString() {
+        return "(type=" + Const.getItemName(type) + printIndex() + ")";
+    }
 }

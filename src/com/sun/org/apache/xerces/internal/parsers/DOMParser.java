@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2000-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -39,6 +40,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import java.io.CharConversionException;
 import org.w3c.dom.Node;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
@@ -176,7 +178,7 @@ public class DOMParser
     public void parse(String systemId) throws SAXException, IOException {
 
         // parse document
-        XMLInputSource source = new XMLInputSource(null, systemId, null);
+        XMLInputSource source = new XMLInputSource(null, systemId, null, false);
         try {
             parse(source);
         }
@@ -184,7 +186,7 @@ public class DOMParser
         // wrap XNI exceptions as SAX exceptions
         catch (XMLParseException e) {
             Exception ex = e.getException();
-            if (ex == null) {
+            if (ex == null || ex instanceof CharConversionException) {
                 // must be a parser exception; mine it for locator info and throw
                 // a SAXParseException
                 LocatorImpl locatorImpl = new LocatorImpl();
@@ -192,7 +194,9 @@ public class DOMParser
                 locatorImpl.setSystemId(e.getExpandedSystemId());
                 locatorImpl.setLineNumber(e.getLineNumber());
                 locatorImpl.setColumnNumber(e.getColumnNumber());
-                throw new SAXParseException(e.getMessage(), locatorImpl);
+                throw (ex == null) ?
+                        new SAXParseException(e.getMessage(), locatorImpl) :
+                        new SAXParseException(e.getMessage(), locatorImpl, ex);
             }
             if (ex instanceof SAXException) {
                 // why did we create an XMLParseException?
@@ -236,7 +240,7 @@ public class DOMParser
             XMLInputSource xmlInputSource =
                 new XMLInputSource(inputSource.getPublicId(),
                                    inputSource.getSystemId(),
-                                   null);
+                                   null, false);
             xmlInputSource.setByteStream(inputSource.getByteStream());
             xmlInputSource.setCharacterStream(inputSource.getCharacterStream());
             xmlInputSource.setEncoding(inputSource.getEncoding());
@@ -246,7 +250,7 @@ public class DOMParser
         // wrap XNI exceptions as SAX exceptions
         catch (XMLParseException e) {
             Exception ex = e.getException();
-            if (ex == null) {
+            if (ex == null || ex instanceof CharConversionException) {
                 // must be a parser exception; mine it for locator info and throw
                 // a SAXParseException
                 LocatorImpl locatorImpl = new LocatorImpl();
@@ -254,7 +258,9 @@ public class DOMParser
                 locatorImpl.setSystemId(e.getExpandedSystemId());
                 locatorImpl.setLineNumber(e.getLineNumber());
                 locatorImpl.setColumnNumber(e.getColumnNumber());
-                throw new SAXParseException(e.getMessage(), locatorImpl);
+                throw (ex == null) ?
+                        new SAXParseException(e.getMessage(), locatorImpl) :
+                        new SAXParseException(e.getMessage(), locatorImpl, ex);
             }
             if (ex instanceof SAXException) {
                 // why did we create an XMLParseException?

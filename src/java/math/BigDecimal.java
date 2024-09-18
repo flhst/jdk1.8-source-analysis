@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -29,8 +29,12 @@
 
 package java.math;
 
-import java.util.Arrays;
 import static java.math.BigInteger.LONG_MASK;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
+import java.io.StreamCorruptedException;
+import java.util.Arrays;
 
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A
@@ -407,9 +411,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public BigDecimal(char[] in, int offset, int len, MathContext mc) {
-        // protect against huge length.
-        if (offset + len > in.length || offset < 0)
-            throw new NumberFormatException("Bad offset or len arguments for char[] input.");
+        // protect against huge length, negative values, and integer overflow
+        if ((in.length | len | offset) < 0 || len > in.length - offset) {
+            throw new NumberFormatException
+                ("Bad offset or len arguments for char[] input.");
+        }
+
         // This is the primary string to BigDecimal constructor; all
         // incoming strings end up here; it uses explicit (inline)
         // parsing for speed and generates at most one intermediate
@@ -973,6 +980,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
+     * Accept no subclasses.
+     */
+    private static BigInteger toStrictBigInteger(BigInteger val) {
+        return (val.getClass() == BigInteger.class) ?
+            val :
+            new BigInteger(val.toByteArray().clone());
+    }
+
+    /**
      * Translates a {@code BigInteger} into a {@code BigDecimal}.
      * The scale of the {@code BigDecimal} is zero.
      *
@@ -981,8 +997,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     public BigDecimal(BigInteger val) {
         scale = 0;
-        intVal = val;
-        intCompact = compactValFor(val);
+        intVal = toStrictBigInteger(val);
+        intCompact = compactValFor(intVal);
     }
 
     /**
@@ -998,7 +1014,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public BigDecimal(BigInteger val, MathContext mc) {
-        this(val,0,mc);
+        this(toStrictBigInteger(val), 0, mc);
     }
 
     /**
@@ -1012,8 +1028,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     public BigDecimal(BigInteger unscaledVal, int scale) {
         // Negative scales are now allowed
-        this.intVal = unscaledVal;
-        this.intCompact = compactValFor(unscaledVal);
+        this.intVal = toStrictBigInteger(unscaledVal);
+        this.intCompact = compactValFor(this.intVal);
         this.scale = scale;
     }
 
@@ -1033,6 +1049,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public BigDecimal(BigInteger unscaledVal, int scale, MathContext mc) {
+        unscaledVal = toStrictBigInteger(unscaledVal);
         long compactVal = compactValFor(unscaledVal);
         int mcp = mc.precision;
         int prec = 0;
@@ -3057,9 +3074,32 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @return this {@code BigDecimal} converted to a {@code long}.
      */
     public long longValue(){
-        return (intCompact != INFLATED && scale == 0) ?
-            intCompact:
-            toBigInteger().longValue();
+        if (intCompact != INFLATED && scale == 0) {
+            return intCompact;
+        } else {
+            // Fastpath zero and small values
+            if (this.signum() == 0 || fractionOnly() ||
+                // Fastpath very large-scale values that will result
+                // in a truncated value of zero. If the scale is -64
+                // or less, there are at least 64 powers of 10 in the
+                // value of the numerical result. Since 10 = 2*5, in
+                // that case there would also be 64 powers of 2 in the
+                // result, meaning all 64 bits of a long will be zero.
+                scale <= -64) {
+                return 0;
+            } else {
+                return toBigInteger().longValue();
+            }
+        }
+    }
+
+    /**
+     * Return true if a nonzero BigDecimal has an absolute value less
+     * than one; i.e. only has fraction digits.
+     */
+    private boolean fractionOnly() {
+        assert this.signum() != 0;
+        return (this.precision() - this.scale) <= 0;
     }
 
     /**
@@ -3077,15 +3117,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     public long longValueExact() {
         if (intCompact != INFLATED && scale == 0)
             return intCompact;
+
+        // Fastpath zero
+        if (this.signum() == 0)
+            return 0;
+
+        // Fastpath numbers less than 1.0 (the latter can be very slow
+        // to round if very small)
+        if (fractionOnly())
+            throw new ArithmeticException("Rounding necessary");
+
         // If more than 19 digits in integer part it cannot possibly fit
         if ((precision() - scale) > 19) // [OK for negative scale too]
             throw new java.lang.ArithmeticException("Overflow");
-        // Fastpath zero and < 1.0 numbers (the latter can be very slow
-        // to round if very small)
-        if (this.signum() == 0)
-            return 0;
-        if ((this.precision() - this.scale) <= 0)
-            throw new ArithmeticException("Rounding necessary");
+
         // round to an integer, with Exception if decimal part non-0
         BigDecimal num = this.setScale(0, ROUND_UNNECESSARY);
         if (num.precision() >= 19) // need to check carefully
@@ -3127,7 +3172,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     public int intValue() {
         return  (intCompact != INFLATED && scale == 0) ?
             (int)intCompact :
-            toBigInteger().intValue();
+            (int)longValue();
     }
 
     /**
@@ -3716,6 +3761,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         private static final sun.misc.Unsafe unsafe;
         private static final long intCompactOffset;
         private static final long intValOffset;
+        private static final long scaleOffset;
         static {
             try {
                 unsafe = sun.misc.Unsafe.getUnsafe();
@@ -3723,12 +3769,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     (BigDecimal.class.getDeclaredField("intCompact"));
                 intValOffset = unsafe.objectFieldOffset
                     (BigDecimal.class.getDeclaredField("intVal"));
+                scaleOffset = unsafe.objectFieldOffset
+                    (BigDecimal.class.getDeclaredField("scale"));
             } catch (Exception ex) {
                 throw new ExceptionInInitializerError(ex);
             }
         }
-        static void setIntCompactVolatile(BigDecimal bd, long val) {
-            unsafe.putLongVolatile(bd, intCompactOffset, val);
+        static void setIntValAndScale(BigDecimal bd, BigInteger intVal, int scale) {
+            unsafe.putObject(bd, intValOffset, intVal);
+            unsafe.putInt(bd, scaleOffset, scale);
+            unsafe.putLong(bd, intCompactOffset, compactValFor(intVal));
         }
 
         static void setIntValVolatile(BigDecimal bd, BigInteger val) {
@@ -3744,15 +3794,29 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
-        // Read in all fields
-        s.defaultReadObject();
-        // validate possibly bad fields
-        if (intVal == null) {
-            String message = "BigDecimal: null intVal in stream";
-            throw new java.io.StreamCorruptedException(message);
-        // [all values of scale are now allowed]
+        // prepare to read the fields
+        ObjectInputStream.GetField fields = s.readFields();
+        BigInteger serialIntVal = (BigInteger) fields.get("intVal", null);
+
+        // Validate field data
+        if (serialIntVal == null) {
+            throw new StreamCorruptedException("Null or missing intVal in BigDecimal stream");
         }
-        UnsafeHolder.setIntCompactVolatile(this, compactValFor(intVal));
+        // Validate provenance of serialIntVal object
+        serialIntVal = toStrictBigInteger(serialIntVal);
+
+        // Any integer value is valid for scale
+        int serialScale = fields.get("scale", 0);
+
+        UnsafeHolder.setIntValAndScale(this, serialIntVal, serialScale);
+    }
+
+    /**
+     * Serialization without data not supported for this class.
+     */
+    private void readObjectNoData()
+        throws ObjectStreamException {
+        throw new InvalidObjectException("Deserialized BigDecimal objects need data");
     }
 
    /**

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,27 +17,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: SAX2DOM.java,v 1.8.2.1 2006/12/04 18:45:41 spericas Exp $
- */
 
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import java.util.Stack;
 import java.util.Vector;
-import javax.xml.parsers.DocumentBuilder;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Constants;
+import jdk.xml.internal.JdkXmlUtils;
 
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.Text;
 import org.w3c.dom.ProcessingInstruction;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -70,16 +66,16 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
      * synchronization because the Javadoc is not explicit about
      * thread safety.
      */
-    private DocumentBuilderFactory _factory =
-            DocumentBuilderFactory.newInstance();
+    private DocumentBuilderFactory _factory;
     private boolean _internal = true;
 
-    public SAX2DOM(boolean useServicesMechanism) throws ParserConfigurationException {
-        _document = createDocument(useServicesMechanism);
+    public SAX2DOM(boolean overrideDefaultParser) throws ParserConfigurationException {
+        _document = createDocument(overrideDefaultParser);
         _root = _document;
     }
 
-    public SAX2DOM(Node root, Node nextSibling, boolean useServicesMechanism) throws ParserConfigurationException {
+    public SAX2DOM(Node root, Node nextSibling, boolean overrideDefaultParser)
+            throws ParserConfigurationException {
         _root = root;
         if (root instanceof Document) {
           _document = (Document)root;
@@ -88,15 +84,16 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
           _document = root.getOwnerDocument();
         }
         else {
-          _document = createDocument(useServicesMechanism);
+          _document = createDocument(overrideDefaultParser);
           _root = _document;
         }
 
         _nextSibling = nextSibling;
     }
 
-    public SAX2DOM(Node root, boolean useServicesMechanism) throws ParserConfigurationException {
-        this(root, null, useServicesMechanism);
+    public SAX2DOM(Node root, boolean overrideDefaultParser)
+            throws ParserConfigurationException {
+        this(root, null, overrideDefaultParser);
     }
 
     public Node getDOM() {
@@ -308,18 +305,13 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
     public void startDTD(String name, String publicId, String systemId)
         throws SAXException {}
 
-    private Document createDocument(boolean useServicesMechanism) throws ParserConfigurationException {
+    private Document createDocument(boolean overrideDefaultParser)
+            throws ParserConfigurationException {
         if (_factory == null) {
-            if (useServicesMechanism) {
-                _factory = DocumentBuilderFactory.newInstance();
-                if (!(_factory instanceof com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl)) {
-                    _internal = false;
-                }
-            } else {
-                _factory = DocumentBuilderFactory.newInstance(
-                  "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
-                  SAX2DOM.class.getClassLoader()
-                  );
+            _factory = JdkXmlUtils.getDOMFactory(overrideDefaultParser);
+            _internal = true;
+            if (!(_factory instanceof com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl)) {
+                _internal = false;
             }
         }
         Document doc;

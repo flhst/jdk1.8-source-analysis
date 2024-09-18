@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -458,10 +458,10 @@ public final class SocketPermission extends Permission
             }
             return;
         } else {
-            if (host.length() > 0) {
+            if (!host.isEmpty()) {
                 // see if we are being initialized with an IP address.
                 char ch = host.charAt(0);
-                if (ch == ':' || Character.digit(ch, 16) != -1) {
+                if (ch == ':' || IPAddressUtil.digit(ch, 16) != -1) {
                     byte ip[] = IPAddressUtil.textToNumericFormatV4(host);
                     if (ip == null) {
                         ip = IPAddressUtil.textToNumericFormatV6(host);
@@ -686,8 +686,7 @@ public final class SocketPermission extends Permission
             hdomain = RegisteredDomain.getRegisteredDomain(b);
         }
 
-        return cdomain.length() != 0 && hdomain.length() != 0
-                        && cdomain.equals(hdomain);
+        return !cdomain.isEmpty() && !hdomain.isEmpty() && cdomain.equals(hdomain);
     }
 
     private boolean authorized(String cname, byte[] addr) {

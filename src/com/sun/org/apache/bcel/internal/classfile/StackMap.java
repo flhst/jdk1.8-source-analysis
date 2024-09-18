@@ -1,188 +1,168 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
- * This class represents a stack map attribute used for
- * preverification of Java classes for the <a
- * href="http://java.sun.com/j2me/"> Java 2 Micro Edition</a>
- * (J2ME). This attribute is used by the <a
- * href="http://java.sun.com/products/cldc/">KVM</a> and contained
- * within the Code attribute of a method. See CLDC specification
- * 5.3.1.2
+ * This class represents a stack map attribute used for preverification of Java classes for the
+ * <a href="http://java.sun.com/j2me/"> Java 2 Micro Edition</a> (J2ME). This attribute is used by the
+ * <a href="http://java.sun.com/products/cldc/">KVM</a> and contained within the Code attribute of a method. See CLDC
+ * specification 5.3.1.2
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     Code
- * @see     StackMapEntry
- * @see     StackMapType
+ * <pre>
+ * StackMapTable_attribute {
+ *   u2              attribute_name_index;
+ *   u4              attribute_length;
+ *   u2              number_of_entries;
+ *   stack_map_frame entries[number_of_entries];
+ * }
+ * </pre>
+ *
+ * @see Code
+ * @see StackMapEntry
+ * @see StackMapType
+ * @LastModified: Oct 2020
  */
-public final class StackMap extends Attribute implements Node {
-  private int             map_length;
-  private StackMapEntry[] map; // Table of stack map entries
+public final class StackMap extends Attribute {
 
-  /*
-   * @param name_index Index of name
-   * @param length Content length in bytes
-   * @param map Table of stack map entries
-   * @param constant_pool Array of constants
-   */
-  public StackMap(int name_index, int length,  StackMapEntry[] map,
-                  ConstantPool constant_pool)
-  {
-    super(Constants.ATTR_STACK_MAP, name_index, length, constant_pool);
+    private StackMapEntry[] table; // Table of stack map entries
 
-    setStackMap(map);
-  }
-
-  /**
-   * Construct object from file stream.
-   * @param name_index Index of name
-   * @param length Content length in bytes
-   * @param file Input stream
-   * @throws IOException
-   * @param constant_pool Array of constants
-   */
-  StackMap(int name_index, int length, DataInputStream file,
-           ConstantPool constant_pool) throws IOException
-  {
-    this(name_index, length, (StackMapEntry[])null, constant_pool);
-
-    map_length = file.readUnsignedShort();
-    map = new StackMapEntry[map_length];
-
-    for(int i=0; i < map_length; i++)
-      map[i] = new StackMapEntry(file, constant_pool);
-  }
-
-  /**
-   * Dump line number table attribute to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    super.dump(file);
-    file.writeShort(map_length);
-    for(int i=0; i < map_length; i++)
-      map[i].dump(file);
-  }
-
-  /**
-   * @return Array of stack map entries
-   */
-  public final StackMapEntry[] getStackMap() { return map; }
-
-  /**
-   * @param map Array of stack map entries
-   */
-  public final void setStackMap(StackMapEntry[] map) {
-    this.map = map;
-
-    map_length = (map == null)? 0 : map.length;
-  }
-
-  /**
-   * @return String representation.
-   */
-  public final String toString() {
-    StringBuffer buf = new StringBuffer("StackMap(");
-
-    for(int i=0; i < map_length; i++) {
-      buf.append(map[i].toString());
-
-      if(i < map_length - 1)
-        buf.append(", ");
+    /**
+     * Construct object from input stream.
+     *
+     * @param nameIndex Index of name
+     * @param length Content length in bytes
+     * @param dataInput Input stream
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O error occurs.
+     */
+    StackMap(final int nameIndex, final int length, final DataInput dataInput, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, (StackMapEntry[]) null, constantPool);
+        final int mapLength = dataInput.readUnsignedShort();
+        table = new StackMapEntry[mapLength];
+        for (int i = 0; i < mapLength; i++) {
+            table[i] = new StackMapEntry(dataInput, constantPool);
+        }
     }
 
-    buf.append(')');
+    /*
+     * @param nameIndex Index of name
+     *
+     * @param length Content length in bytes
+     *
+     * @param map Table of stack map entries
+     *
+     * @param constantPool Array of constants
+     */
+    public StackMap(final int nameIndex, final int length, final StackMapEntry[] table, final ConstantPool constantPool) {
+        super(Const.ATTR_STACK_MAP, nameIndex, length, constantPool);
+        this.table = table != null ? table : StackMapEntry.EMPTY_ARRAY;
+        Args.requireU2(this.table.length, "table.length");
+    }
 
-    return buf.toString();
-  }
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitStackMap(this);
+    }
 
-  /**
-   * @return deep copy of this attribute
-   */
-  public Attribute copy(ConstantPool constant_pool) {
-    StackMap c = (StackMap)clone();
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        final StackMap c = (StackMap) clone();
+        c.table = new StackMapEntry[table.length];
+        for (int i = 0; i < table.length; i++) {
+            c.table[i] = table[i].copy();
+        }
+        c.setConstantPool(constantPool);
+        return c;
+    }
 
-    c.map = new StackMapEntry[map_length];
-    for(int i=0; i < map_length; i++)
-      c.map[i] = map[i].copy();
+    /**
+     * Dump stack map table attribute to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void dump(final DataOutputStream file) throws IOException {
+        super.dump(file);
+        file.writeShort(table.length);
+        for (final StackMapEntry entry : table) {
+            entry.dump(file);
+        }
+    }
 
-    c.constant_pool = constant_pool;
-    return c;
-  }
+    public int getMapLength() {
+        return table.length;
+    }
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-   public void accept(Visitor v) {
-     v.visitStackMap(this);
-   }
+    /**
+     * @return Array of stack map entries
+     */
+    public StackMapEntry[] getStackMap() {
+        return table;
+    }
 
-  public final int getMapLength() { return map_length; }
+    /**
+     * @param table Array of stack map entries
+     */
+    public void setStackMap(final StackMapEntry[] table) {
+        this.table = table != null ? table : StackMapEntry.EMPTY_ARRAY;
+        int len = 2; // Length of 'number_of_entries' field prior to the array of stack maps
+        for (final StackMapEntry element : this.table) {
+            len += element.getMapEntrySize();
+        }
+        setLength(len);
+    }
+
+    /**
+     * @return String representation.
+     */
+    @Override
+    public String toString() {
+        final StringBuilder buf = new StringBuilder("StackMap(");
+        int runningOffset = -1; // no +1 on first entry
+        for (int i = 0; i < table.length; i++) {
+            runningOffset = table[i].getByteCodeOffset() + runningOffset + 1;
+            buf.append(String.format("%n@%03d %s", runningOffset, table[i]));
+            if (i < table.length - 1) {
+                buf.append(", ");
+            }
+        }
+        buf.append(')');
+        return buf.toString();
+    }
 }

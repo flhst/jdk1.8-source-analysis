@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -100,7 +100,7 @@ public final class LinkPermission extends BasicPermission {
     public LinkPermission(String name, String actions) {
         super(name);
         checkName(name);
-        if (actions != null && actions.length() > 0) {
+        if (actions != null && !actions.isEmpty()) {
             throw new IllegalArgumentException("actions: " + actions);
         }
     }

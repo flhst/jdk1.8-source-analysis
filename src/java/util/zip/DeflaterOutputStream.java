@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -221,9 +221,15 @@ class DeflaterOutputStream extends FilterOutputStream {
      */
     public void finish() throws IOException {
         if (!def.finished()) {
-            def.finish();
-            while (!def.finished()) {
-                deflate();
+            try{
+                def.finish();
+                while (!def.finished()) {
+                    deflate();
+                }
+            } catch(IOException e) {
+                if (usesDefaultDeflater)
+                    def.end();
+                throw e;
             }
         }
     }
@@ -235,9 +241,12 @@ class DeflaterOutputStream extends FilterOutputStream {
      */
     public void close() throws IOException {
         if (!closed) {
+            try {
             finish();
+            } finally {
             if (usesDefaultDeflater)
                 def.end();
+            }
             out.close();
             closed = true;
         }

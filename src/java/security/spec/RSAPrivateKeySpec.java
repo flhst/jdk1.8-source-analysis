@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -43,8 +43,9 @@ import java.math.BigInteger;
 
 public class RSAPrivateKeySpec implements KeySpec {
 
-    private BigInteger modulus;
-    private BigInteger privateExponent;
+    private final BigInteger modulus;
+    private final BigInteger privateExponent;
+    private final AlgorithmParameterSpec params;
 
     /**
      * Creates a new RSAPrivateKeySpec.
@@ -53,8 +54,23 @@ public class RSAPrivateKeySpec implements KeySpec {
      * @param privateExponent the private exponent
      */
     public RSAPrivateKeySpec(BigInteger modulus, BigInteger privateExponent) {
+        this(modulus, privateExponent, null);
+    }
+
+    /**
+     * Creates a new RSAPrivateKeySpec with additional key parameters.
+     *
+     * @apiNote This method is defined in Java SE 8 Maintenance Release 3.
+     * @param modulus the modulus
+     * @param privateExponent the private exponent
+     * @param params the parameters associated with this key, may be null
+     * @since 8
+     */
+    public RSAPrivateKeySpec(BigInteger modulus, BigInteger privateExponent,
+            AlgorithmParameterSpec params) {
         this.modulus = modulus;
         this.privateExponent = privateExponent;
+        this.params = params;
     }
 
     /**
@@ -73,5 +89,17 @@ public class RSAPrivateKeySpec implements KeySpec {
      */
     public BigInteger getPrivateExponent() {
         return this.privateExponent;
+    }
+
+    /**
+     * Returns the parameters associated with this key, may be null if not
+     * present.
+     *
+     * @apiNote This method is defined in Java SE 8 Maintenance Release 3.
+     * @return the parameters associated with this key
+     * @since 8
+     */
+    public AlgorithmParameterSpec getParams() {
+        return this.params;
     }
 }

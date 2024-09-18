@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xalan.internal.res;
 
 import java.util.ListResourceBundle;
@@ -742,7 +744,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "Pr\u00E4fix in exclude-result-prefixes ist nicht g\u00FCltig: {0}"},
 
     { ER_MISSING_NS_URI,
-      "Fehlender Namespace-URI f\u00FCr angegebenes Pr\u00E4fix"},
+      "Fehlende Namespace-URI f\u00FCr angegebenes Pr\u00E4fix"},
 
     { ER_MISSING_ARG_FOR_OPTION,
       "Fehlendes Argument f\u00FCr Option: {0}"},
@@ -992,7 +994,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
      "{0}-Attributwert nicht erkannt "},
 
     { ER_NULL_URI_NAMESPACE,
-     "Versuch, ein Namespace-Pr\u00E4fix mit einem Null-URI zu generieren"},
+     "Versuch, ein Namespace-Pr\u00E4fix mit einer Null-URI zu generieren"},
 
     { ER_NUMBER_TOO_BIG,
      "Versuch, eine Zahl zu formatieren, die gr\u00F6\u00DFer als die gr\u00F6\u00DFte Long-Ganzzahl ist"},

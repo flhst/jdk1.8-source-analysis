@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -197,6 +199,97 @@ public class SerializerMessages_ko extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "\uACBD\uACE0: \uC778\uCF54\uB529 ''{0}''\uC740(\uB294) Java \uB7F0\uD0C0\uC784\uC5D0 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "''{0}'' \uB9E4\uAC1C\uBCC0\uC218\uB97C \uC778\uC2DD\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "''{0}'' \uB9E4\uAC1C\uBCC0\uC218\uAC00 \uC778\uC2DD\uB418\uC5C8\uC9C0\uB9CC \uC694\uCCAD\uB41C \uAC12\uC744 \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "\uACB0\uACFC \uBB38\uC790\uC5F4\uC774 \uB108\uBB34 \uCEE4\uC11C DOMString\uC5D0 \uB9DE\uC9C0 \uC54A\uC74C: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "\uC774 \uB9E4\uAC1C\uBCC0\uC218 \uC774\uB984\uC5D0 \uB300\uD55C \uAC12 \uC720\uD615\uC774 \uD544\uC694\uD55C \uAC12 \uC720\uD615\uACFC \uD638\uD658\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "\uB370\uC774\uD130\uB97C \uC4F8 \uCD9C\uB825 \uB300\uC0C1\uC774 \uB110\uC785\uB2C8\uB2E4."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "\uC9C0\uC6D0\uB418\uC9C0 \uC54A\uB294 \uC778\uCF54\uB529\uC774 \uBC1C\uACAC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "\uB178\uB4DC\uB97C \uC9C1\uB82C\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "CDATA \uC139\uC158\uC5D0 \uD558\uB098 \uC774\uC0C1\uC758 \uC885\uB8CC \uD45C\uC2DC\uC790 ']]>'\uAC00 \uC788\uC2B5\uB2C8\uB2E4."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "Well-Formedness \uAC80\uC0AC\uAE30\uC758 \uC778\uC2A4\uD134\uC2A4\uB97C \uC0DD\uC131\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. well-formed \uB9E4\uAC1C\uBCC0\uC218\uAC00 true\uB85C \uC124\uC815\uB418\uC5C8\uC9C0\uB9CC well-formedness \uAC80\uC0AC\uB97C \uC218\uD589\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "''{0}'' \uB178\uB4DC\uC5D0 \uBD80\uC801\uD569\uD55C XML \uBB38\uC790\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "\uC8FC\uC11D\uC5D0\uC11C \uBD80\uC801\uD569\uD55C XML \uBB38\uC790(\uC720\uB2C8\uCF54\uB4DC: 0x{0})\uAC00 \uBC1C\uACAC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "\uBD80\uC801\uD569\uD55C XML \uBB38\uC790(\uC720\uB2C8\uCF54\uB4DC: 0x{0})\uAC00 instructiondata \uCC98\uB9AC\uC5D0\uC11C \uBC1C\uACAC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "\uBD80\uC801\uD569\uD55C XML \uBB38\uC790(\uC720\uB2C8\uCF54\uB4DC: 0x{0})\uAC00 CDATASection\uC758 \uCF58\uD150\uCE20\uC5D0\uC11C \uBC1C\uACAC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "\uBD80\uC801\uD569\uD55C XML \uBB38\uC790(\uC720\uB2C8\uCF54\uB4DC: 0x{0})\uAC00 \uB178\uB4DC\uC758 \uBB38\uC790 \uB370\uC774\uD130 \uCF58\uD150\uCE20\uC5D0\uC11C \uBC1C\uACAC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "\uBD80\uC801\uD569\uD55C XML \uBB38\uC790\uAC00 \uC774\uB984\uC774 ''{1}''\uC778 {0} \uB178\uB4DC\uC5D0\uC11C \uBC1C\uACAC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "\uC8FC\uC11D\uC5D0\uC11C\uB294 \"--\" \uBB38\uC790\uC5F4\uC774 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "\uC694\uC18C \uC720\uD615 \"{0}\"\uACFC(\uC640) \uC5F0\uAD00\uB41C \"{1}\" \uC18D\uC131\uC758 \uAC12\uC5D0\uB294 ''<'' \uBB38\uC790\uAC00 \uD3EC\uD568\uB418\uC9C0 \uC54A\uC544\uC57C \uD569\uB2C8\uB2E4."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "\uAD6C\uBB38\uC774 \uBD84\uC11D\uB418\uC9C0 \uC54A\uC740 \uC5D4\uD2F0\uD2F0 \uCC38\uC870 \"&{0};\"\uC740(\uB294) \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "\uC18D\uC131\uAC12\uC5D0\uC11C\uB294 \uC678\uBD80 \uC5D4\uD2F0\uD2F0 \uCC38\uC870 \"&{0};\"\uC774 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "\"{0}\" \uC811\uB450\uC5B4\uB97C \"{1}\" \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uC5D0 \uBC14\uC778\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "\"{0}\" \uC694\uC18C\uC758 \uB85C\uCEEC \uC774\uB984\uC774 \uB110\uC785\uB2C8\uB2E4."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "\"{0}\" \uC18D\uC131\uC758 \uB85C\uCEEC \uC774\uB984\uC774 \uB110\uC785\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "\uC5D4\uD2F0\uD2F0 \uB178\uB4DC \"{0}\"\uC758 \uB300\uCCB4 \uD14D\uC2A4\uD2B8\uC5D0 \uBC14\uC778\uB4DC\uB418\uC9C0 \uC54A\uC740 \uC811\uB450\uC5B4 \"{2}\"\uC744(\uB97C) \uC0AC\uC6A9\uD558\uB294 \uC694\uC18C \uB178\uB4DC \"{1}\"\uC774(\uAC00) \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "\uC5D4\uD2F0\uD2F0 \uB178\uB4DC \"{0}\"\uC758 \uB300\uCCB4 \uD14D\uC2A4\uD2B8\uC5D0 \uBC14\uC778\uB4DC\uB418\uC9C0 \uC54A\uC740 \uC811\uB450\uC5B4 \"{2}\"\uC744(\uB97C) \uC0AC\uC6A9\uD558\uB294 \uC18D\uC131 \uB178\uB4DC \"{1}\"\uC774(\uAC00) \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "\uB0B4\uBD80 \uBD80\uBD84 \uC9D1\uD569\uC744 \uC4F0\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+             },
 
         };
 

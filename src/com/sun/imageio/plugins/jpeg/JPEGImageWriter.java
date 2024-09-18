@@ -134,6 +134,7 @@ public class JPEGImageWriter extends ImageWriter {
     private int newAdobeTransform = JPEG.ADOBE_IMPOSSIBLE;  // Change if needed
     private boolean writeDefaultJFIF = false;
     private boolean writeAdobe = false;
+    private boolean invertCMYK = false;
     private JPEGMetadata metadata = null;
 
     private boolean sequencePrepared = false;
@@ -634,6 +635,7 @@ public class JPEGImageWriter extends ImageWriter {
         newAdobeTransform = JPEG.ADOBE_IMPOSSIBLE;  // Change if needed
         writeDefaultJFIF = false;
         writeAdobe = false;
+        invertCMYK = false;
 
         // By default we'll do no conversion:
         int inCsType = JPEG.JCS_UNKNOWN;
@@ -815,6 +817,14 @@ public class JPEGImageWriter extends ImageWriter {
                                             JPEG.JCS_YCbCrA : JPEG.JCS_RGBA;
                                     }
                                 }
+                            }
+                            break;
+                        case ColorSpace.TYPE_CMYK:
+                            outCsType = JPEG.JCS_CMYK;
+                            if (jfif != null) {
+                                ignoreJFIF = true;
+                                warningOccurred
+                                (WARNING_IMAGE_METADATA_JFIF_MISMATCH);
                             }
                             break;
                         case ColorSpace.TYPE_3CLR:
@@ -1060,6 +1070,11 @@ public class JPEGImageWriter extends ImageWriter {
             System.out.println("inCsType: " + inCsType);
             System.out.println("outCsType: " + outCsType);
         }
+
+        invertCMYK =
+            (!rasterOnly &&
+             ((outCsType == JPEG.JCS_YCCK) ||
+              (outCsType == JPEG.JCS_CMYK)));
 
         // Note that getData disables acceleration on buffer, but it is
         // just a 1-line intermediate data transfer buffer that does not
@@ -1819,6 +1834,12 @@ public class JPEGImageWriter extends ImageWriter {
                                         srcBands);
         }
         raster.setRect(sourceLine);
+        if (invertCMYK) {
+            byte[] data = ((DataBufferByte)raster.getDataBuffer()).getData();
+            for (int i = 0, len = data.length; i < len; i++) {
+                data[i] = (byte)(0x0ff - (data[i] & 0xff));
+            }
+        }
         if ((y > 7) && (y%8 == 0)) {  // Every 8 scanlines
             cbLock.lock();
             try {

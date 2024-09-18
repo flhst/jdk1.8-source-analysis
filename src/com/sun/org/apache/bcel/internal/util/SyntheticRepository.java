@@ -1,207 +1,158 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.sun.org.apache.bcel.internal.util;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.IOException;
+import java.io.InputStream;
 
-import java.io.*;
-
-import java.util.Map;
+import com.sun.org.apache.bcel.internal.classfile.ClassParser;
+import com.sun.org.apache.bcel.internal.classfile.JavaClass;
+import com.sun.org.apache.bcel.internal.classfile.Utility;
+import java.lang.ref.SoftReference;
 import java.util.HashMap;
-
-import com.sun.org.apache.bcel.internal.classfile.*;
+import java.util.Map;
 
 /**
- * This repository is used in situations where a Class is created
- * outside the realm of a ClassLoader. Classes are loaded from
- * the file systems using the paths specified in the given
- * class path. By default, this is the value returned by
+ * This repository is used in situations where a Class is created outside the realm of a ClassLoader. Classes are loaded
+ * from the file systems using the paths specified in the given class path. By default, this is the value returned by
  * ClassPath.getClassPath().
- * <br>
- * It is designed to be used as a singleton, however it
- * can also be used with custom classpaths.
- *
-/**
- * Abstract definition of a class repository. Instances may be used
- * to load classes from different sources and may be used in the
- * Repository.setRepository method.
+ * <p>
+ * This repository uses a factory design, allowing it to maintain a collection of different classpaths, and as such It
+ * is designed to be used as a singleton per classpath.
+ * </p>
  *
  * @see com.sun.org.apache.bcel.internal.Repository
  *
- * @author <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @author David Dixon-Peugh
+ * @LastModified: Feb 2023
  */
 public class SyntheticRepository implements Repository {
-  private static final String DEFAULT_PATH = ClassPath.getClassPath();
 
-  private static HashMap _instances = new HashMap(); // CLASSPATH X REPOSITORY
+    // CLASSNAME X JAVACLASS
+    private final Map<String, SoftReference<JavaClass>> loadedClasses = new HashMap<>();
 
-  private ClassPath _path = null;
-  private HashMap   _loadedClasses = new HashMap(); // CLASSNAME X JAVACLASS
-
-  private SyntheticRepository(ClassPath path) {
-    _path = path;
-  }
-
-  public static SyntheticRepository getInstance() {
-    return getInstance(ClassPath.SYSTEM_CLASS_PATH);
-  }
-
-  public static SyntheticRepository getInstance(ClassPath classPath) {
-    SyntheticRepository rep = (SyntheticRepository)_instances.get(classPath);
-
-    if(rep == null) {
-      rep = new SyntheticRepository(classPath);
-      _instances.put(classPath, rep);
+    private SyntheticRepository() {
     }
 
-    return rep;
-  }
-
-  /**
-   * Store a new JavaClass instance into this Repository.
-   */
-  public void storeClass(JavaClass clazz) {
-    _loadedClasses.put(clazz.getClassName(), clazz);
-    clazz.setRepository(this);
- }
-
-  /**
-   * Remove class from repository
-   */
-  public void removeClass(JavaClass clazz) {
-    _loadedClasses.remove(clazz.getClassName());
-  }
-
-  /**
-   * Find an already defined (cached) JavaClass object by name.
-   */
-  public JavaClass findClass(String className) {
-    return (JavaClass)_loadedClasses.get(className);
-  }
-
-  /**
-   * Load a JavaClass object for the given class name using
-   * the CLASSPATH environment variable.
-   */
-  public JavaClass loadClass(String className)
-    throws ClassNotFoundException
-  {
-    if(className == null || className.equals("")) {
-      throw new IllegalArgumentException("Invalid class name " + className);
+    public static SyntheticRepository getInstance() {
+        return new SyntheticRepository();
     }
 
-    className = className.replace('/', '.'); // Just in case, canonical form
-
-    try {
-      return loadClass(_path.getInputStream(className), className);
-    } catch(IOException e) {
-      throw new ClassNotFoundException("Exception while looking for class " +
-                                       className + ": " + e.toString());
-    }
-  }
-
-  /**
-   * Try to find class source via getResourceAsStream().
-   * @see Class
-   * @return JavaClass object for given runtime class
-   */
-  public JavaClass loadClass(Class clazz) throws ClassNotFoundException {
-    String className = clazz.getName();
-    String name      = className;
-    int    i         = name.lastIndexOf('.');
-
-    if(i > 0) {
-      name = name.substring(i + 1);
+    /**
+     * Clear all entries from cache.
+     */
+    @Override
+    public void clear() {
+        loadedClasses.clear();
     }
 
-    return loadClass(clazz.getResourceAsStream(name + ".class"), className);
-  }
-
-  private JavaClass loadClass(InputStream is, String className)
-    throws ClassNotFoundException
-  {
-    JavaClass clazz = findClass(className);
-
-    if(clazz != null) {
-      return clazz;
+    /**
+     * Find an already defined (cached) JavaClass object by name.
+     */
+    @Override
+    public JavaClass findClass(final String className) {
+        final SoftReference<JavaClass> ref = loadedClasses.get(className);
+        return ref == null ? null : ref.get();
     }
 
-    try {
-      if(is != null) {
-        ClassParser parser = new ClassParser(is, className);
-        clazz = parser.parse();
-
-        storeClass(clazz);
-
-        return clazz;
-      }
-    } catch(IOException e) {
-      throw new ClassNotFoundException("Exception while looking for class " +
-                                       className + ": " + e.toString());
+    /**
+     * Remove class from repository
+     */
+    @Override
+    public void removeClass(final JavaClass clazz) {
+        loadedClasses.remove(clazz.getClassName());
     }
 
-    throw new ClassNotFoundException("SyntheticRepository could not load " +
-                                     className);
-  }
+    /**
+     * Store a new JavaClass instance into this Repository.
+     */
+    @Override
+    public void storeClass(final JavaClass clazz) {
+        // Not calling super.storeClass because this subclass maintains the mapping.
+        loadedClasses.put(clazz.getClassName(), new SoftReference<>(clazz));
+        clazz.setRepository(this);
+    }
 
-  /** Clear all entries from cache.
-   */
-  public void clear() {
-    _loadedClasses.clear();
-  }
+    /**
+     * Finds the JavaClass object for a runtime Class object. If a class with the same name is already in this Repository,
+     * the Repository version is returned. Otherwise, getResourceAsStream() is called on the Class object to find the
+     * class's representation. If the representation is found, it is added to the Repository.
+     *
+     * @see Class
+     * @param clazz the runtime Class object
+     * @return JavaClass object for given runtime class
+     * @throws ClassNotFoundException if the class is not in the Repository, and its representation could not be found
+     */
+    @Override
+    public JavaClass loadClass(final Class<?> clazz) throws ClassNotFoundException {
+        final String className = clazz.getName();
+        final JavaClass repositoryClass = findClass(className);
+        if (repositoryClass != null) {
+            return repositoryClass;
+        }
+        String name = className;
+        final int i = name.lastIndexOf('.');
+        if (i > 0) {
+            name = name.substring(i + 1);
+        }
+
+        try (InputStream clsStream = clazz.getResourceAsStream(name + JavaClass.EXTENSION)) {
+            return loadClass(clsStream, className);
+        } catch (final IOException e) {
+            return null;
+        }
+    }
+
+    private JavaClass loadClass(final InputStream inputStream, final String className) throws ClassNotFoundException {
+        try {
+            if (inputStream != null) {
+                final ClassParser parser = new ClassParser(inputStream, className);
+                final JavaClass clazz = parser.parse();
+                storeClass(clazz);
+                return clazz;
+            }
+        } catch (final IOException e) {
+            throw new ClassNotFoundException("Exception while looking for class " + className + ": " + e, e);
+        }
+        throw new ClassNotFoundException("ClassRepository could not load " + className);
+    }
+
+    /**
+     * Finds a JavaClass object by name. If it is already in this Repository, the Repository version is returned. Otherwise,
+     * the Repository's classpath is searched for the class (and it is added to the Repository if found).
+     *
+     * @param className the name of the class
+     * @return the JavaClass object
+     * @throws ClassNotFoundException if the class is not in the Repository, and could not be found on the classpath
+     */
+    @Override
+    public JavaClass loadClass(String className) throws ClassNotFoundException {
+        if (className == null || className.isEmpty()) {
+            throw new IllegalArgumentException("Invalid class name " + className);
+        }
+        className = Utility.pathToPackage(className); // Just in case, canonical form
+        final JavaClass clazz = findClass(className);
+        if (clazz != null) {
+            return clazz;
+        }
+        IOException e = new IOException("Couldn't find: " + className + ".class");
+        throw new ClassNotFoundException("Exception while looking for class " +
+                className + ": " + e, e);
+    }
 }

@@ -49,12 +49,8 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
     // emulates SO_REUSEADDR when exclusiveBind is true
     private boolean isReuseAddress;
 
-    public DualStackPlainSocketImpl(boolean exclBind) {
-        exclusiveBind = exclBind;
-    }
-
-    public DualStackPlainSocketImpl(FileDescriptor fd, boolean exclBind) {
-        this.fd = fd;
+    public DualStackPlainSocketImpl(boolean exclBind, boolean isServer) {
+        super(isServer);
         exclusiveBind = exclBind;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -26,9 +26,13 @@ package javax.swing;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.ComponentOrientation;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Comparator;
-import java.io.*;
+import java.util.Enumeration;
+
 import sun.awt.SunToolkit;
 
 
@@ -235,6 +239,30 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
             JComboBox box = (JComboBox)aComponent;
             return box.getUI().isFocusTraversable(box);
         } else if (aComponent instanceof JComponent) {
+            if (SunToolkit.isInstanceOf(aComponent,
+                                                 "javax.swing.JToggleButton")) {
+                ButtonModel model = ((JToggleButton)aComponent).getModel();
+                if (model instanceof DefaultButtonModel) {
+                    ButtonGroup group = ((DefaultButtonModel) model).getGroup();
+                    if (group != null) {
+                        Enumeration<AbstractButton> elements =
+                                                        group.getElements();
+                        int idx = 0;
+                        while (elements.hasMoreElements()) {
+                            AbstractButton member = elements.nextElement();
+                            if (member instanceof JToggleButton &&
+                                 member.isVisible() && member.isDisplayable() &&
+                                 member.isEnabled() && member.isFocusable()) {
+                                if (member == aComponent) {
+                                    return idx == 0;
+                                }
+                                idx++;
+                            }
+                        }
+                    }
+                }
+            }
+
             JComponent jComponent = (JComponent)aComponent;
             InputMap inputMap = jComponent.getInputMap(JComponent.WHEN_FOCUSED,
                                                        false);

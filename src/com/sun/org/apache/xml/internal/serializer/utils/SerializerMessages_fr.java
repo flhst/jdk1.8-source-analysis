@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -197,6 +199,97 @@ public class SerializerMessages_fr extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Avertissement : l''encodage ''{0}'' n''est pas pris en charge par l''ex\u00E9cution Java." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "Le param\u00E8tre ''{0}'' n''est pas reconnu."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "Le param\u00E8tre ''{0}'' est reconnu mais la valeur demand\u00E9e ne peut pas \u00EAtre d\u00E9finie."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "La cha\u00EEne obtenue est trop longue pour tenir dans un \u00E9l\u00E9ment DOMString : ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "Le type de valeur pour ce nom de param\u00E8tre n'est pas compatible avec le type de valeur attendu. "},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "La destination de sortie dans laquelle \u00E9crire les donn\u00E9es est NULL."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "Un encodage non pris en charge a \u00E9t\u00E9 d\u00E9tect\u00E9."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "Le noeud n'a pas pu \u00EAtre s\u00E9rialis\u00E9."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "La section CDATA contient des marqueurs de fin ']]>'."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "Une instance du v\u00E9rificateur de format correct n'a pas pu \u00EAtre cr\u00E9\u00E9e. Le param\u00E8tre de format correct a \u00E9t\u00E9 d\u00E9fini sur True mais la v\u00E9rification de format correct n'a pas pu \u00EAtre r\u00E9alis\u00E9e."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "Le noeud ''{0}'' contient des caract\u00E8res XML non valides."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "Un caract\u00E8re XML non valide (Unicode : 0x{0}) a \u00E9t\u00E9 d\u00E9tect\u00E9 dans le commentaire."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "Un caract\u00E8re XML non valide (Unicode : 0x{0}) a \u00E9t\u00E9 d\u00E9tect\u00E9 dans les donn\u00E9es d''instruction de traitement."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "Un caract\u00E8re XML non valide (Unicode : 0x{0}) a \u00E9t\u00E9 d\u00E9tect\u00E9 dans le contenu de la section CDATA."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "Un caract\u00E8re XML non valide (Unicode : 0x{0}) a \u00E9t\u00E9 d\u00E9tect\u00E9 dans le contenu des donn\u00E9es alphanum\u00E9riques du noeud."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "Un caract\u00E8re XML non valide a \u00E9t\u00E9 d\u00E9tect\u00E9 dans le noeud {0} nomm\u00E9 ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "La cha\u00EEne \"--\" n'est pas autoris\u00E9e dans les commentaires."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "La valeur de l''attribut \"{1}\" associ\u00E9 \u00E0 un type d''\u00E9l\u00E9ment \"{0}\" ne doit pas contenir le caract\u00E8re ''<''."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "La r\u00E9f\u00E9rence d''entit\u00E9 non analys\u00E9e \"&{0};\" n''est pas autoris\u00E9e."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "La r\u00E9f\u00E9rence d''entit\u00E9 externe \"&{0};\" n''est pas autoris\u00E9e dans une valeur d''attribut."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "Le pr\u00E9fixe \"{0}\" ne peut pas \u00EAtre li\u00E9 \u00E0 l''espace de noms \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "Le nom local de l''\u00E9l\u00E9ment \"{0}\" est NULL."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "Le nom local de l''attribut \"{0}\" est NULL."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "Le texte de remplacement du noeud d''entit\u00E9 \"{0}\" contient un noeud d''\u00E9l\u00E9ment \"{1}\" avec un pr\u00E9fixe non li\u00E9 \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "Le texte de remplacement du noeud d''entit\u00E9 \"{0}\" contient un noeud d''attribut \"{1}\" avec un pr\u00E9fixe non li\u00E9 \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Une erreur s'est produite lors de l'\u00E9criture du sous-ensemble interne."
+             },
 
         };
 

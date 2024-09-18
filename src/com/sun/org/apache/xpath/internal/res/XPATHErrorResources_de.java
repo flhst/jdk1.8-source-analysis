@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xpath.internal.res;
 
 import java.util.ListResourceBundle;
@@ -30,6 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
+ * @LastModified: May 2019
  */
 public class XPATHErrorResources_de extends ListResourceBundle
 {
@@ -147,6 +149,10 @@ public class XPATHErrorResources_de extends ListResourceBundle
          "ER_FOUND_COMMA_BUT_NO_FOLLOWING_ARG";
   public static final String ER_PREDICATE_ILLEGAL_SYNTAX =
          "ER_PREDICATE_ILLEGAL_SYNTAX";
+  public static final String ER_PREDICATE_TOO_MANY_OPEN =
+         "ER_PREDICATE_TOO_MANY_OPEN";
+  public static final String ER_COMPILATION_TOO_MANY_OPERATION =
+         "ER_COMPILATION_TOO_MANY_OPERATION";
   public static final String ER_ILLEGAL_AXIS_NAME = "ER_ILLEGAL_AXIS_NAME";
   public static final String ER_UNKNOWN_NODETYPE = "ER_UNKNOWN_NODETYPE";
   public static final String ER_PATTERN_LITERAL_NEEDS_BE_QUOTED =
@@ -429,7 +435,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "ERROR. Unbekannter Vorgangscode: {0}"},
 
   { ER_EXTRA_ILLEGAL_TOKENS,
-     "Zus\u00E4tzliche ung\u00FCltige Tokens: {0}"},
+     "Zus\u00E4tzliche unzul\u00E4ssige Tokens: {0}"},
 
   { ER_EXPECTED_DOUBLE_QUOTE,
       "Literal in falschen Anf\u00FChrungszeichen... Doppelte Anf\u00FChrungszeichen erwartet."},
@@ -456,10 +462,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "\",\" gefunden, aber kein folgendes Argument vorhanden."},
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
-      "\"..[predicate]\" oder \".[predicate]\" ist ung\u00FCltige Syntax. Verwenden Sie stattdessen \"self::node()[predicate]\"."},
+      "\"..[predicate]\" oder \".[predicate]\" ist unzul\u00E4ssige Syntax. Verwenden Sie stattdessen \"self::node()[predicate]\"."},
+
+  { ER_PREDICATE_TOO_MANY_OPEN,
+      "Stack\u00FCberlauf beim Parsen von {0} bei {1}. Es sind zu viele offene Pr\u00E4dikate vorhanden ({2})."},
+
+  { ER_COMPILATION_TOO_MANY_OPERATION,
+      "Stack\u00FCberlauf beim Kompilieren des Ausdrucks. Es sind zu viele Vorg\u00E4nge vorhanden ({0})."},
 
   { ER_ILLEGAL_AXIS_NAME,
-     "Ung\u00FCltiger Achsenname: {0}"},
+     "Unzul\u00E4ssiger Achsenname: {0}"},
 
   { ER_UNKNOWN_NODETYPE,
      "Unbekannter Knotentyp: {0}"},

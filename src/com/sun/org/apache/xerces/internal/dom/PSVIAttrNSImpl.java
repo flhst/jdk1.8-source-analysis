@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2002-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,13 +20,15 @@
 
 package com.sun.org.apache.xerces.internal.dom;
 
+import com.sun.org.apache.xerces.internal.impl.dv.ValidatedInfo;
+import com.sun.org.apache.xerces.internal.impl.xs.AttributePSVImpl;
+import com.sun.org.apache.xerces.internal.impl.xs.util.StringListImpl;
+import com.sun.org.apache.xerces.internal.xs.*;
+import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
-import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
-import com.sun.org.apache.xerces.internal.xs.*;
 
 /**
  * Attribute namespace implementation; stores PSVI attribute items.
@@ -67,20 +69,8 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
      * value in the original document, this is true; otherwise, it is false  */
     protected boolean fSpecified = true;
 
-    /** schema normalized value property */
-    protected String fNormalizedValue = null;
-
-    /** schema actual value */
-    protected Object fActualValue = null;
-
-    /** schema actual value type */
-    protected short fActualValueType = XSConstants.UNAVAILABLE_DT;
-
-    /** actual value types if the value is a list */
-    protected ShortList fItemValueTypes = null;
-
-    /** member type definition against which attribute was validated */
-    protected XSSimpleTypeDefinition fMemberType = null;
+    /** Schema value */
+    protected ValidatedInfo fValue = new ValidatedInfo();
 
     /** validation attempted: none, partial, full */
     protected short fValidationAttempted = AttributePSVI.VALIDATION_NONE;
@@ -91,6 +81,9 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
     /** error codes */
     protected StringList fErrorCodes = null;
 
+    /** error messages */
+    protected StringList fErrorMessages = null;
+
     /** validation context: could be QName or XPath expression*/
     protected String fValidationContext = null;
 
@@ -98,12 +91,27 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
     // AttributePSVI methods
     //
 
+    /* (non-Javadoc)
+     * @see org.apache.xerces.xs.ItemPSVI#constant()
+     */
+    public ItemPSVI constant() {
+        return new AttributePSVImpl(true, this);
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.xerces.xs.ItemPSVI#isConstant()
+     */
+    public boolean isConstant() {
+        return false;
+    }
+
     /**
      * [schema default]
      *
      * @return The canonical lexical representation of the declaration's {value constraint} value.
      * @see <a href="http://www.w3.org/TR/xmlschema-1/#e-schema_default>XML Schema Part 1: Structures [schema default]</a>
      */
+    @SuppressWarnings("deprecation")
     public String getSchemaDefault() {
         return fDeclaration == null ? null : fDeclaration.getConstraintValue();
     }
@@ -115,8 +123,9 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
      * @see <a href="http://www.w3.org/TR/xmlschema-1/#e-schema_normalized_value>XML Schema Part 1: Structures [schema normalized value]</a>
      * @return the normalized value of this item after validation
      */
+    @Deprecated
     public String getSchemaNormalizedValue() {
-        return fNormalizedValue;
+        return fValue.getNormalizedValue();
     }
 
     /**
@@ -157,7 +166,23 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
      * @return list of error codes
      */
     public StringList getErrorCodes() {
-        return fErrorCodes;
+        if (fErrorCodes != null) {
+            return fErrorCodes;
+        }
+        return StringListImpl.EMPTY_LIST;
+    }
+
+    /**
+     * A list of error messages generated from the validation attempt or
+     * an empty <code>StringList</code> if no errors occurred during the
+     * validation attempt. The indices of error messages in this list are
+     * aligned with those in the <code>[schema error code]</code> list.
+     */
+    public StringList getErrorMessages() {
+        if (fErrorMessages != null) {
+            return fErrorMessages;
+        }
+        return StringListImpl.EMPTY_LIST;
     }
 
     // This is the only information we can provide in a pipeline.
@@ -177,14 +202,14 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
     /**
      * If and only if that type definition is a simple type definition
      * with {variety} union, or a complex type definition whose {content type}
-     * is a simple thype definition with {variety} union, then an item isomorphic
+     * is a simple type definition with {variety} union, then an item isomorphic
      * to that member of the union's {member type definitions} which actually
      * validated the element item's normalized value.
      *
      * @return  a simple type declaration
      */
     public XSSimpleTypeDefinition getMemberTypeDefinition() {
-        return fMemberType;
+        return fValue.getMemberTypeDefinition();
     }
 
     /**
@@ -208,34 +233,41 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
         this.fValidity = attr.getValidity();
         this.fValidationAttempted = attr.getValidationAttempted();
         this.fErrorCodes = attr.getErrorCodes();
-        this.fNormalizedValue = attr.getSchemaNormalizedValue();
-        this.fActualValue = attr.getActualNormalizedValue();
-        this.fActualValueType = attr.getActualNormalizedValueType();
-        this.fItemValueTypes = attr.getItemValueTypes();
+        this.fErrorMessages = attr.getErrorMessages();
+        this.fValue.copyFrom(attr.getSchemaValue());
         this.fTypeDecl = attr.getTypeDefinition();
-        this.fMemberType = attr.getMemberTypeDefinition();
         this.fSpecified = attr.getIsSchemaSpecified();
     }
 
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValue()
      */
+    @Deprecated
     public Object getActualNormalizedValue() {
-        return this.fActualValue;
+        return fValue.getActualValue();
     }
 
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValueType()
      */
+    @Deprecated
     public short getActualNormalizedValueType() {
-        return this.fActualValueType;
+        return fValue.getActualValueType();
     }
 
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getItemValueTypes()
      */
+    @Deprecated
     public ShortList getItemValueTypes() {
-        return this.fItemValueTypes;
+        return fValue.getListValueTypes();
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.xerces.xs.ItemPSVI#getSchemaValue()
+     */
+    public XSValue getSchemaValue() {
+        return fValue;
     }
 
     // REVISIT: Forbid serialization of PSVI DOM until

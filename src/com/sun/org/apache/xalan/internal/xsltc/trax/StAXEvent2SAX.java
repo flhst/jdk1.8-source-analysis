@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -337,8 +337,8 @@ public class StAXEvent2SAX implements XMLReader, Locator {
                 qname);
 
             // end namespace bindings
-            for( Iterator i = event.getNamespaces(); i.hasNext();) {
-                String prefix = (String)i.next();
+            for(Iterator<Namespace> i = event.getNamespaces(); i.hasNext();) {
+                String prefix = (i.next()).getPrefix();
                 if( prefix == null ) { // true for default namespace
                     prefix = "";
                 }
@@ -353,8 +353,8 @@ public class StAXEvent2SAX implements XMLReader, Locator {
         throws XMLStreamException {
         try {
             // start namespace bindings
-            for (Iterator i = event.getNamespaces(); i.hasNext();) {
-                String prefix = ((Namespace)i.next()).getPrefix();
+            for (Iterator<Namespace> i = event.getNamespaces(); i.hasNext();) {
+                String prefix = (i.next()).getPrefix();
                 if (prefix == null) { // true for default namespace
                     prefix = "";
                 }
@@ -402,8 +402,8 @@ public class StAXEvent2SAX implements XMLReader, Locator {
         // we don't use it.) So don't add xmlns:* to attributes.
 
         // gather non-namespace attrs
-        for (Iterator i = event.getAttributes(); i.hasNext();) {
-            Attribute staxAttr = (javax.xml.stream.events.Attribute)i.next();
+        for (Iterator<Attribute> i = event.getAttributes(); i.hasNext();) {
+            Attribute staxAttr = i.next();
 
             String uri = staxAttr.getName().getNamespaceURI();
             if (uri == null) {

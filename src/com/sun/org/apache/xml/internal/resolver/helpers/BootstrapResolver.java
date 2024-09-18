@@ -62,6 +62,9 @@ public class BootstrapResolver implements EntityResolver, URIResolver {
   /** System identifier for OASIS XML Catalog files. */
   public static final String xmlCatalogSysId = "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd";
 
+  /** Public identifier for legacy Apache XCatalog files.  There is no official system identifier for XCatalog files. */
+  public static final String xCatalogPubId = "-//DTD XCatalog//EN";
+
   /** Private hash used for public identifiers. */
   private final Map<String, String> publicMap = new HashMap<>();
 
@@ -87,6 +90,11 @@ public class BootstrapResolver implements EntityResolver, URIResolver {
     url = this.getClass().getResource("/com/sun/org/apache/xml/internal/resolver/etc/catalog.xsd");
     if (url != null) {
       uriMap.put(xmlCatalogXSD, url.toString());
+    }
+
+    url = this.getClass().getResource("/com/sun/org/apache/xml/internal/resolver/etc/xcatalog.dtd");
+    if (url != null) {
+      publicMap.put(xCatalogPubId, url.toString());
     }
   }
 

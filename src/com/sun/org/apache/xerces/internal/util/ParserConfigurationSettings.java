@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -20,11 +20,11 @@
 
 package com.sun.org.apache.xerces.internal.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
@@ -58,13 +58,13 @@ public class ParserConfigurationSettings
     // data
 
     /** Recognized properties. */
-    protected Set<String> fRecognizedProperties;
+    protected List<String> fRecognizedProperties;
 
     /** Properties. */
     protected Map<String, Object> fProperties;
 
     /** Recognized features. */
-    protected Set<String> fRecognizedFeatures;
+    protected List<String> fRecognizedFeatures;
 
     /** Features. */
     protected Map<String, Boolean> fFeatures;
@@ -88,8 +88,8 @@ public class ParserConfigurationSettings
     public ParserConfigurationSettings(XMLComponentManager parent) {
 
         // create storage for recognized features and properties
-        fRecognizedFeatures = new HashSet<String>();
-        fRecognizedProperties = new HashSet<String>();
+        fRecognizedFeatures = new ArrayList<>();
+        fRecognizedProperties = new ArrayList<>();
 
         // create table for features and properties
         fFeatures = new HashMap<String, Boolean>();
@@ -196,7 +196,7 @@ public class ParserConfigurationSettings
      *                                   it is <strong>really</strong>
      *                                   a critical error.
      */
-    public final boolean getFeature(String featureId)
+    public boolean getFeature(String featureId)
         throws XMLConfigurationException {
 
         FeatureState state = getFeatureState(featureId);
@@ -221,7 +221,7 @@ public class ParserConfigurationSettings
             FeatureState checkState = checkFeature(featureId);
             if (checkState.isExceptional()) {
                 return checkState;
-            }
+        }
             return FeatureState.is(false);
         }
         return FeatureState.is(state);
@@ -250,7 +250,7 @@ public class ParserConfigurationSettings
         return state.state;
     } // getProperty(String):Object
 
-    public final Object getProperty(String propertyId, Object defaultValue) {
+    public Object getProperty(String propertyId, Object defaultValue) {
         PropertyState state = getPropertyState(propertyId);
         if (state.isExceptional()) {
             return defaultValue;
@@ -266,7 +266,7 @@ public class ParserConfigurationSettings
             PropertyState state = checkProperty(propertyId);
             if (state.isExceptional()) {
                 return state;
-            }
+        }
         }
 
         return PropertyState.is(propertyValue);
@@ -320,7 +320,7 @@ public class ParserConfigurationSettings
                 PropertyState state = fParentSettings.getPropertyState(propertyId);
                 if (state.isExceptional()) {
                     return state;
-                }
+            }
             }
             else {
                 return PropertyState.NOT_RECOGNIZED;

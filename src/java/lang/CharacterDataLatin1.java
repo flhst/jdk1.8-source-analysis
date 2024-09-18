@@ -1,4 +1,4 @@
-// This file was generated AUTOMATICALLY from a template file Tue Sep 05 19:40:08 PDT 2017
+// This file was generated AUTOMATICALLY from a template file Wed Jun 14 13:53:34 UTC 2023
 /*
  * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
@@ -252,7 +252,7 @@ class CharacterDataLatin1 extends CharacterData {
     private CharacterDataLatin1() {};
 
     // The following tables and code generated using:
-  // java GenerateCharacter -template c:/re/workspace/8-2-build-windows-amd64-cygwin/jdk8u151/9699/jdk/make/data/characterdata/CharacterDataLatin1.java.template -spec c:/re/workspace/8-2-build-windows-amd64-cygwin/jdk8u151/9699/jdk/make/data/unicodedata/UnicodeData.txt -specialcasing c:/re/workspace/8-2-build-windows-amd64-cygwin/jdk8u151/9699/jdk/make/data/unicodedata/SpecialCasing.txt -proplist c:/re/workspace/8-2-build-windows-amd64-cygwin/jdk8u151/9699/jdk/make/data/unicodedata/PropList.txt -o c:/re/workspace/8-2-build-windows-amd64-cygwin/jdk8u151/9699/build/windows-amd64/jdk/gensrc/java/lang/CharacterDataLatin1.java -string -usecharforbyte -latin1 8
+  // java GenerateCharacter -template c:/jenkins/workspace/8-2-build-windows-x64-cygwin-sans-NAS/jdk8u381/237/jdk/make/data/characterdata/CharacterDataLatin1.java.template -spec c:/jenkins/workspace/8-2-build-windows-x64-cygwin-sans-NAS/jdk8u381/237/jdk/make/data/unicodedata/UnicodeData.txt -specialcasing c:/jenkins/workspace/8-2-build-windows-x64-cygwin-sans-NAS/jdk8u381/237/jdk/make/data/unicodedata/SpecialCasing.txt -proplist c:/jenkins/workspace/8-2-build-windows-x64-cygwin-sans-NAS/jdk8u381/237/jdk/make/data/unicodedata/PropList.txt -o c:/jenkins/workspace/8-2-build-windows-x64-cygwin-sans-NAS/jdk8u381/237/build/windows-x64/jdk/gensrc/java/lang/CharacterDataLatin1.java -string -usecharforbyte -latin1 8
   // The A table has 256 entries for a total of 1024 bytes.
 
   static final int A[] = new int[256];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -811,8 +811,12 @@ public class KeyStore {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("KeyStore." + type.toUpperCase() + " type from: " +
-                this.provider.getName());
+                getProviderName());
         }
+    }
+
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
     }
 
     /**
@@ -890,7 +894,7 @@ public class KeyStore {
     public static KeyStore getInstance(String type, String provider)
         throws KeyStoreException, NoSuchProviderException
     {
-        if (provider == null || provider.length() == 0)
+        if (provider == null || provider.isEmpty())
             throw new IllegalArgumentException("missing provider");
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -36,7 +36,7 @@ import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolverSpi;
 public class SingleCertificateResolver extends StorageResolverSpi {
 
     /** Field certificate */
-    private X509Certificate certificate = null;
+    private final X509Certificate certificate;
 
     /**
      * @param x509cert the single {@link X509Certificate}
@@ -45,7 +45,7 @@ public class SingleCertificateResolver extends StorageResolverSpi {
         this.certificate = x509cert;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public Iterator<Certificate> getIterator() {
         return new InternalIterator(this.certificate);
     }
@@ -56,10 +56,10 @@ public class SingleCertificateResolver extends StorageResolverSpi {
     static class InternalIterator implements Iterator<Certificate> {
 
         /** Field alreadyReturned */
-        boolean alreadyReturned = false;
+        private boolean alreadyReturned;
 
         /** Field certificate */
-        X509Certificate certificate = null;
+        private final X509Certificate certificate;
 
         /**
          * Constructor InternalIterator
@@ -70,12 +70,12 @@ public class SingleCertificateResolver extends StorageResolverSpi {
             this.certificate = x509cert;
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public boolean hasNext() {
             return !this.alreadyReturned;
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public Certificate next() {
             if (this.alreadyReturned) {
                 throw new NoSuchElementException();

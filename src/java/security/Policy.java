@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -443,7 +443,7 @@ public abstract class Policy {
                                 String provider)
                 throws NoSuchProviderException, NoSuchAlgorithmException {
 
-        if (provider == null || provider.length() == 0) {
+        if (provider == null || provider.isEmpty()) {
             throw new IllegalArgumentException("missing provider");
         }
 

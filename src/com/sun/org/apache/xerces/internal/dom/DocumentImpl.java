@@ -476,7 +476,7 @@ public class DocumentImpl
     }
 
     /**
-     * Retreive event listener registered on a given node
+     * Retrieve event listener registered on a given node
      */
     private List<LEntry> getEventListeners(NodeImpl n) {
         if (eventListeners == null) {
@@ -680,6 +680,7 @@ public class DocumentImpl
      *              method was invoked by an EventListener; otherwise false.
     */
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
     protected boolean dispatchEvent(NodeImpl node, Event event) {
         if (event == null) return false;
 
@@ -737,9 +738,9 @@ public class DocumentImpl
                 // Handle all capturing listeners on this node
                 NodeImpl nn = (NodeImpl) pv.get(j);
                 evt.currentTarget = nn;
-                List<LEntry> nodeListeners = getEventListeners(nn);
+                ArrayList<LEntry> nodeListeners = (ArrayList<LEntry>)getEventListeners(nn);
                 if (nodeListeners != null) {
-                    List<LEntry> nl = (List)((ArrayList)nodeListeners).clone();
+                    List<LEntry> nl = (ArrayList<LEntry>)nodeListeners.clone();
                     // call listeners in the order in which they got registered
                     int nlsize = nl.size();
                     for (int i = 0; i < nlsize; i++) {
@@ -766,9 +767,9 @@ public class DocumentImpl
             // node are _not_ invoked, even during the capture phase.
             evt.eventPhase = Event.AT_TARGET;
             evt.currentTarget = node;
-            List<LEntry> nodeListeners = getEventListeners(node);
+            ArrayList<LEntry> nodeListeners = (ArrayList<LEntry>)getEventListeners(node);
             if (!evt.stopPropagation && nodeListeners != null) {
-                List<LEntry> nl = (List)((ArrayList)nodeListeners).clone();
+                List<LEntry> nl = (ArrayList<LEntry>)nodeListeners.clone();
                 // call listeners in the order in which they got registered
                 int nlsize = nl.size();
                 for (int i = 0; i < nlsize; i++) {
@@ -799,9 +800,9 @@ public class DocumentImpl
                     // Handle all bubbling listeners on this node
                     NodeImpl nn = (NodeImpl) pv.get(j);
                     evt.currentTarget = nn;
-                    nodeListeners = getEventListeners(nn);
+                    nodeListeners = (ArrayList<LEntry>)getEventListeners(nn);
                     if (nodeListeners != null) {
-                        List<LEntry> nl = (List)((ArrayList)nodeListeners).clone();
+                        List<LEntry> nl = (ArrayList<LEntry>)nodeListeners.clone();
                         // call listeners in the order in which they got
                         // registered
                         int nlsize = nl.size();

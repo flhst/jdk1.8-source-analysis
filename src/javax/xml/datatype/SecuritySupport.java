@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -98,7 +98,7 @@ class SecuritySupport  {
     return ((Boolean)
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
-                    return new Boolean(f.exists());
+                    return f.exists();
                 }
             })).booleanValue();
     }

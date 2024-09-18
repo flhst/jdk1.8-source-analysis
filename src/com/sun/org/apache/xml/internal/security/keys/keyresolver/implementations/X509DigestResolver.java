@@ -1,9 +1,28 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations;
 
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -24,18 +43,17 @@ import org.w3c.dom.Element;
 
 /**
  * KeyResolverSpi implementation which resolves public keys and X.509 certificates from a
- * <code>dsig11:X509Digest</code> element.
+ * {@code dsig11:X509Digest} element.
  *
- * @author Brent Putman (putmanb@georgetown.edu)
  */
 public class X509DigestResolver extends KeyResolverSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(X509DigestResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(X509DigestResolver.class);
 
-    /** {@inheritDoc}. */
-    public boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
+    /** {@inheritDoc} */
+    @Override
+    protected boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
         if (XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_X509DATA)) {
             try {
                 X509Data x509Data = new X509Data(element, baseURI);
@@ -48,11 +66,12 @@ public class X509DigestResolver extends KeyResolverSpi {
         }
     }
 
-    /** {@inheritDoc}. */
-    public PublicKey engineLookupAndResolvePublicKey(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected PublicKey engineResolvePublicKey(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
 
-        X509Certificate cert = this.engineLookupResolveX509Certificate(element, baseURI, storage);
+        X509Certificate cert = this.engineResolveX509Certificate(element, baseURI, storage, secureValidation);
 
         if (cert != null) {
             return cert.getPublicKey();
@@ -61,31 +80,23 @@ public class X509DigestResolver extends KeyResolverSpi {
         return null;
     }
 
-    /** {@inheritDoc}. */
-    public X509Certificate engineLookupResolveX509Certificate(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected X509Certificate engineResolveX509Certificate(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
-
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName());
-        }
-
-        if (!engineCanResolve(element, baseURI, storage)) {
-            return null;
-        }
 
         try {
             return resolveCertificate(element, baseURI, storage);
         } catch (XMLSecurityException e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "XMLSecurityException", e);
-            }
+            LOG.debug("XMLSecurityException", e);
         }
 
         return null;
     }
 
-    /** {@inheritDoc}. */
-    public SecretKey engineLookupAndResolveSecretKey(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected SecretKey engineResolveSecretKey(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
         return null;
     }
@@ -96,7 +107,7 @@ public class X509DigestResolver extends KeyResolverSpi {
      * @param element
      * @param baseURI
      * @param storage
-     * @return
+     * @return the certificate represented by the digest.
      * @throws XMLSecurityException
      */
     private X509Certificate resolveCertificate(Element element, String baseURI, StorageResolver storage)
@@ -128,9 +139,7 @@ public class X509DigestResolver extends KeyResolverSpi {
                     byte[] certDigestBytes = XMLX509Digest.getDigestBytesFromCert(cert, keyInfoDigest.getAlgorithm());
 
                     if (Arrays.equals(keyInfoDigest.getDigestBytes(), certDigestBytes)) {
-                        if (log.isLoggable(java.util.logging.Level.FINE)) {
-                            log.log(java.util.logging.Level.FINE, "Found certificate with: " + cert.getSubjectX500Principal().getName());
-                        }
+                        LOG.debug("Found certificate with: {}", cert.getSubjectX500Principal().getName());
                         return cert;
                     }
 
@@ -138,7 +147,7 @@ public class X509DigestResolver extends KeyResolverSpi {
             }
 
         } catch (XMLSecurityException ex) {
-            throw new KeyResolverException("empty", ex);
+            throw new KeyResolverException(ex);
         }
 
         return null;
@@ -152,13 +161,18 @@ public class X509DigestResolver extends KeyResolverSpi {
      */
     private void checkStorage(StorageResolver storage) throws KeyResolverException {
         if (storage == null) {
-            Object exArgs[] = { Constants._TAG_X509DIGEST };
+            Object[] exArgs = { Constants._TAG_X509DIGEST };
             KeyResolverException ex = new KeyResolverException("KeyResolver.needStorageResolver", exArgs);
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "", ex);
-            }
+            LOG.debug("", ex);
             throw ex;
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    protected PrivateKey engineResolvePrivateKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
+    ) {
+        return null;
+    }
 }

@@ -1,205 +1,182 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
- * This class represents the table of exceptions that are thrown by a
- * method. This attribute may be used once per method.  The name of
- * this class is <em>ExceptionTable</em> for historical reasons; The
- * Java Virtual Machine Specification, Second Edition defines this
- * attribute using the name <em>Exceptions</em> (which is inconsistent
- * with the other classes).
+ * This class represents the table of exceptions that are thrown by a method. This attribute may be used once per
+ * method. The name of this class is <em>ExceptionTable</em> for historical reasons; The Java Virtual Machine
+ * Specification, Second Edition defines this attribute using the name <em>Exceptions</em> (which is inconsistent with
+ * the other classes).
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     Code
+ * <pre>
+ * Exceptions_attribute {
+ *   u2 attribute_name_index;
+ *   u4 attribute_length;
+ *   u2 number_of_exceptions;
+ *   u2 exception_index_table[number_of_exceptions];
+ * }
+ * </pre>
+ * @see Code
+ * @LastModified: Feb 2023
  */
 public final class ExceptionTable extends Attribute {
-  private int   number_of_exceptions;  // Table of indices into
-  private int[] exception_index_table; // constant pool
 
-  /**
-   * Initialize from another object. Note that both objects use the same
-   * references (shallow copy). Use copy() for a physical copy.
-   */
-  public ExceptionTable(ExceptionTable c) {
-    this(c.getNameIndex(), c.getLength(), c.getExceptionIndexTable(),
-         c.getConstantPool());
-  }
+    private int[] exceptionIndexTable; // constant pool
 
-  /**
-   * @param name_index Index in constant pool
-   * @param length Content length in bytes
-   * @param exception_index_table Table of indices in constant pool
-   * @param constant_pool Array of constants
-   */
-  public ExceptionTable(int        name_index, int length,
-                        int[]      exception_index_table,
-                        ConstantPool constant_pool)
-  {
-    super(Constants.ATTR_EXCEPTIONS, name_index, length, constant_pool);
-    setExceptionIndexTable(exception_index_table);
-  }
-
-  /**
-   * Construct object from file stream.
-   * @param name_index Index in constant pool
-   * @param length Content length in bytes
-   * @param file Input stream
-   * @param constant_pool Array of constants
-   * @throws IOException
-   */
-  ExceptionTable(int name_index, int length, DataInputStream file,
-                 ConstantPool constant_pool) throws IOException
-  {
-    this(name_index, length, (int[])null, constant_pool);
-
-    number_of_exceptions  = file.readUnsignedShort();
-    exception_index_table = new int[number_of_exceptions];
-
-    for(int i=0; i < number_of_exceptions; i++)
-      exception_index_table[i] = file.readUnsignedShort();
-  }
-
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitExceptionTable(this);
-  }
-
-  /**
-   * Dump exceptions attribute to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    super.dump(file);
-    file.writeShort(number_of_exceptions);
-    for(int i=0; i < number_of_exceptions; i++)
-      file.writeShort(exception_index_table[i]);
-  }
-
-  /**
-   * @return Array of indices into constant pool of thrown exceptions.
-   */
-  public final int[] getExceptionIndexTable() {return exception_index_table;}
-  /**
-   * @return Length of exception table.
-   */
-  public final int getNumberOfExceptions() { return number_of_exceptions; }
-
-  /**
-   * @return class names of thrown exceptions
-   */
-  public final String[] getExceptionNames() {
-    String[] names = new String[number_of_exceptions];
-    for(int i=0; i < number_of_exceptions; i++)
-      names[i] = constant_pool.getConstantString(exception_index_table[i],
-                                                 Constants.CONSTANT_Class).
-        replace('/', '.');
-    return names;
-  }
-
-  /**
-   * @param exception_index_table.
-   * Also redefines number_of_exceptions according to table length.
-   */
-  public final void setExceptionIndexTable(int[] exception_index_table) {
-    this.exception_index_table = exception_index_table;
-    number_of_exceptions       = (exception_index_table == null)? 0 :
-      exception_index_table.length;
-  }
-  /**
-   * @return String representation, i.e., a list of thrown exceptions.
-   */
-  public final String toString() {
-    StringBuffer buf = new StringBuffer("");
-    String       str;
-
-    for(int i=0; i < number_of_exceptions; i++) {
-      str = constant_pool.getConstantString(exception_index_table[i],
-                                            Constants.CONSTANT_Class);
-      buf.append(Utility.compactClassName(str, false));
-
-      if(i < number_of_exceptions - 1)
-        buf.append(", ");
+    /**
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use copy() for a
+     * physical copy.
+     *
+     * @param c Source to copy.
+     */
+    public ExceptionTable(final ExceptionTable c) {
+        this(c.getNameIndex(), c.getLength(), c.getExceptionIndexTable(), c.getConstantPool());
     }
 
-    return buf.toString();
-  }
+    /**
+     * Construct object from input stream.
+     *
+     * @param nameIndex Index in constant pool
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O error occurs.
+     */
+    ExceptionTable(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, (int[]) null, constantPool);
+        final int exceptionCount = input.readUnsignedShort();
+        exceptionIndexTable = new int[exceptionCount];
+        for (int i = 0; i < exceptionCount; i++) {
+            exceptionIndexTable[i] = input.readUnsignedShort();
+        }
+    }
 
-  /**
-   * @return deep copy of this attribute
-   */
-  public Attribute copy(ConstantPool constant_pool) {
-    ExceptionTable c = (ExceptionTable)clone();
-    c.exception_index_table = (int[])exception_index_table.clone();
-    c.constant_pool = constant_pool;
-    return c;
-  }
+    /**
+     * @param nameIndex Index in constant pool
+     * @param length Content length in bytes
+     * @param exceptionIndexTable Table of indices in constant pool
+     * @param constantPool Array of constants
+     */
+    public ExceptionTable(final int nameIndex, final int length, final int[] exceptionIndexTable, final ConstantPool constantPool) {
+        super(Const.ATTR_EXCEPTIONS, nameIndex, length, constantPool);
+        this.exceptionIndexTable = exceptionIndexTable != null ? exceptionIndexTable : Const.EMPTY_INT_ARRAY;
+        Args.requireU2(this.exceptionIndexTable.length, "exceptionIndexTable.length");
+    }
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitExceptionTable(this);
+    }
+
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        final ExceptionTable c = (ExceptionTable) clone();
+        if (exceptionIndexTable != null) {
+            c.exceptionIndexTable = exceptionIndexTable.clone();
+        }
+        c.setConstantPool(constantPool);
+        return c;
+    }
+
+    /**
+     * Dump exceptions attribute to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void dump(final DataOutputStream file) throws IOException {
+        super.dump(file);
+        file.writeShort(exceptionIndexTable.length);
+        for (final int index : exceptionIndexTable) {
+            file.writeShort(index);
+        }
+    }
+
+    /**
+     * @return Array of indices into constant pool of thrown exceptions.
+     */
+    public int[] getExceptionIndexTable() {
+        return exceptionIndexTable;
+    }
+
+    /**
+     * @return class names of thrown exceptions
+     */
+    public String[] getExceptionNames() {
+        final String[] names = new String[exceptionIndexTable.length];
+        for (int i = 0; i < exceptionIndexTable.length; i++) {
+            names[i] = super.getConstantPool().getConstantString(exceptionIndexTable[i],
+                    Const.CONSTANT_Class).replace('/', '.');
+        }
+        return names;
+    }
+
+    /**
+     * @return Length of exception table.
+     */
+    public int getNumberOfExceptions() {
+        return exceptionIndexTable == null ? 0 : exceptionIndexTable.length;
+    }
+
+    /**
+     * @param exceptionIndexTable the list of exception indexes Also redefines number_of_exceptions according to table
+     *        length.
+     */
+    public void setExceptionIndexTable(final int[] exceptionIndexTable) {
+        this.exceptionIndexTable = exceptionIndexTable != null ? exceptionIndexTable : Const.EMPTY_INT_ARRAY;
+    }
+
+    /**
+     * @return String representation, i.e., a list of thrown exceptions.
+     */
+    @Override
+    public String toString() {
+        final StringBuilder buf = new StringBuilder();
+        String str;
+        buf.append("Exceptions: ");
+        for (int i = 0; i < exceptionIndexTable.length; i++) {
+            str = super.getConstantPool().getConstantString(exceptionIndexTable[i], Const.CONSTANT_Class);
+            buf.append(Utility.compactClassName(str, false));
+            if (i < exceptionIndexTable.length - 1) {
+                buf.append(", ");
+            }
+        }
+        return buf.toString();
+    }
 }

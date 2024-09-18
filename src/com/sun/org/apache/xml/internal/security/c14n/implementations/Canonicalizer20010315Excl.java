@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -23,53 +23,48 @@
 package com.sun.org.apache.xml.internal.security.c14n.implementations;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.c14n.helper.C14nHelper;
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.params.InclusiveNamespaces;
-import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Attr;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 /**
  * Implements &quot; <A
  * HREF="http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/">Exclusive XML
- * Canonicalization, Version 1.0 </A>&quot; <BR />
+ * Canonicalization, Version 1.0 </A>&quot; <p></p>
  * Credits: During restructuring of the Canonicalizer framework, Ren??
  * Kollmorgen from Software AG submitted an implementation of ExclC14n which
  * fitted into the old architecture and which based heavily on my old (and slow)
  * implementation of "Canonical XML". A big "thank you" to Ren?? for this.
- * <BR />
+ * <p></p>
  * <i>THIS </i> implementation is a complete rewrite of the algorithm.
  *
- * @author Christian Geuer-Pollmann <geuerp@apache.org>
- * @version $Revision: 1147448 $
- * @see <a href="http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/ Exclusive#">
- *          XML Canonicalization, Version 1.0</a>
+ * @see <a href="http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/">
+ *          Exclusive XML Canonicalization, Version 1.0</a>
  */
 public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
 
-    private static final String XML_LANG_URI = Constants.XML_LANG_SPACE_SpecNS;
-    private static final String XMLNS_URI = Constants.NamespaceSpecNS;
-
     /**
-      * This Set contains the names (Strings like "xmlns" or "xmlns:foo") of
-      * the inclusive namespaces.
-      */
-    private SortedSet<String> inclusiveNSSet;
-
-    private final SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
+     * This Set contains the names (Strings like "xmlns" or "xmlns:foo") of
+     * the inclusive namespaces.
+     */
+    private SortedSet<String> inclusiveNSSet = Collections.emptySortedSet();
+    private boolean propagateDefaultNamespace = false;
 
     /**
      * Constructor Canonicalizer20010315Excl
@@ -82,28 +77,44 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
 
     /**
      * Method engineCanonicalizeSubTree
-     * @inheritDoc
+     * {@inheritDoc}
      * @param rootNode
-     *
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalizeSubTree(Node rootNode)
+    public void engineCanonicalizeSubTree(Node rootNode, OutputStream writer)
         throws CanonicalizationException {
-        return engineCanonicalizeSubTree(rootNode, "", null);
+        engineCanonicalizeSubTree(rootNode, "", null, writer);
     }
 
     /**
      * Method engineCanonicalizeSubTree
-     *  @inheritDoc
+     *  {@inheritDoc}
      * @param rootNode
      * @param inclusiveNamespaces
-     *
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalizeSubTree(
-        Node rootNode, String inclusiveNamespaces
+    public void engineCanonicalizeSubTree(
+        Node rootNode, String inclusiveNamespaces, OutputStream writer
     ) throws CanonicalizationException {
-        return engineCanonicalizeSubTree(rootNode, inclusiveNamespaces, null);
+        engineCanonicalizeSubTree(rootNode, inclusiveNamespaces, null, writer);
+    }
+
+    /**
+     * Method engineCanonicalizeSubTree
+     *  {@inheritDoc}
+     * @param rootNode
+     * @param inclusiveNamespaces
+     * @param propagateDefaultNamespace If true the default namespace will be propagated to the c14n-ized root element
+     * @param writer OutputStream to write the canonicalization result
+     * @throws CanonicalizationException
+     */
+    public void engineCanonicalizeSubTree(
+        Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace, OutputStream writer
+    ) throws CanonicalizationException {
+        this.propagateDefaultNamespace = propagateDefaultNamespace;
+        engineCanonicalizeSubTree(rootNode, inclusiveNamespaces, null, writer);
     }
 
     /**
@@ -111,55 +122,57 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
      * @param rootNode
      * @param inclusiveNamespaces
      * @param excl A element to exclude from the c14n process.
-     * @return the rootNode c14n.
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalizeSubTree(
-        Node rootNode, String inclusiveNamespaces, Node excl
+    public void engineCanonicalizeSubTree(
+        Node rootNode, String inclusiveNamespaces, Node excl, OutputStream writer
     ) throws CanonicalizationException{
         inclusiveNSSet = InclusiveNamespaces.prefixStr2Set(inclusiveNamespaces);
-        return super.engineCanonicalizeSubTree(rootNode, excl);
+        super.engineCanonicalizeSubTree(rootNode, excl, writer);
     }
 
     /**
      *
      * @param rootNode
      * @param inclusiveNamespaces
-     * @return the rootNode c14n.
+     * @param writer OutputStream to write the canonicalization result
+     * @param secureValidation Whether secure validation is enabled
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalize(
-        XMLSignatureInput rootNode, String inclusiveNamespaces
+    public void engineCanonicalize(
+        XMLSignatureInput rootNode, String inclusiveNamespaces, OutputStream writer, boolean secureValidation
     ) throws CanonicalizationException {
         inclusiveNSSet = InclusiveNamespaces.prefixStr2Set(inclusiveNamespaces);
-        return super.engineCanonicalize(rootNode);
+        super.engineCanonicalize(rootNode, writer, secureValidation);
     }
 
     /**
      * Method engineCanonicalizeXPathNodeSet
-     * @inheritDoc
+     * {@inheritDoc}
      * @param xpathNodeSet
      * @param inclusiveNamespaces
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalizeXPathNodeSet(
-        Set<Node> xpathNodeSet, String inclusiveNamespaces
+    public void engineCanonicalizeXPathNodeSet(
+        Set<Node> xpathNodeSet, String inclusiveNamespaces, OutputStream writer
     ) throws CanonicalizationException {
         inclusiveNSSet = InclusiveNamespaces.prefixStr2Set(inclusiveNamespaces);
-        return super.engineCanonicalizeXPathNodeSet(xpathNodeSet);
+        super.engineCanonicalizeXPathNodeSet(xpathNodeSet, writer);
     }
 
     @Override
-    protected Iterator<Attr> handleAttributesSubtree(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
+    protected void outputAttributesSubtree(Element element, NameSpaceSymbTable ns,
+                                           Map<String, byte[]> cache, OutputStream writer)
+        throws CanonicalizationException, DOMException, IOException {
         // result will contain the attrs which have to be output
-        final SortedSet<Attr> result = this.result;
-        result.clear();
+        SortedSet<Attr> result = new TreeSet<>(COMPARE);
 
         // The prefix visibly utilized (in the attribute or in the name) in
         // the element
-        SortedSet<String> visiblyUtilized = new TreeSet<String>();
-        if (inclusiveNSSet != null && !inclusiveNSSet.isEmpty()) {
+        SortedSet<String> visiblyUtilized = new TreeSet<>();
+        if (!inclusiveNSSet.isEmpty()) {
             visiblyUtilized.addAll(inclusiveNSSet);
         }
 
@@ -186,12 +199,19 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                     && C14nHelper.namespaceIsRelative(NNodeValue)) {
                     // The default mapping for xml must not be output.
                     // New definition check if it is relative.
-                    Object exArgs[] = {element.getTagName(), NName, attribute.getNodeValue()};
+                    Object[] exArgs = {element.getTagName(), NName, attribute.getNodeValue()};
                     throw new CanonicalizationException(
                         "c14n.Canonicalizer.RelativeNamespace", exArgs
                     );
                 }
             }
+        }
+        if (propagateDefaultNamespace && ns.getLevel() == 1 &&
+                inclusiveNSSet.contains(XMLNS) &&
+                ns.getMappingWithoutRendered(XMLNS) == null) {
+                ns.removeMapping(XMLNS);
+                ns.addMapping(
+                    XMLNS, "", getNullNode(element.getOwnerDocument()));
         }
         String prefix = null;
         if (element.getNamespaceURI() != null
@@ -209,20 +229,18 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
             }
         }
 
-        return result.iterator();
+        //we output all Attrs which are available
+        for (Attr attr : result) {
+            outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
+        }
     }
 
-    /**
-     * @inheritDoc
-     * @param element
-     * @throws CanonicalizationException
-     */
     @Override
-    protected final Iterator<Attr> handleAttributes(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
+    protected void outputAttributes(Element element, NameSpaceSymbTable ns,
+                                    Map<String, byte[]> cache, OutputStream writer)
+        throws CanonicalizationException, DOMException, IOException {
         // result will contain the attrs which have to be output
-        final SortedSet<Attr> result = this.result;
-        result.clear();
+        SortedSet<Attr> result = new TreeSet<>(COMPARE);
 
         // The prefix visibly utilized (in the attribute or in the name) in
         // the element
@@ -230,8 +248,8 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
         // It's the output selected.
         boolean isOutputElement = isVisibleDO(element, ns.getLevel()) == 1;
         if (isOutputElement) {
-            visiblyUtilized = new TreeSet<String>();
-            if (inclusiveNSSet != null && !inclusiveNSSet.isEmpty()) {
+            visiblyUtilized = new TreeSet<>();
+            if (!inclusiveNSSet.isEmpty()) {
                 visiblyUtilized.addAll(inclusiveNSSet);
             }
         }
@@ -266,7 +284,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                         if (n != null) {
                             result.add((Attr)n);
                             if (C14nHelper.namespaceIsRelative(attribute)) {
-                                Object exArgs[] = { element.getTagName(), NName, attribute.getNodeValue() };
+                                Object[] exArgs = { element.getTagName(), NName, attribute.getNodeValue() };
                                 throw new CanonicalizationException(
                                     "c14n.Canonicalizer.RelativeNamespace", exArgs
                                 );
@@ -277,7 +295,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                     if (ns.addMapping(NName, NNodeValue, attribute)
                         && C14nHelper.namespaceIsRelative(NNodeValue)) {
                         // New definition check if it is relative
-                        Object exArgs[] = { element.getTagName(), NName, attribute.getNodeValue() };
+                        Object[] exArgs = { element.getTagName(), NName, attribute.getNodeValue() };
                         throw new CanonicalizationException(
                             "c14n.Canonicalizer.RelativeNamespace", exArgs
                         );
@@ -312,13 +330,15 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
             }
         }
 
-        return result.iterator();
+        //we output all Attrs which are available
+        for (Attr attr : result) {
+            outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
+        }
     }
 
     protected void circumventBugIfNeeded(XMLSignatureInput input)
-        throws CanonicalizationException, ParserConfigurationException,
-               IOException, SAXException {
-        if (!input.isNeedsToBeExpanded() || inclusiveNSSet.isEmpty() || inclusiveNSSet.isEmpty()) {
+        throws XMLParserException, IOException {
+        if (!input.isNeedsToBeExpanded() || inclusiveNSSet.isEmpty()) {
             return;
         }
         Document doc = null;

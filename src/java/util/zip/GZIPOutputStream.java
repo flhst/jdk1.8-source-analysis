@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -154,6 +154,7 @@ class GZIPOutputStream extends DeflaterOutputStream {
      */
     public void finish() throws IOException {
         if (!def.finished()) {
+            try {
             def.finish();
             while (!def.finished()) {
                 int len = def.deflate(buf, 0, buf.length);
@@ -172,6 +173,11 @@ class GZIPOutputStream extends DeflaterOutputStream {
             byte[] trailer = new byte[TRAILER_SIZE];
             writeTrailer(trailer, 0);
             out.write(trailer);
+            } catch (IOException e) {
+                if (usesDefaultDeflater)
+                    def.end();
+                throw e;
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -76,6 +76,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
  */
+@SuppressWarnings("deprecation")
 public abstract class SAXParser {
 
     /**

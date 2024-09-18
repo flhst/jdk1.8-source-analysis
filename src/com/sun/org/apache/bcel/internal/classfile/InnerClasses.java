@@ -1,184 +1,162 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
- * This class is derived from <em>Attribute</em> and denotes that this class
- * is an Inner class of another.
- * to the source file of this class.
- * It is instantiated from the <em>Attribute.readAttribute()</em> method.
+ * This class is derived from <em>Attribute</em> and denotes that this class is an Inner class of another. to the source
+ * file of this class. It is instantiated from the <em>Attribute.readAttribute()</em> method.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     Attribute
+ * @see Attribute
  */
-public final class InnerClasses extends Attribute {
-  private InnerClass[] inner_classes;
-  private int          number_of_classes;
+public final class InnerClasses extends Attribute implements Iterable<InnerClass> {
 
-  /**
-   * Initialize from another object. Note that both objects use the same
-   * references (shallow copy). Use clone() for a physical copy.
-   */
-  public InnerClasses(InnerClasses c) {
-    this(c.getNameIndex(), c.getLength(), c.getInnerClasses(),
-         c.getConstantPool());
-  }
+    /**
+     * Empty array.
+     */
+    private static final InnerClass[] EMPTY_INNER_CLASSE_ARRAY = {};
 
-  /**
-   * @param name_index Index in constant pool to CONSTANT_Utf8
-   * @param length Content length in bytes
-   * @param inner_classes array of inner classes attributes
-   * @param constant_pool Array of constants
-   * @param sourcefile_index Index in constant pool to CONSTANT_Utf8
-   */
-  public InnerClasses(int name_index, int length,
-                      InnerClass[] inner_classes,
-                      ConstantPool constant_pool)
-  {
-    super(Constants.ATTR_INNER_CLASSES, name_index, length, constant_pool);
-    setInnerClasses(inner_classes);
-  }
+    private InnerClass[] innerClasses;
 
-  /**
-   * Construct object from file stream.
-   *
-   * @param name_index Index in constant pool to CONSTANT_Utf8
-   * @param length Content length in bytes
-   * @param file Input stream
-   * @param constant_pool Array of constants
-   * @throws IOException
-   */
-  InnerClasses(int name_index, int length, DataInputStream file,
-               ConstantPool constant_pool) throws IOException
-  {
-    this(name_index, length, (InnerClass[])null, constant_pool);
+    /**
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use clone() for a
+     * physical copy.
+     *
+     * @param c Source to copy.
+     */
+    public InnerClasses(final InnerClasses c) {
+        this(c.getNameIndex(), c.getLength(), c.getInnerClasses(), c.getConstantPool());
+    }
 
-    number_of_classes = file.readUnsignedShort();
-    inner_classes = new InnerClass[number_of_classes];
+    /**
+     * Construct object from input stream.
+     *
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O error occurs.
+     */
+    InnerClasses(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, (InnerClass[]) null, constantPool);
+        final int classCount = input.readUnsignedShort();
+        innerClasses = new InnerClass[classCount];
+        for (int i = 0; i < classCount; i++) {
+            innerClasses[i] = new InnerClass(input);
+        }
+    }
 
-    for(int i=0; i < number_of_classes; i++)
-      inner_classes[i] = new InnerClass(file);
-  }
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitInnerClasses(this);
-  }
-  /**
-   * Dump source file attribute to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    super.dump(file);
-    file.writeShort(number_of_classes);
+    /**
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8
+     * @param length Content length in bytes
+     * @param innerClasses array of inner classes attributes
+     * @param constantPool Array of constants
+     */
+    public InnerClasses(final int nameIndex, final int length, final InnerClass[] innerClasses, final ConstantPool constantPool) {
+        super(Const.ATTR_INNER_CLASSES, nameIndex, length, constantPool);
+        this.innerClasses = innerClasses != null ? innerClasses : EMPTY_INNER_CLASSE_ARRAY;
+        Args.requireU2(this.innerClasses.length, "innerClasses.length");
+    }
 
-    for(int i=0; i < number_of_classes; i++)
-      inner_classes[i].dump(file);
-  }
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitInnerClasses(this);
+    }
 
-  /**
-   * @return array of inner class "records"
-   */
-  public final InnerClass[] getInnerClasses() { return inner_classes; }
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        // TODO this could be recoded to use a lower level constructor after creating a copy of the inner classes
+        final InnerClasses c = (InnerClasses) clone();
+        c.innerClasses = new InnerClass[innerClasses.length];
+        for (int i = 0; i < innerClasses.length; i++) {
+            c.innerClasses[i] = innerClasses[i].copy();
+        }
+        c.setConstantPool(constantPool);
+        return c;
+    }
 
-  /**
-   * @param inner_classes.
-   */
-  public final void setInnerClasses(InnerClass[] inner_classes) {
-    this.inner_classes = inner_classes;
-    number_of_classes = (inner_classes == null)? 0 : inner_classes.length;
-  }
+    /**
+     * Dump source file attribute to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void dump(final DataOutputStream file) throws IOException {
+        super.dump(file);
+        file.writeShort(innerClasses.length);
+        for (final InnerClass innerClass : innerClasses) {
+            innerClass.dump(file);
+        }
+    }
 
-  /**
-   * @return String representation.
-   */
-  public final String toString() {
-    StringBuffer buf = new StringBuffer();
+    /**
+     * @return array of inner class "records"
+     */
+    public InnerClass[] getInnerClasses() {
+        return innerClasses;
+    }
 
-    for(int i=0; i < number_of_classes; i++)
-      buf.append(inner_classes[i].toString(constant_pool) + "\n");
+    @Override
+    public Iterator<InnerClass> iterator() {
+        return Arrays.asList(innerClasses).iterator();
+    }
 
-    return buf.toString();
-  }
+    /**
+     * @param innerClasses the array of inner classes
+     */
+    public void setInnerClasses(final InnerClass[] innerClasses) {
+        this.innerClasses = innerClasses != null ? innerClasses : EMPTY_INNER_CLASSE_ARRAY;
+    }
 
-  /**
-   * @return deep copy of this attribute
-   */
-  public Attribute copy(ConstantPool constant_pool) {
-    InnerClasses c = (InnerClasses)clone();
-
-    c.inner_classes = new InnerClass[number_of_classes];
-    for(int i=0; i < number_of_classes; i++)
-      c.inner_classes[i] = inner_classes[i].copy();
-
-    c.constant_pool = constant_pool;
-    return c;
-  }
+    /**
+     * @return String representation.
+     */
+    @Override
+    public String toString() {
+        final StringBuilder buf = new StringBuilder();
+        buf.append("InnerClasses(");
+        buf.append(innerClasses.length);
+        buf.append("):\n");
+        for (final InnerClass innerClass : innerClasses) {
+            buf.append(innerClass.toString(super.getConstantPool())).append("\n");
+        }
+        return buf.substring(0, buf.length() - 1); // remove the last newline
+    }
 }

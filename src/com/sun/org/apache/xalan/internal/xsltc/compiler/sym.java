@@ -63,4 +63,14 @@ public class sym {
   public static final int ATTRIBUTE = 41;
   public static final int GT = 19;
   public static final int NODE = 31;
+  /*
+    AXES: count once at DCOLON,
+          these axes names are therefore not counted:
+          NAMESPACE, FOLLOWINGSIBLING, CHILD, DESCENDANTORSELF, DESCENDANT,
+          PRECEDINGSIBLING, SELF, ANCESTORORSELF, PRECEDING, ANCESTOROR, PARENT,
+          FOLLOWING, ATTRIBUTE
+  */
+  public static final int[] OPERATORS = {GT, GE, EQ, NE, LT, LE, SLASH, DSLASH,
+      DOT, DDOT, ATSIGN, DCOLON, PLUS, MINUS, STAR, DIV, MOD, AND, OR, LPAREN,
+      LBRACK, VBAR, DOLLAR, NODE, TEXT, PI, PIPARAM};
 }

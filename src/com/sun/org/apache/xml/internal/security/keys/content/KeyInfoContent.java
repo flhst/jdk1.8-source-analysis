@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -25,7 +25,6 @@ package com.sun.org.apache.xml.internal.security.keys.content;
 /**
  * Empty interface just to identify Elements that can be children of ds:KeyInfo.
  *
- * @author $Author: coheigea $
  */
 public interface KeyInfoContent {
 }

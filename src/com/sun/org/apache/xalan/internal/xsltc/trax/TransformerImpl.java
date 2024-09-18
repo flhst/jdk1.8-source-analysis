@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,8 +24,7 @@
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
 import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
@@ -53,12 +52,12 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownServiceException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -80,6 +79,8 @@ import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -90,6 +91,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
+ * @LastModified: Jan 2022
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache, ErrorListener
@@ -97,8 +99,6 @@ public final class TransformerImpl extends Transformer
 
     private final static String LEXICAL_HANDLER_PROPERTY =
         "http://xml.org/sax/properties/lexical-handler";
-    private static final String NAMESPACE_FEATURE =
-        "http://xml.org/sax/features/namespaces";
 
     /**
      * Namespace prefixes feature for {@link XMLReader}.
@@ -195,15 +195,10 @@ public final class TransformerImpl extends Transformer
     private boolean _isSecureProcessing = false;
 
     /**
-     * Indicates whether implementation parts should use
-     *   service loader (or similar).
-     * Note the default value (false) is the safe option..
+     * Indicates whether 3rd party parser may be used to override the system-default
      */
-    private boolean _useServicesMechanism;
-    /**
-     * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
-     */
-    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private boolean _overrideDefaultParser;
+
      /**
      * protocols allowed for external DTD references in source file and/or stylesheet.
      */
@@ -262,11 +257,10 @@ public final class TransformerImpl extends Transformer
         _propertiesClone = (Properties) _properties.clone();
         _indentNumber = indentNumber;
         _tfactory = tfactory;
-        _useServicesMechanism = _tfactory.useServicesMechnism();
-        _accessExternalStylesheet = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
+        _overrideDefaultParser = _tfactory.overrideDefaultParser();
         _accessExternalDTD = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
         _securityManager = (XMLSecurityManager)_tfactory.getAttribute(XalanConstants.SECURITY_MANAGER);
-        _readerManager = XMLReaderManager.getInstance(_useServicesMechanism);
+        _readerManager = XMLReaderManager.getInstance(_overrideDefaultParser);
         _readerManager.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
         _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
         _readerManager.setProperty(XalanConstants.SECURITY_MANAGER, _securityManager);
@@ -290,15 +284,15 @@ public final class TransformerImpl extends Transformer
     /**
      * Return the state of the services mechanism feature.
      */
-    public boolean useServicesMechnism() {
-        return _useServicesMechanism;
+    public boolean overrideDefaultParser() {
+        return _overrideDefaultParser;
     }
 
     /**
      * Set the state of the services mechanism feature.
      */
-    public void setServicesMechnism(boolean flag) {
-        _useServicesMechanism = flag;
+    public void setOverrideDefaultParser(boolean flag) {
+        _overrideDefaultParser = flag;
     }
 
     /**
@@ -381,7 +375,7 @@ public final class TransformerImpl extends Transformer
         // Get encoding using getProperty() to use defaults
         _encoding = (String) _properties.getProperty(OutputKeys.ENCODING);
 
-        _tohFactory = TransletOutputHandlerFactory.newInstance(_useServicesMechanism);
+        _tohFactory = TransletOutputHandlerFactory.newInstance(_overrideDefaultParser);
         _tohFactory.setEncoding(_encoding);
         if (_method != null) {
             _tohFactory.setOutputMethod(_method);
@@ -551,7 +545,7 @@ public final class TransformerImpl extends Transformer
                  if (_dtmManager == null) {
                      _dtmManager =
                          _tfactory.createNewDTMManagerInstance();
-                     _dtmManager.setServicesMechnism(_useServicesMechanism);
+                     _dtmManager.setOverrideDefaultParser(_overrideDefaultParser);
                  }
                  dom = (DOM)_dtmManager.getDTM(source, false, wsfilter, true,
                                               false, false, 0, hasIdCall);
@@ -636,7 +630,6 @@ public final class TransformerImpl extends Transformer
                     ErrorMsg err = new ErrorMsg(ErrorMsg.JAXP_NO_SOURCE_ERR);
                     throw new TransformerException(err.toString());
                 }
-
                 // Start pushing SAX events
                 reader.parse(input);
             } finally {
@@ -723,7 +716,7 @@ public final class TransformerImpl extends Transformer
                 ((SAXSource)source).getXMLReader()==null )||
                 (source instanceof DOMSource &&
                 ((DOMSource)source).getNode()==null)){
-                        DocumentBuilderFactory builderF = FactoryImpl.getDOMFactory(_useServicesMechanism);
+                        DocumentBuilderFactory builderF = JdkXmlUtils.getDOMFactory(_overrideDefaultParser);
                         DocumentBuilder builder = builderF.newDocumentBuilder();
                         String systemID = source.getSystemId();
                         source = new DOMSource(builder.newDocument());
@@ -1053,7 +1046,7 @@ public final class TransformerImpl extends Transformer
             else if (name.equals(OutputKeys.CDATA_SECTION_ELEMENTS)) {
                 if (value != null) {
                     StringTokenizer e = new StringTokenizer(value);
-                    Vector uriAndLocalNames = null;
+                    ArrayList<String> uriAndLocalNames = null;
                     while (e.hasMoreTokens()) {
                         final String token = e.nextToken();
 
@@ -1073,11 +1066,11 @@ public final class TransformerImpl extends Transformer
                         }
 
                         if (uriAndLocalNames == null) {
-                            uriAndLocalNames = new Vector();
+                            uriAndLocalNames = new ArrayList<>();
                         }
                         // add the uri/localName as a pair, in that order
-                        uriAndLocalNames.addElement(uri);
-                        uriAndLocalNames.addElement(localName);
+                        uriAndLocalNames.add(uri);
+                        uriAndLocalNames.add(localName);
                     }
                     handler.setCdataSectionElements(uriAndLocalNames);
                 }
@@ -1289,8 +1282,34 @@ public final class TransformerImpl extends Transformer
              */
             Source resolvedSource = _uriResolver.resolve(href, baseURI);
             if (resolvedSource == null)  {
-                StreamSource streamSource = new StreamSource(
-                     SystemIDResolver.getAbsoluteURI(href, baseURI));
+                /**
+                 * Uses the translet to carry over error msg.
+                 * Performs the access check without any interface changes
+                 * (e.g. Translet and DOMCache).
+                 */
+                @SuppressWarnings("unchecked") //AbstractTranslet is the sole impl.
+                AbstractTranslet t = (AbstractTranslet)translet;
+                String systemId = SystemIDResolver.getAbsoluteURI(href, baseURI);
+                String errMsg = null;
+                try {
+                    String accessError = SecuritySupport.checkAccess(systemId,
+                            t.getAllowedProtocols(),
+                            XalanConstants.ACCESS_EXTERNAL_ALL);
+                    if (accessError != null) {
+                        ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+                                SecuritySupport.sanitizePath(href), accessError);
+                        errMsg = msg.toString();
+                    }
+                } catch (IOException ioe) {
+                    errMsg = ioe.getMessage();
+                }
+                if (errMsg != null) {
+                    t.setAccessError(errMsg);
+                    return null;
+                }
+
+                StreamSource streamSource = new StreamSource(systemId);
+
                 return getDOM(streamSource) ;
             }
 

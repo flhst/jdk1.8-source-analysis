@@ -1,111 +1,83 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.generic;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
-import com.sun.org.apache.bcel.internal.Constants;
-import java.util.Objects;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * Returnaddress, the type JSR or JSR_W instructions push upon the stack.
  *
  * see vmspec2 3.3.3
- * @author  <A HREF="http://www.inf.fu-berlin.de/~ehaase">Enver Haase</A>
  */
 public class ReturnaddressType extends Type {
 
-  public static final ReturnaddressType NO_TARGET = new ReturnaddressType();
-  private InstructionHandle returnTarget;
+    public static final ReturnaddressType NO_TARGET = new ReturnaddressType();
+    private InstructionHandle returnTarget;
 
-  /**
-   * A Returnaddress [that doesn't know where to return to].
-   */
-  private ReturnaddressType(){
-    super(Constants.T_ADDRESS, "<return address>");
-  }
+    /**
+     * A Returnaddress [that doesn't know where to return to].
+     */
+    private ReturnaddressType() {
+        super(Const.T_ADDRESS, "<return address>");
+    }
 
-  /**
-   * Creates a ReturnaddressType object with a target.
-   */
-  public ReturnaddressType(InstructionHandle returnTarget) {
-    super(Constants.T_ADDRESS, "<return address targeting "+returnTarget+">");
+    /**
+     * Creates a ReturnaddressType object with a target.
+     */
+    public ReturnaddressType(final InstructionHandle returnTarget) {
+        super(Const.T_ADDRESS, "<return address targeting " + returnTarget + ">");
         this.returnTarget = returnTarget;
-  }
+    }
 
-  @Override
-  public int hashCode() {
-      return Objects.hashCode(this.returnTarget);
-  }
+    /**
+     * Returns if the two Returnaddresses refer to the same target.
+     */
+    @Override
+    public boolean equals(final Object rat) {
+        if (!(rat instanceof ReturnaddressType)) {
+            return false;
+        }
+        final ReturnaddressType that = (ReturnaddressType) rat;
+        if (this.returnTarget == null || that.returnTarget == null) {
+            return that.returnTarget == this.returnTarget;
+        }
+        return that.returnTarget.equals(this.returnTarget);
+    }
 
-  /**
-   * Returns if the two Returnaddresses refer to the same target.
-   */
-  @Override
-  public boolean equals(Object rat){
-    if(!(rat instanceof ReturnaddressType))
-      return false;
+    /**
+     * @return the target of this ReturnaddressType
+     */
+    public InstructionHandle getTarget() {
+        return returnTarget;
+    }
 
-    return ((ReturnaddressType)rat).returnTarget.equals(this.returnTarget);
-  }
-
-  /**
-   * @return the target of this ReturnaddressType
-   */
-  public InstructionHandle getTarget(){
-    return returnTarget;
-  }
+    /**
+     * @return a hash code value for the object.
+     */
+    @Override
+    public int hashCode() {
+        if (returnTarget == null) {
+            return 0;
+        }
+        return returnTarget.hashCode();
+    }
 }

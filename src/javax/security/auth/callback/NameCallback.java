@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -63,7 +63,7 @@ public class NameCallback implements Callback, java.io.Serializable {
      *                  or if {@code prompt} has a length of 0.
      */
     public NameCallback(String prompt) {
-        if (prompt == null || prompt.length() == 0)
+        if (prompt == null || prompt.isEmpty())
             throw new IllegalArgumentException();
         this.prompt = prompt;
     }
@@ -85,8 +85,8 @@ public class NameCallback implements Callback, java.io.Serializable {
      *                  or if {@code defaultName} has a length of 0.
      */
     public NameCallback(String prompt, String defaultName) {
-        if (prompt == null || prompt.length() == 0 ||
-            defaultName == null || defaultName.length() == 0)
+        if (prompt == null || prompt.isEmpty() ||
+            defaultName == null || defaultName.isEmpty())
             throw new IllegalArgumentException();
 
         this.prompt = prompt;

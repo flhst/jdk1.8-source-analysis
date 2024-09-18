@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2005 The Apache Software Foundation.
@@ -19,7 +18,7 @@
  */
 package com.sun.org.apache.xerces.internal.xpointer;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
@@ -38,9 +37,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
  * @xerces.internal
  *
  * @version $Id: ElementSchemePointer.java,v 1.4 2009/06/11 23:51:50 joehw Exp $
- *
  */
-class ElementSchemePointer implements XPointerPart {
+final class ElementSchemePointer implements XPointerPart {
 
     // Fields
 
@@ -346,15 +344,17 @@ class ElementSchemePointer implements XPointerPart {
 
                 // Donot check for empty elements if the empty element is
                 // a child of a found parent element
-                //if (!fIsElementFound) {
-                    if (checkMatch()) {
-                        fIsElementFound = true;
+                if (checkMatch()) {
+                    if (!fIsElementFound) {
                         fWasOnlyEmptyElementFound = true;
                     } else {
-                        fIsElementFound = false;
+                        fWasOnlyEmptyElementFound = false;
                     }
-                //}
-
+                    fIsElementFound = true;
+                } else {
+                    fIsElementFound = false;
+                    fWasOnlyEmptyElementFound = false;
+                }
             }
         }
 
@@ -526,7 +526,7 @@ class ElementSchemePointer implements XPointerPart {
 
         private SymbolTable fSymbolTable;
 
-        private Hashtable fTokenNames = new Hashtable();
+        private HashMap<Integer, String> fTokenNames = new HashMap<>();
 
         /**
          * Constructor
@@ -536,9 +536,9 @@ class ElementSchemePointer implements XPointerPart {
         private Tokens(SymbolTable symbolTable) {
             fSymbolTable = symbolTable;
 
-            fTokenNames.put(new Integer(XPTRTOKEN_ELEM_NCNAME),
+            fTokenNames.put(XPTRTOKEN_ELEM_NCNAME,
                     "XPTRTOKEN_ELEM_NCNAME");
-            fTokenNames.put(new Integer(XPTRTOKEN_ELEM_CHILD),
+            fTokenNames.put(XPTRTOKEN_ELEM_CHILD,
                     "XPTRTOKEN_ELEM_CHILD");
         }
 
@@ -548,27 +548,19 @@ class ElementSchemePointer implements XPointerPart {
          * @return String The token string
          */
         private String getTokenString(int token) {
-            return (String) fTokenNames.get(new Integer(token));
-        }
-
-        /**
-         * Returns the token String
-         * @param token The index of the token
-         * @return String The token string
-         */
-        private Integer getToken(int token) {
-            return (Integer) fTokenNames.get(new Integer(token));
+            return fTokenNames.get(token);
         }
 
         /**
          * Add the specified string as a token
          *
-         * @param token The token string
+         * @param tokenStr The token string
          */
         private void addToken(String tokenStr) {
-            Integer tokenInt = (Integer) fTokenNames.get(tokenStr);
+            String str = fTokenNames.get(tokenStr);
+            Integer tokenInt = str == null ? null : Integer.parseInt(str);
             if (tokenInt == null) {
-                tokenInt = new Integer(fTokenNames.size());
+                tokenInt = fTokenNames.size();
                 fTokenNames.put(tokenInt, tokenStr);
             }
             addToken(tokenInt.intValue());
@@ -772,7 +764,7 @@ class ElementSchemePointer implements XPointerPart {
                     // An invalid child sequence character
                     if (child == 0) {
                         reportError("InvalidChildSequenceCharacter",
-                                new Object[] { new Character((char) ch) });
+                                new Object[] { (char) ch });
                         return false;
                     }
 

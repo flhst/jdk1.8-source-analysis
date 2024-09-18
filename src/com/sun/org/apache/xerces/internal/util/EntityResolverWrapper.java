@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -116,7 +116,7 @@ public class EntityResolverWrapper
                     Reader charStream = inputSource.getCharacterStream();
                     String encoding = inputSource.getEncoding();
                     XMLInputSource xmlInputSource =
-                        new XMLInputSource(publicId, systemId, baseSystemId);
+                        new XMLInputSource(publicId, systemId, baseSystemId, true);
                     xmlInputSource.setByteStream(byteStream);
                     xmlInputSource.setCharacterStream(charStream);
                     xmlInputSource.setEncoding(encoding);

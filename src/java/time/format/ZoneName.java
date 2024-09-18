@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -192,7 +192,7 @@ class ZoneName {
         "Africa/Ndjamena", "Africa_Western", "Africa/Lagos",
         "Asia/Macau", "China", "Asia/Shanghai",
         "America/Lima", "Peru", "America/Lima",
-        "Africa/Windhoek", "Africa_Western", "Africa/Lagos",
+        "Africa/Windhoek", "Africa_Central", "Africa/Maputo",
         "America/Sitka", "Alaska", "America/Juneau",
         "America/Mazatlan", "America_Mountain", "America/Denver",
         "Asia/Saigon", "Indochina", "Asia/Saigon",
@@ -288,7 +288,7 @@ class ZoneName {
         "America/St_Barthelemy", "Atlantic", "America/Halifax",
         "Asia/Pontianak", "Indonesia_Western", "Asia/Jakarta",
         "Africa/Lusaka", "Africa_Central", "Africa/Maputo",
-        "America/Godthab", "Greenland_Western", "America/Godthab",
+        "America/Nuuk", "Greenland_Western", "America/Godthab",
         "Asia/Dhaka", "Bangladesh", "Asia/Dhaka",
         "Asia/Dubai", "Gulf", "Asia/Dubai",
         "Europe/Moscow", "Moscow", "Europe/Moscow",
@@ -324,7 +324,7 @@ class ZoneName {
         "Atlantic/Faroe", "Europe_Western", "Atlantic/Canary",
         "America/Cambridge_Bay", "America_Mountain", "America/Denver",
         "America/Los_Angeles", "America_Pacific", "America/Los_Angeles",
-        "Africa/Khartoum", "Africa_Eastern", "Africa/Nairobi",
+        "Africa/Khartoum", "Africa_Central", "Africa/Maputo",
         "Europe/Simferopol", "Europe_Eastern", "Europe/Bucharest",
         "Australia/Currie", "Australia_Eastern", "Australia/Sydney",
         "Europe/Guernsey", "GMT", "Atlantic/Reykjavik",
@@ -411,7 +411,7 @@ class ZoneName {
         "Pacific/Wake", "Wake", "Pacific/Wake",
         "Pacific/Pago_Pago", "Samoa", "Pacific/Apia",
         "America/Moncton", "Atlantic", "America/Halifax",
-        "Africa/Sao_Tome", "GMT", "Atlantic/Reykjavik",
+        "Africa/Sao_Tome", "Africa_Western", "Africa/Lagos",
         "America/Glace_Bay", "Atlantic", "America/Halifax",
         "Asia/Jakarta", "Indonesia_Western", "Asia/Jakarta",
         "Africa/Asmera", "Africa_Eastern", "Africa/Nairobi",
@@ -494,7 +494,6 @@ class ZoneName {
         "America/Kralendijk", "Atlantic", "America/Halifax",
     };
     private static final String[] mzoneMap = new String[] {
-        "GMT", "ST", "Africa/Sao_Tome",
         "GMT", "ML", "Africa/Bamako",
         "GMT", "IE", "Europe/Dublin",
         "GMT", "SN", "Africa/Dakar",
@@ -509,6 +508,7 @@ class ZoneName {
         "GMT", "GB", "Europe/London",
         "GMT", "LR", "Africa/Monrovia",
         "GMT", "TG", "Africa/Lome",
+        "Africa_Western", "ST", "Africa/Sao_Tome",
         "Africa_Western", "CF", "Africa/Bangui",
         "Africa_Western", "NE", "Africa/Niamey",
         "Africa_Western", "CM", "Africa/Douala",
@@ -684,7 +684,6 @@ class ZoneName {
         "Africa/Timbuktu", "Africa/Bamako",
         "America/Buenos_Aires", "America/Argentina/Buenos_Aires",
         "Canada/Pacific", "America/Vancouver",
-        "US/Pacific-New", "America/Los_Angeles",
         "Mexico/BajaNorte", "America/Tijuana",
         "Europe/Guernsey", "Europe/London",
         "Asia/Tel_Aviv", "Asia/Jerusalem",
@@ -744,7 +743,6 @@ class ZoneName {
         "UTC", "Etc/UTC",
         "Canada/Newfoundland", "America/St_Johns",
         "Europe/Skopje", "Europe/Belgrade",
-        "Canada/East-Saskatchewan", "America/Regina",
         "PRC", "Asia/Shanghai",
         "UCT", "Etc/UCT",
         "America/Mendoza", "America/Argentina/Mendoza",
@@ -769,6 +767,7 @@ class ZoneName {
         "Europe/Belfast", "Europe/London",
         "America/Kralendijk", "America/Curacao",
         "Asia/Rangoon", "Asia/Yangon",
+        "America/Godthab", "America/Nuuk",
     };
 
     private static final Map<String, String> zidToMzone = new HashMap<>();

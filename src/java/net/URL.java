@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -33,6 +33,7 @@ import java.io.ObjectStreamField;
 import java.io.ObjectInputStream.GetField;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
+import sun.net.util.IPAddressUtil;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -212,7 +213,7 @@ public final class URL implements java.io.Serializable {
      * The host's IP address, used in equals and hashCode.
      * Computed on demand. An uninitialized or unknown hostAddress is null.
      */
-    transient InetAddress hostAddress;
+    private transient InetAddress hostAddress;
 
     /**
      * The URLStreamHandler for this URL.
@@ -414,13 +415,29 @@ public final class URL implements java.io.Serializable {
         }
         ref = parts.getRef();
 
-        // Note: we don't do validation of the URL here. Too risky to change
+        // Note: we don't do full validation of the URL here. Too risky to change
         // right now, but worth considering for future reference. -br
         if (handler == null &&
             (handler = getURLStreamHandler(protocol)) == null) {
             throw new MalformedURLException("unknown protocol: " + protocol);
         }
         this.handler = handler;
+        if (host != null && isBuiltinStreamHandler(handler)) {
+            String s = IPAddressUtil.checkExternalForm(this);
+            if (s != null) {
+                throw new MalformedURLException(s);
+            }
+        }
+        if ("jar".equalsIgnoreCase(protocol)) {
+            if (handler instanceof sun.net.www.protocol.jar.Handler) {
+                // URL.openConnection() would throw a confusing exception
+                // so generate a better exception here instead.
+                String s = ((sun.net.www.protocol.jar.Handler) handler).checkNestedProtocol(file);
+                if (s != null) {
+                    throw new MalformedURLException(s);
+                }
+            }
+        }
     }
 
     /**
@@ -726,6 +743,31 @@ public final class URL implements java.io.Serializable {
     }
 
     /**
+     * Returns the address of the host represented by this URL.
+     * A {@link SecurityException} or an {@link UnknownHostException}
+     * while getting the host address will result in this method returning
+     * {@code null}
+     *
+     * @return an {@link InetAddress} representing the host
+     */
+    synchronized InetAddress getHostAddress() {
+        if (hostAddress != null) {
+            return hostAddress;
+        }
+
+        if (host == null || host.isEmpty()) {
+            return null;
+        }
+        try {
+            hostAddress = InetAddress.getByName(host);
+        } catch (UnknownHostException | SecurityException ex) {
+            return null;
+        }
+        return hostAddress;
+    }
+
+
+    /**
      * Gets the query part of this {@code URL}.
      *
      * @return  the query part of this {@code URL},
@@ -943,7 +985,12 @@ public final class URL implements java.io.Serializable {
      * @since 1.5
      */
     public URI toURI() throws URISyntaxException {
-        return new URI (toString());
+        URI uri = new URI(toString());
+        if (authority != null && isBuiltinStreamHandler(handler)) {
+            String s = IPAddressUtil.checkAuthority(this);
+            if (s != null) throw new URISyntaxException(authority, s);
+        }
+        return uri;
     }
 
     /**
@@ -1286,7 +1333,7 @@ public final class URL implements java.io.Serializable {
         String ref = (String)gf.get("ref", null);
         int hashCode = gf.get("hashCode", -1);
         if (authority == null
-                && ((host != null && host.length() > 0) || port != -1)) {
+                && ((host != null && !host.isEmpty()) || port != -1)) {
             if (host == null)
                 host = "";
             authority = (port == -1) ? host : host + ":" + port;
@@ -1333,7 +1380,7 @@ public final class URL implements java.io.Serializable {
 
         // Construct authority part
         if (authority == null
-            && ((host != null && host.length() > 0) || port != -1)) {
+            && ((host != null && !host.isEmpty()) || port != -1)) {
             if (host == null)
                 host = "";
             authority = (port == -1) ? host : host + ":" + port;
@@ -1398,6 +1445,12 @@ public final class URL implements java.io.Serializable {
         replacementURL.setSerializedHashCode(tempState.getHashCode());
         resetState();
         return replacementURL;
+    }
+
+    boolean isBuiltinStreamHandler(URLStreamHandler handler) {
+       Class<?> handlerClass = handler.getClass();
+       return isBuiltinStreamHandler(handlerClass.getName())
+                 || (handlerClass.getClassLoader() == null);
     }
 
     private boolean isBuiltinStreamHandler(String handlerClassName) {
@@ -1507,7 +1560,7 @@ final class UrlDeserializedState {
 
         // pre-compute length of StringBuilder
         int len = protocol.length() + 1;
-        if (authority != null && authority.length() > 0)
+        if (authority != null && !authority.isEmpty())
             len += 2 + authority.length();
         if (file != null) {
             len += file.length();
@@ -1517,7 +1570,7 @@ final class UrlDeserializedState {
         StringBuilder result = new StringBuilder(len);
         result.append(protocol);
         result.append(":");
-        if (authority != null && authority.length() > 0) {
+        if (authority != null && !authority.isEmpty()) {
             result.append("//");
             result.append(authority);
         }

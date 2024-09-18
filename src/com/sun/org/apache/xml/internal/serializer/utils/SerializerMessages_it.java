@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -197,6 +199,97 @@ public class SerializerMessages_it extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Avvertenza: la codifica ''{0}'' non \u00E8 supportata da Java Runtime." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "Il parametro {0} non \u00E8 riconosciuto."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "Il parametro ''{0}'' \u00E8 stato riconosciuto, ma non \u00E8 possibile impostare il valore richiesto."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "La stringa risultante \u00E8 troppo lunga per adattarsi in DOMString: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "Il tipo di valore per questo nome parametro non \u00E8 compatibile con il tipo di valore previsto. "},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "La destinazione di output per i dati da scrivere \u00E8 nulla."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "\u00C8 stata rilevata una codifica non supportata."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "Impossibile serializzare il nodo."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "La sezione CDATA contiene uno o pi\u00F9 indicatori di fine ']]>'."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "Impossibile creare un'istanza dello strumento di controllo della correttezza del formato. Il parametro con formato valido \u00E8 impostato su true, ma non \u00E8 possibile eseguire il controllo della correttezza del formato."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "Il nodo ''{0}'' contiene caratteri XML non validi."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nel commento."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nei dati dell''istruzione di elaborazione."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nei contenuti della sezione CDATA."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nel contenuto dei dati carattere del nodo."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "\u00C8 stato trovato un carattere o caratteri XML non validi nel nodo {0} denominato ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "La stringa \"--\" non \u00E8 consentita nei commenti."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "Il valore dell''attributo \"{1}\" associato a un tipo di elemento \"{0}\" non deve essere contenere il carattere ''<''."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "Il riferimento di entit\u00E0 non analizzata \"&{0};\" non \u00E8 consentito."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "Il riferimento di entit\u00E0 esterna \"&{0};\" non \u00E8 consentito in un valore di attributo."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "Impossibile associare il prefisso \"{0}\" allo spazio di nomi \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "Il nome locale dell''elemento \"{0}\" \u00E8 nullo."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "Il nome locale dell''attributo \"{0}\" \u00E8 nullo."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "Il testo di sostituzione del nodo entit\u00E0 \"{0}\" contiene un nodo elemento \"{1}\" con un prefisso non associato \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "Il testo di sostituzione del nodo entit\u00E0 \"{0}\" contiene un nodo attributo \"{1}\" con un prefisso non associato \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Si \u00E8 verificato un errore durante la scrittura del subset interno."
+             },
 
         };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -2786,7 +2786,9 @@ public class Window extends Container implements Accessible {
      */
     @Deprecated
     public void applyResourceBundle(String rbName) {
-        applyResourceBundle(ResourceBundle.getBundle(rbName));
+        applyResourceBundle(ResourceBundle.getBundle(rbName,
+                                Locale.getDefault(),
+                                ClassLoader.getSystemClassLoader()));
     }
 
    /*

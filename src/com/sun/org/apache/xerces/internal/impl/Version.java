@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -76,7 +76,7 @@ public class Version {
      * @deprecated  getVersion() should be used instead.  */
     public static final String fVersion = getVersion();
 
-    private static final String fImmutableVersion = "Xerces-J 2.7.1";
+    private static final String fImmutableVersion = "Xerces-J 2.12.1";
 
     // public methods
 

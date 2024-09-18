@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -167,7 +167,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.INVALID_URI_ERR,
-        "Ung\u00FCltiger URI \"{0}\"."},
+        "Ung\u00FCltige URI \"{0}\"."},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
@@ -254,7 +254,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * text.
          */
         {ErrorMsg.ILLEGAL_ATTRIBUTE_ERR,
-        "Ung\u00FCltiges Attribut \"{0}\"."},
+        "Unzul\u00E4ssiges Attribut \"{0}\"."},
 
         /*
          * Note to translators:  "import" and "include" are keywords that should
@@ -307,7 +307,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * function has too many or too few arguments.
          */
         {ErrorMsg.ILLEGAL_ARG_ERR,
-        "Ung\u00FCltige Argumente f\u00FCr Funktionsaufruf."},
+        "Unzul\u00E4ssige Argumente f\u00FCr Funktionsaufruf."},
 
         /*
          * Note to translators:  "document()" is the name of function and must

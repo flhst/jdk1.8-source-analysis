@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.security.Permission;
+import java.util.Locale;
 
 /**
  * Represents permission to access a resource or set of resources defined by a
@@ -368,7 +369,7 @@ public final class URLPermission extends Permission {
             char c = methods.charAt(i);
             if (c == ',') {
                 String s = b.toString();
-                if (s.length() > 0)
+                if (!s.isEmpty())
                     l.add(s);
                 b = new StringBuilder();
             } else if (c == ' ' || c == '\t') {
@@ -382,7 +383,7 @@ public final class URLPermission extends Permission {
             }
         }
         String s = b.toString();
-        if (s.length() > 0)
+        if (!s.isEmpty())
             l.add(s);
         return l;
     }
@@ -407,7 +408,7 @@ public final class URLPermission extends Permission {
                 b.append(c);
             } else if (c == ',') {
                 String s = b.toString();
-                if (s.length() > 0)
+                if (!s.isEmpty())
                     l.add(s);
                 b = new StringBuilder();
                 capitalizeNext = true;
@@ -417,7 +418,7 @@ public final class URLPermission extends Permission {
             }
         }
         String s = b.toString();
-        if (s.length() > 0)
+        if (!s.isEmpty())
             l.add(s);
         return l;
     }
@@ -429,7 +430,7 @@ public final class URLPermission extends Permission {
             throw new IllegalArgumentException(
                 "Invalid URL string: \"" + url + "\"");
         }
-        scheme = url.substring(0, delim).toLowerCase();
+        scheme = url.substring(0, delim).toLowerCase(Locale.ROOT);
         this.ssp = url.substring(delim + 1);
 
         if (!ssp.startsWith("//")) {
@@ -451,7 +452,7 @@ public final class URLPermission extends Permission {
             auth = authpath.substring(0, delim);
             this.path = authpath.substring(delim);
         }
-        this.authority = new Authority(scheme, auth.toLowerCase());
+        this.authority = new Authority(scheme, auth.toLowerCase(Locale.ROOT));
     }
 
     private String actions() {

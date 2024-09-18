@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -160,7 +160,7 @@ public final class ToXMLStream extends ToStream
                     writer.write('\"');
                     writer.write(standalone);
                     writer.write("?>");
-                    if (m_doIndent) {
+                    if (m_doIndent || m_isStandalone) {
                         if (m_standaloneWasSpecified
                                 || getDoctypePublic() != null
                                 || getDoctypeSystem() != null

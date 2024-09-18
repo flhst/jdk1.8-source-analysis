@@ -167,6 +167,22 @@ public final class XalanConstants {
     public static final String SP_MAX_ELEMENT_DEPTH = "jdk.xml.maxElementDepth";
 
     /**
+     * JDK XPath Expression group limit
+     */
+    public static final String XPATH_GROUP_LIMIT = "jdk.xml.xpathExprGrpLimit";
+
+    /**
+     * JDK XPath Expression operators limit
+     */
+    public static final String XPATH_OP_LIMIT = "jdk.xml.xpathExprOpLimit";
+
+    /**
+     * JDK XSL XPath limit or Total Number of Operators Permitted in an XSL Stylesheet
+     */
+    public static final String XPATH_TOTALOP_LIMIT = "jdk.xml.xpathTotalOpLimit";
+
+
+    /**
      * JDK TransformerFactory and Transformer attribute that specifies a class
      * loader that will be used for extension functions class loading
      * Value: a "null", the default value, means that the default EF class loading

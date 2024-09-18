@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -28,7 +28,8 @@ package java.security.interfaces;
 import java.math.BigInteger;
 
 /**
- * The interface to an RSA private key, as defined in the PKCS#1 standard,
+ * The interface to an RSA private key, as defined in the
+ * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard,
  * using the <i>Chinese Remainder Theorem</i> (CRT) information values.
  *
  * @author Jan Luehe

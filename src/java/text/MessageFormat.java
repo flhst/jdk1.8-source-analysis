@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -1308,7 +1308,7 @@ public class MessageFormat extends Format {
                         }
                         arg = null;
                     }
-                    if (arg != null && arg.length() > 0) {
+                    if (arg != null && !arg.isEmpty()) {
                         result.append(arg);
                         characterIterators.add(
                                  createAttributedCharacterIterator(
@@ -1454,7 +1454,7 @@ public class MessageFormat extends Format {
 
         // now get the format
         Format newFormat = null;
-        if (segments[SEG_TYPE].length() != 0) {
+        if (!segments[SEG_TYPE].isEmpty()) {
             int type = findKeyword(segments[SEG_TYPE], TYPE_KEYWORDS);
             switch (type) {
             case TYPE_NULL:

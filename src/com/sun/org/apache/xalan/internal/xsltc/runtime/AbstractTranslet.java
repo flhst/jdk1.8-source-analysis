@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,7 +25,6 @@
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
 import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
@@ -45,10 +44,10 @@ import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Templates;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 
@@ -58,6 +57,7 @@ import org.w3c.dom.Document;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author John Howard, JohnH@schemasoft.com
+ * @LastModified: Sept 2021
  */
 public abstract class AbstractTranslet implements Translet {
 
@@ -74,7 +74,7 @@ public abstract class AbstractTranslet implements Translet {
     public String  _doctypeSystem = null;
     public boolean _indent = false;
     public String  _mediaType = null;
-    public Vector _cdata = null;
+    public ArrayList<String> _cdata = null;
     public int _indentamount = -1;
 
     public static final int FIRST_TRANSLET_VERSION = 100;
@@ -109,12 +109,15 @@ public abstract class AbstractTranslet implements Translet {
     // This is the name of the index used for ID attributes
     private final static String ID_INDEX_NAME = "##id";
 
-    private boolean _useServicesMechanism;
+    private boolean _overrideDefaultParser;
 
     /**
      * protocols allowed for external references set by the stylesheet processing instruction, Document() function, Import and Include element.
      */
     private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+
+    // The error message when access to exteranl resources is rejected
+    private String _accessErr = null;
 
     /************************************************************************
      * Debugging
@@ -155,7 +158,7 @@ public abstract class AbstractTranslet implements Translet {
      * Push a new parameter frame.
      */
     public final void pushParamFrame() {
-        paramsStack.add(pframe, new Integer(pbase));
+        paramsStack.add(pframe, pbase);
         pbase = ++pframe;
     }
 
@@ -559,7 +562,7 @@ public abstract class AbstractTranslet implements Translet {
     {
         try {
             final TransletOutputHandlerFactory factory
-                = TransletOutputHandlerFactory.newInstance();
+                = TransletOutputHandlerFactory.newInstance(_overrideDefaultParser);
 
             String dirStr = new File(filename).getParent();
             if ((null != dirStr) && (dirStr.length() > 0)) {
@@ -645,7 +648,7 @@ public abstract class AbstractTranslet implements Translet {
      */
     public void addCdataElement(String name) {
         if (_cdata == null) {
-            _cdata = new Vector();
+            _cdata = new ArrayList<>();
         }
 
         int lastColon = name.lastIndexOf(':');
@@ -653,11 +656,11 @@ public abstract class AbstractTranslet implements Translet {
         if (lastColon > 0) {
             String uri = name.substring(0, lastColon);
             String localName = name.substring(lastColon+1);
-            _cdata.addElement(uri);
-            _cdata.addElement(localName);
+            _cdata.add(uri);
+            _cdata.add(localName);
         } else {
-            _cdata.addElement(null);
-            _cdata.addElement(name);
+            _cdata.add(null);
+            _cdata.add(name);
         }
     }
 
@@ -756,15 +759,15 @@ public abstract class AbstractTranslet implements Translet {
     /**
      * Return the state of the services mechanism feature.
      */
-    public boolean useServicesMechnism() {
-        return _useServicesMechanism;
+    public boolean overrideDefaultParser() {
+        return _overrideDefaultParser;
     }
 
     /**
      * Set the state of the services mechanism feature.
      */
-    public void setServicesMechnism(boolean flag) {
-        _useServicesMechanism = flag;
+    public void setOverrideDefaultParser(boolean flag) {
+        _overrideDefaultParser = flag;
     }
 
     /**
@@ -781,6 +784,20 @@ public abstract class AbstractTranslet implements Translet {
         _accessExternalStylesheet = protocols;
     }
 
+    /**
+     * Returns the access error.
+     */
+    public String getAccessError() {
+        return _accessErr;
+    }
+
+    /**
+     * Sets the access error.
+     */
+    public void setAccessError(String accessErr) {
+        this._accessErr = accessErr;
+    }
+
     /************************************************************************
      * DOMImplementation caching for basis library
      ************************************************************************/
@@ -790,7 +807,7 @@ public abstract class AbstractTranslet implements Translet {
         throws ParserConfigurationException
     {
         if (_domImplementation == null) {
-            DocumentBuilderFactory dbf = FactoryImpl.getDOMFactory(_useServicesMechanism);
+            DocumentBuilderFactory dbf = JdkXmlUtils.getDOMFactory(_overrideDefaultParser);
             _domImplementation = dbf.newDocumentBuilder().getDOMImplementation();
         }
         return _domImplementation.createDocument(uri, qname, null);

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2005 The Apache Software Foundation.
@@ -17,10 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xerces.internal.xpointer;
 
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
@@ -32,6 +32,7 @@ import com.sun.org.apache.xerces.internal.xinclude.XIncludeNamespaceSupport;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
+import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
@@ -64,8 +65,8 @@ public final class XPointerHandler extends XIncludeHandler implements
         XPointerProcessor {
 
     // Fields
-    // A Vector of XPointerParts
-    protected Vector fXPointerParts = null;
+    // An ArrayList of XPointerParts
+    protected ArrayList<XPointerPart> fXPointerParts = null;
 
     // The current XPointerPart
     protected XPointerPart fXPointerPart = null;
@@ -102,7 +103,7 @@ public final class XPointerHandler extends XIncludeHandler implements
     public XPointerHandler() {
         super();
 
-        fXPointerParts = new Vector();
+        fXPointerParts = new ArrayList<>();
         fSymbolTable = new SymbolTable();
     }
 
@@ -110,11 +111,15 @@ public final class XPointerHandler extends XIncludeHandler implements
             XMLErrorHandler errorHandler, XMLErrorReporter errorReporter) {
         super();
 
-        fXPointerParts = new Vector();
+        fXPointerParts = new ArrayList<>();
         fSymbolTable = symbolTable;
         fErrorHandler = errorHandler;
         fXPointerErrorReporter = errorReporter;
         //fErrorReporter = errorReporter; // The XInclude ErrorReporter
+    }
+
+    public void setDocumentHandler(XMLDocumentHandler handler) {
+        fDocumentHandler = handler;
     }
 
     // ************************************************************************
@@ -242,8 +247,8 @@ public final class XPointerHandler extends XIncludeHandler implements
                 if (openParenCount != closeParenCount) {
                     reportError("UnbalancedParenthesisInXPointerExpression",
                             new Object[] { xpointer,
-                                    new Integer(openParenCount),
-                                    new Integer(closeParenCount) });
+                                    openParenCount,
+                                    closeParenCount });
                 }
 
                 // Perform scheme specific parsing of the pointer part
@@ -300,7 +305,7 @@ public final class XPointerHandler extends XIncludeHandler implements
             // in the XPointer expression until a matching element is found.
             for (int i = 0; i < fXPointerParts.size(); i++) {
 
-                fXPointerPart = (XPointerPart) fXPointerParts.get(i);
+                fXPointerPart = fXPointerParts.get(i);
 
                 if (fXPointerPart.resolveXPointer(element, attributes, augs,
                         event)) {
@@ -430,11 +435,11 @@ public final class XPointerHandler extends XIncludeHandler implements
     }
 
     /**
-     * Returns a Vector of XPointerPart objects
+     * Returns an ArrayList of XPointerPart objects
      *
-     * @return A Vector of XPointerPart objects.
+     * @return An ArrayList of XPointerPart objects.
      */
-    public Vector getPointerParts() {
+    public ArrayList<XPointerPart> getPointerParts() {
         return fXPointerParts;
     }
 
@@ -480,7 +485,7 @@ public final class XPointerHandler extends XIncludeHandler implements
 
         private SymbolTable fSymbolTable;
 
-        private Hashtable fTokenNames = new Hashtable();
+        private HashMap<Integer, String> fTokenNames = new HashMap<>();
 
         /**
          * Constructor
@@ -490,15 +495,15 @@ public final class XPointerHandler extends XIncludeHandler implements
         private Tokens(SymbolTable symbolTable) {
             fSymbolTable = symbolTable;
 
-            fTokenNames.put(new Integer(XPTRTOKEN_OPEN_PAREN),
+            fTokenNames.put(XPTRTOKEN_OPEN_PAREN,
                     "XPTRTOKEN_OPEN_PAREN");
-            fTokenNames.put(new Integer(XPTRTOKEN_CLOSE_PAREN),
+            fTokenNames.put(XPTRTOKEN_CLOSE_PAREN,
                     "XPTRTOKEN_CLOSE_PAREN");
-            fTokenNames.put(new Integer(XPTRTOKEN_SHORTHAND),
+            fTokenNames.put(XPTRTOKEN_SHORTHAND,
                     "XPTRTOKEN_SHORTHAND");
-            fTokenNames.put(new Integer(XPTRTOKEN_SCHEMENAME),
+            fTokenNames.put(XPTRTOKEN_SCHEMENAME,
                     "XPTRTOKEN_SCHEMENAME");
-            fTokenNames.put(new Integer(XPTRTOKEN_SCHEMEDATA),
+            fTokenNames.put(XPTRTOKEN_SCHEMEDATA,
                     "XPTRTOKEN_SCHEMEDATA");
         }
 
@@ -508,7 +513,7 @@ public final class XPointerHandler extends XIncludeHandler implements
          * @return String The token string
          */
         private String getTokenString(int token) {
-            return (String) fTokenNames.get(new Integer(token));
+            return fTokenNames.get(token);
         }
 
         /**
@@ -517,9 +522,10 @@ public final class XPointerHandler extends XIncludeHandler implements
          * @param token The token string
          */
         private void addToken(String tokenStr) {
-            Integer tokenInt = (Integer) fTokenNames.get(tokenStr);
+            String str = fTokenNames.get(tokenStr);
+            Integer tokenInt = str == null ? null : Integer.parseInt(str);
             if (tokenInt == null) {
-                tokenInt = new Integer(fTokenNames.size());
+                tokenInt = fTokenNames.size();
                 fTokenNames.put(tokenInt, tokenStr);
             }
             addToken(tokenInt.intValue());

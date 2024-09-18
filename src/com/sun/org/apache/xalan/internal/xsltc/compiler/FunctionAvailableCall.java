@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Dec 2019
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,25 +18,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: FunctionAvailableCall.java,v 1.2.4.1 2005/09/01 15:30:25 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.List;
 
 /**
  * @author G. Todd Miller
@@ -54,9 +51,9 @@ final class FunctionAvailableCall extends FunctionCall {
      * a list of arguments where the arguments must be instances of
      * LiteralExpression.
      */
-    public FunctionAvailableCall(QName fname, Vector arguments) {
+    public FunctionAvailableCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
-        _arg = (Expression)arguments.elementAt(0);
+        _arg = (Expression)arguments.get(0);
         _type = null;
 
         if (_arg instanceof LiteralExpr) {
@@ -100,7 +97,6 @@ final class FunctionAvailableCall extends FunctionCall {
      * the specified method is found in the specifed class.
      */
     private boolean hasMethods() {
-        LiteralExpr arg = (LiteralExpr)_arg;
 
         // Get the class name from the namespace uri
         String className = getClassNameFromUri(_namespaceOfFunct);
@@ -113,7 +109,7 @@ final class FunctionAvailableCall extends FunctionCall {
           int lastDotIndex = functionName.lastIndexOf('.');
           if (lastDotIndex > 0) {
             methodName = functionName.substring(lastDotIndex+1);
-            if (className != null && !className.equals(""))
+            if (className != null && className.length() != 0)
               className = className + "." + functionName.substring(0, lastDotIndex);
             else
               className = functionName.substring(0, lastDotIndex);
@@ -133,7 +129,7 @@ final class FunctionAvailableCall extends FunctionCall {
           methodName = replaceDash(methodName);
 
         try {
-            final Class clazz = ObjectFactory.findProviderClass(className, true);
+            final Class<?> clazz = ObjectFactory.findProviderClass(className, true);
 
             if (clazz == null) {
                 return false;

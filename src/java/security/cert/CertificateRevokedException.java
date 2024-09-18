@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -35,6 +35,7 @@ import java.util.Map;
 import javax.security.auth.x500.X500Principal;
 
 import sun.misc.IOUtils;
+import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.InvalidityDateExtension;
 
@@ -146,7 +147,7 @@ public class CertificateRevokedException extends CertificateException {
      * @return the invalidity date, or {@code null} if not specified
      */
     public Date getInvalidityDate() {
-        Extension ext = getExtensions().get("2.5.29.24");
+        Extension ext = getExtensions().get(KnownOIDs.InvalidityDate.value());
         if (ext == null) {
             return null;
         } else {
@@ -239,9 +240,9 @@ public class CertificateRevokedException extends CertificateException {
         for (int i = 0; i < size; i++) {
             String oid = (String) ois.readObject();
             boolean critical = ois.readBoolean();
-            byte[] extVal = IOUtils.readNBytes(ois, ois.readInt());
+            byte[] extVal = IOUtils.readExactlyNBytes(ois, ois.readInt());
             Extension ext = sun.security.x509.Extension.newExtension
-                (new ObjectIdentifier(oid), critical, extVal);
+                (ObjectIdentifier.of(oid), critical, extVal);
             extensions.put(oid, ext);
         }
     }

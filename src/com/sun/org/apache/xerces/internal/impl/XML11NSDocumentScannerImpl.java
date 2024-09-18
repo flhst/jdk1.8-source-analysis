@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+
 package com.sun.org.apache.xerces.internal.impl;
 
 import java.io.IOException;
@@ -202,7 +203,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
                     fAttributes.getLength() > fElementAttributeLimit){
                 fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                              "ElementAttributeLimit",
-                                             new Object[]{rawname, new Integer(fElementAttributeLimit) },
+                                             new Object[]{rawname, fElementAttributeLimit },
                                              XMLErrorReporter.SEVERITY_FATAL_ERROR );
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -33,7 +33,8 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
  *
  * @version $Id: ObjectListImpl.java,v 1.2 2010-10-26 23:01:04 joehw Exp $
  */
-public final class ObjectListImpl extends AbstractList implements ObjectList {
+@SuppressWarnings("unchecked") // method <T>toArray(T[])
+public final class ObjectListImpl extends AbstractList<Object> implements ObjectList {
 
     /**
      * An immutable empty list.
@@ -100,8 +101,8 @@ public final class ObjectListImpl extends AbstractList implements ObjectList {
 
     public Object[] toArray(Object[] a) {
         if (a.length < fLength) {
-            Class arrayClass = a.getClass();
-            Class componentType = arrayClass.getComponentType();
+            Class<?> arrayClass = a.getClass();
+            Class<?> componentType = arrayClass.getComponentType();
             a = (Object[]) Array.newInstance(componentType, fLength);
         }
         toArray0(a);

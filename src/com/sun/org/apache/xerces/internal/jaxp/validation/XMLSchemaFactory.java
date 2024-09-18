@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2005 The Apache Software Foundation.
@@ -33,6 +32,8 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
+import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader;
@@ -69,11 +70,20 @@ import org.xml.sax.SAXParseException;
  */
 public final class XMLSchemaFactory extends SchemaFactory {
 
-    // property identifiers
+    // feature identifiers
+
+    /** JAXP Source feature prefix. */
+    private static final String JAXP_SOURCE_FEATURE_PREFIX = "http://javax.xml.transform";
 
     /** Feature identifier: schema full checking. */
     private static final String SCHEMA_FULL_CHECKING =
         Constants.XERCES_FEATURE_PREFIX + Constants.SCHEMA_FULL_CHECKING;
+
+    /** Feature identifier: use grammar pool only. */
+    private static final String USE_GRAMMAR_POOL_ONLY =
+        Constants.XERCES_FEATURE_PREFIX + Constants.USE_GRAMMAR_POOL_ONLY_FEATURE;
+
+    // property identifiers
 
     /** Property identifier: grammar pool. */
     private static final String XMLGRAMMAR_POOL =
@@ -105,7 +115,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
     private final DOMEntityResolverWrapper fDOMEntityResolverWrapper;
 
     /** The ErrorHandlerWrapper */
-    private ErrorHandlerWrapper fErrorHandlerWrapper;
+    private final ErrorHandlerWrapper fErrorHandlerWrapper;
 
     /** The SecurityManager. */
     private XMLSecurityManager fSecurityManager;
@@ -114,24 +124,21 @@ public final class XMLSchemaFactory extends SchemaFactory {
     private XMLSecurityPropertyManager fSecurityPropertyMgr;
 
     /** The container for the real grammar pool. */
-    private XMLGrammarPoolWrapper fXMLGrammarPoolWrapper;
+    private final XMLGrammarPoolWrapper fXMLGrammarPoolWrapper;
 
+    /** Whether or not to allow new schemas to be added to the grammar pool */
+    private boolean fUseGrammarPoolOnly;
+
+    private final JdkXmlFeatures fXmlFeatures;
     /**
-     * Indicates whether implementation parts should use
-     *   service loader (or similar).
-     * Note the default value (false) is the safe option..
+     * Indicates whether 3rd party parser may be used to override the system-default
+     * Note the default value (false) is the safe option.
+     * Note same as the old property useServicesMechanism
      */
-    private final boolean fUseServicesMechanism;
+    private final boolean fOverrideDefaultParser;
 
 
     public XMLSchemaFactory() {
-        this(true);
-    }
-    public static XMLSchemaFactory newXMLSchemaFactoryNoServiceLoader() {
-        return new XMLSchemaFactory(false);
-    }
-    private XMLSchemaFactory(boolean useServicesMechanism) {
-        fUseServicesMechanism = useServicesMechanism;
         fErrorHandlerWrapper = new ErrorHandlerWrapper(DraconianErrorHandler.getInstance());
         fDOMEntityResolverWrapper = new DOMEntityResolverWrapper();
         fXMLGrammarPoolWrapper = new XMLGrammarPoolWrapper();
@@ -139,6 +146,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fXMLSchemaLoader.setProperty(XMLGRAMMAR_POOL, fXMLGrammarPoolWrapper);
         fXMLSchemaLoader.setEntityResolver(fDOMEntityResolverWrapper);
         fXMLSchemaLoader.setErrorHandler(fErrorHandlerWrapper);
+        fUseGrammarPoolOnly = true;
 
         // Enable secure processing feature by default
         fSecurityManager = new XMLSecurityManager(true);
@@ -147,6 +155,10 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fSecurityPropertyMgr = new XMLSecurityPropertyManager();
         fXMLSchemaLoader.setProperty(XML_SECURITY_PROPERTY_MANAGER,
                 fSecurityPropertyMgr);
+        fXmlFeatures = new JdkXmlFeatures(fSecurityManager.isSecureProcessing());
+        fOverrideDefaultParser = fXmlFeatures.getFeature(
+                        JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
+        fXMLSchemaLoader.setFeature(JdkXmlUtils.OVERRIDE_PARSER, fOverrideDefaultParser);
     }
 
     /**
@@ -171,7 +183,8 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "SchemaLanguageLengthZero", null));
         }
         // only W3C XML Schema 1.0 is supported
-        return schemaLanguage.equals(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        return schemaLanguage.equals(XMLConstants.W3C_XML_SCHEMA_NS_URI) ||
+                schemaLanguage.equals(Constants.W3C_XML_SCHEMA10_NS_URI);
     }
 
     public LSResourceResolver getResourceResolver() {
@@ -203,7 +216,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         XMLInputSource[] xmlInputSources = new XMLInputSource[schemas.length];
         InputStream inputStream;
         Reader reader;
-        for( int i=0; i<schemas.length; i++ ) {
+        for (int i = 0; i < schemas.length; ++i) {
             Source source = schemas[i];
             if (source instanceof StreamSource) {
                 StreamSource streamSource = (StreamSource) source;
@@ -211,9 +224,10 @@ public final class XMLSchemaFactory extends SchemaFactory {
                 String systemId = streamSource.getSystemId();
                 inputStream = streamSource.getInputStream();
                 reader = streamSource.getReader();
-                xmlInputSources[i] = new XMLInputSource(publicId, systemId, null);
-                xmlInputSources[i].setByteStream(inputStream);
-                xmlInputSources[i].setCharacterStream(reader);
+                XMLInputSource xmlInputSource = new XMLInputSource(publicId, systemId, null, false);
+                xmlInputSource.setByteStream(inputStream);
+                xmlInputSource.setCharacterStream(reader);
+                xmlInputSources[i] = xmlInputSource;
             }
             else if (source instanceof SAXSource) {
                 SAXSource saxSource = (SAXSource) source;
@@ -261,7 +275,9 @@ public final class XMLSchemaFactory extends SchemaFactory {
         catch (IOException e) {
             // this hasn't been reported, so do so now.
             SAXParseException se = new SAXParseException(e.getMessage(),null,e);
-            fErrorHandler.error(se);
+            if (fErrorHandler != null) {
+                fErrorHandler.error(se);
+            }
             throw se; // and we must throw it.
         }
 
@@ -271,15 +287,20 @@ public final class XMLSchemaFactory extends SchemaFactory {
         // Select Schema implementation based on grammar count.
         final int grammarCount = pool.getGrammarCount();
         AbstractXMLSchema schema = null;
-        if (grammarCount > 1) {
-            schema = new XMLSchema(new ReadOnlyGrammarPool(pool));
-        }
-        else if (grammarCount == 1) {
-            Grammar[] grammars = pool.retrieveInitialGrammarSet(XMLGrammarDescription.XML_SCHEMA);
-            schema = new SimpleXMLSchema(grammars[0]);
+        if (fUseGrammarPoolOnly) {
+            if (grammarCount > 1) {
+                schema = new XMLSchema(new ReadOnlyGrammarPool(pool));
+            }
+            else if (grammarCount == 1) {
+                Grammar[] grammars = pool.retrieveInitialGrammarSet(XMLGrammarDescription.XML_SCHEMA);
+                schema = new SimpleXMLSchema(grammars[0]);
+            }
+            else {
+                schema = new EmptyXMLSchema();
+            }
         }
         else {
-            schema = new EmptyXMLSchema();
+            schema = new XMLSchema(new ReadOnlyGrammarPool(pool), false);
         }
         propagateFeatures(schema);
         propagateProperties(schema);
@@ -287,10 +308,29 @@ public final class XMLSchemaFactory extends SchemaFactory {
     }
 
     public Schema newSchema() throws SAXException {
+        /*
+         * It would make sense to return an EmptyXMLSchema object here, if
+         * fUseGrammarPoolOnly is set to true. However, because the default
+         * value of this feature is true, doing so would change the default
+         * behaviour of this method. Thus, we return a WeakReferenceXMLSchema
+         * regardless of the value of fUseGrammarPoolOnly. -PM
+         */
+
         // Use a Schema that uses the system id as the equality source.
         AbstractXMLSchema schema = new WeakReferenceXMLSchema();
         propagateFeatures(schema);
         propagateProperties(schema);
+        return schema;
+    }
+
+    public Schema newSchema(XMLGrammarPool pool) throws SAXException {
+        // If the "use-grammar-pool-only" feature is set to true
+        // prevent the application's grammar pool from being mutated
+        // by wrapping it in a ReadOnlyGrammarPool.
+        final AbstractXMLSchema schema = (fUseGrammarPoolOnly) ?
+            new XMLSchema(new ReadOnlyGrammarPool(pool)) :
+            new XMLSchema(pool, false);
+        propagateFeatures(schema);
         return schema;
     }
 
@@ -300,8 +340,20 @@ public final class XMLSchemaFactory extends SchemaFactory {
             throw new NullPointerException(JAXPValidationMessageFormatter.formatMessage(fXMLSchemaLoader.getLocale(),
                     "FeatureNameNull", null));
         }
+        if (name.startsWith(JAXP_SOURCE_FEATURE_PREFIX)) {
+            // Indicates to the caller that this SchemaFactory supports a specific JAXP Source.
+            if (name.equals(StreamSource.FEATURE) ||
+                name.equals(SAXSource.FEATURE) ||
+                name.equals(DOMSource.FEATURE) ||
+                name.equals(StAXSource.FEATURE)) {
+                return true;
+            }
+        }
         if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
             return (fSecurityManager != null && fSecurityManager.isSecureProcessing());
+        }
+        else if (name.equals(USE_GRAMMAR_POOL_ONLY)) {
+            return fUseGrammarPoolOnly;
         }
         try {
             return fXMLSchemaLoader.getFeature(name);
@@ -335,6 +387,11 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     SAXMessageFormatter.formatMessage(fXMLSchemaLoader.getLocale(),
                     "property-not-supported", new Object [] {name}));
         }
+        /** Check to see if the property is managed by the JdkXmlFeatues **/
+        int index = fXmlFeatures.getIndex(name);
+        if (index > -1) {
+            return fXmlFeatures.getFeature(index);
+        }
         try {
             return fXMLSchemaLoader.getProperty(name);
         }
@@ -359,6 +416,16 @@ public final class XMLSchemaFactory extends SchemaFactory {
             throw new NullPointerException(JAXPValidationMessageFormatter.formatMessage(fXMLSchemaLoader.getLocale(),
                     "FeatureNameNull", null));
         }
+        if (name.startsWith(JAXP_SOURCE_FEATURE_PREFIX)) {
+            if (name.equals(StreamSource.FEATURE) ||
+                name.equals(SAXSource.FEATURE) ||
+                name.equals(DOMSource.FEATURE) ||
+                name.equals(StAXSource.FEATURE)) {
+                throw new SAXNotSupportedException(
+                        SAXMessageFormatter.formatMessage(fXMLSchemaLoader.getLocale(),
+                        "feature-read-only", new Object [] {name}));
+            }
+        }
         if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
             if (System.getSecurityManager() != null && (!value)) {
                 throw new SAXNotSupportedException(
@@ -378,10 +445,24 @@ public final class XMLSchemaFactory extends SchemaFactory {
 
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
             return;
-        } else if (name.equals(Constants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
-            //in secure mode, let _useServicesMechanism be determined by the constructor
+        }
+        else if (name.equals(USE_GRAMMAR_POOL_ONLY)) {
+            fUseGrammarPoolOnly = value;
+            return;
+        }
+        else if (name.equals(Constants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+            //in secure mode, let useServicesMechanism be determined by the constructor
             if (System.getSecurityManager() != null)
                 return;
+        }
+
+        if ((fXmlFeatures != null) &&
+                    fXmlFeatures.setFeature(name, JdkXmlFeatures.State.APIPROPERTY, value)) {
+            if (name.equals(JdkXmlUtils.OVERRIDE_PARSER)
+                    || name.equals(Constants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+                fXMLSchemaLoader.setFeature(name, value);
+            }
+            return;
         }
         try {
             fXMLSchemaLoader.setFeature(name, value);
@@ -455,7 +536,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
     private void propagateFeatures(AbstractXMLSchema schema) {
         schema.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
                 (fSecurityManager != null && fSecurityManager.isSecureProcessing()));
-        schema.setFeature(Constants.ORACLE_FEATURE_SERVICE_MECHANISM, fUseServicesMechanism);
+        schema.setFeature(JdkXmlUtils.OVERRIDE_PARSER, fOverrideDefaultParser);
         String[] features = fXMLSchemaLoader.getRecognizedFeatures();
         for (int i = 0; i < features.length; ++i) {
             boolean state = fXMLSchemaLoader.getFeature(features[i]);

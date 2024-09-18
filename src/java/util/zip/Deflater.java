@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -557,6 +557,16 @@ class Deflater {
         assert Thread.holdsLock(zsRef);
         if (zsRef.address() == 0)
             throw new NullPointerException("Deflater has been closed");
+    }
+
+    /**
+     * Returns the value of 'finish' flag.
+     * 'finish' will be set to true if def.finish() method is called.
+     */
+    boolean shouldFinish() {
+        synchronized (zsRef) {
+            return finish;
+        }
     }
 
     private static native void initIDs();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -35,11 +35,10 @@ import org.w3c.dom.Element;
 /**
  * This Object serves as Content for the ds:Transforms for exclusive
  * Canonicalization.
- * <BR />
+ * <p></p>
  * It implements the {@link Element} interface
  * and can be used directly in a DOM tree.
  *
- * @author Christian Geuer-Pollmann
  */
 public class InclusiveNamespaces extends ElementProxy implements TransformParam {
 
@@ -77,32 +76,32 @@ public class InclusiveNamespaces extends ElementProxy implements TransformParam 
         if (prefixes instanceof SortedSet<?>) {
             prefixList = (SortedSet<String>)prefixes;
         } else {
-            prefixList = new TreeSet<String>(prefixes);
+            prefixList = new TreeSet<>(prefixes);
         }
 
         StringBuilder sb = new StringBuilder();
         for (String prefix : prefixList) {
-            if (prefix.equals("xmlns")) {
+            if ("xmlns".equals(prefix)) {
                 sb.append("#default ");
             } else {
-                sb.append(prefix + " ");
+                sb.append(prefix);
+                sb.append(' ');
             }
         }
 
-        this.constructionElement.setAttributeNS(
-            null, InclusiveNamespaces._ATT_EC_PREFIXLIST, sb.toString().trim());
+        setLocalAttribute(InclusiveNamespaces._ATT_EC_PREFIXLIST, sb.toString().trim());
     }
 
     /**
      * Constructor InclusiveNamespaces
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public InclusiveNamespaces(Element element, String BaseURI)
+    public InclusiveNamespaces(Element element, String baseURI)
         throws XMLSecurityException {
-        super(element, BaseURI);
+        super(element, baseURI);
     }
 
     /**
@@ -111,36 +110,36 @@ public class InclusiveNamespaces extends ElementProxy implements TransformParam 
      * @return The Inclusive Namespace string
      */
     public String getInclusiveNamespaces() {
-        return this.constructionElement.getAttributeNS(null, InclusiveNamespaces._ATT_EC_PREFIXLIST);
+        return getLocalAttribute(InclusiveNamespaces._ATT_EC_PREFIXLIST);
     }
 
     /**
-     * Decodes the <code>inclusiveNamespaces</code> String and returns all
-     * selected namespace prefixes as a Set. The <code>#default</code>
+     * Decodes the {@code inclusiveNamespaces} String and returns all
+     * selected namespace prefixes as a Set. The {@code #default}
      * namespace token is represented as an empty namespace prefix
-     * (<code>"xmlns"</code>).
-     * <BR/>
-     * The String <code>inclusiveNamespaces=" xenc    ds #default"</code>
+     * ({@code "xmlns"}).
+     * <BR>
+     * The String {@code inclusiveNamespaces=" xenc    ds #default"}
      * is returned as a Set containing the following Strings:
      * <UL>
-     * <LI><code>xmlns</code></LI>
-     * <LI><code>xenc</code></LI>
-     * <LI><code>ds</code></LI>
+     * <LI>{@code xmlns}</LI>
+     * <LI>{@code xenc}</LI>
+     * <LI>{@code ds}</LI>
      * </UL>
      *
      * @param inclusiveNamespaces
      * @return A set to string
      */
     public static SortedSet<String> prefixStr2Set(String inclusiveNamespaces) {
-        SortedSet<String> prefixes = new TreeSet<String>();
+        SortedSet<String> prefixes = new TreeSet<>();
 
-        if ((inclusiveNamespaces == null) || (inclusiveNamespaces.length() == 0)) {
+        if (inclusiveNamespaces == null || inclusiveNamespaces.length() == 0) {
             return prefixes;
         }
 
         String[] tokens = inclusiveNamespaces.split("\\s");
         for (String prefix : tokens) {
-            if (prefix.equals("#default")) {
+            if ("#default".equals(prefix)) {
                 prefixes.add("xmlns");
             } else {
                 prefixes.add(prefix);
@@ -153,7 +152,7 @@ public class InclusiveNamespaces extends ElementProxy implements TransformParam 
     /**
      * Method getBaseNamespace
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public String getBaseNamespace() {
         return InclusiveNamespaces.ExclusiveCanonicalizationNamespace;
@@ -162,7 +161,7 @@ public class InclusiveNamespaces extends ElementProxy implements TransformParam 
     /**
      * Method getBaseLocalName
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public String getBaseLocalName() {
         return InclusiveNamespaces._TAG_EC_INCLUSIVENAMESPACES;

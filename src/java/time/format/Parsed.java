@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -340,10 +340,11 @@ final class Parsed implements TemporalAccessor {
     }
 
     private void resolveInstantFields0(ZoneId selectedZone) {
-        Instant instant = Instant.ofEpochSecond(fieldValues.remove(INSTANT_SECONDS));
+        Instant instant = Instant.ofEpochSecond(fieldValues.get(INSTANT_SECONDS));
         ChronoZonedDateTime<?> zdt = chrono.zonedDateTime(instant, selectedZone);
         updateCheckConflict(zdt.toLocalDate());
         updateCheckConflict(INSTANT_SECONDS, SECOND_OF_DAY, (long) zdt.toLocalTime().toSecondOfDay());
+        updateCheckConflict(INSTANT_SECONDS, OFFSET_SECONDS, (long) zdt.getOffset().getTotalSeconds());
     }
 
     //-----------------------------------------------------------------------
@@ -585,7 +586,7 @@ final class Parsed implements TemporalAccessor {
 
     private void resolveInstant() {
         // add instant seconds if we have date, time and zone
-        if (date != null && time != null) {
+        if (!fieldValues.containsKey(INSTANT_SECONDS) && date != null && time != null) {
             if (zone != null) {
                 long instant = date.atTime(time).atZone(zone).getLong(ChronoField.INSTANT_SECONDS);
                 fieldValues.put(INSTANT_SECONDS, instant);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -150,7 +150,7 @@ public abstract class TransformerFactory {
 
         //do not fallback if given classloader can't find the class, throw exception
         return  FactoryFinder.newInstance(TransformerFactory.class,
-                    factoryClassName, classLoader, false, false);
+                    factoryClassName, classLoader, false);
     }
     /**
      * <p>Process the <code>Source</code> into a <code>Transformer</code>

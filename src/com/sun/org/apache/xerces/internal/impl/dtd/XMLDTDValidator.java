@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -51,6 +52,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentFilter;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
+import java.util.Iterator;
 
 /**
  * The DTD validator. The validator implements a document
@@ -335,7 +337,7 @@ public class XMLDTDValidator
     // temporary variables
 
     /** Temporary element declaration. */
-    private XMLElementDecl fTempElementDecl = new XMLElementDecl();
+    private final XMLElementDecl fTempElementDecl = new XMLElementDecl();
 
     /** Temporary atribute declaration. */
     private final XMLAttributeDecl fTempAttDecl = new XMLAttributeDecl();
@@ -2021,12 +2023,14 @@ public class XMLDTDValidator
             //   IDREF and IDREFS attr (V_IDREF0)
             //
             if (fPerformValidation) {
-                String value = fValidationState.checkIDRefID();
-                if (value != null) {
-                    fErrorReporter.reportError( XMLMessageFormatter.XML_DOMAIN,
-                                                "MSG_ELEMENT_WITH_ID_REQUIRED",
-                                                new Object[]{value},
-                                                XMLErrorReporter.SEVERITY_ERROR );
+                Iterator invIdRefs = fValidationState.checkIDRefID();
+                if (invIdRefs != null) {
+                    while (invIdRefs.hasNext()) {
+                        fErrorReporter.reportError( XMLMessageFormatter.XML_DOMAIN,
+                                "MSG_ELEMENT_WITH_ID_REQUIRED",
+                                new Object[]{invIdRefs.next()},
+                                XMLErrorReporter.SEVERITY_ERROR );
+                    }
                 }
             }
             return;

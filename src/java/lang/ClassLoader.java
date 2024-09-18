@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -255,9 +255,6 @@ public abstract class ClassLoader {
         new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
                              null, this, null);
 
-    // The initiating protection domains for all classes loaded by this loader
-    private final Set<ProtectionDomain> domains;
-
     // Invoked by the VM to record every loaded class with this loader.
     void addClass(Class<?> c) {
         classes.addElement(c);
@@ -281,14 +278,11 @@ public abstract class ClassLoader {
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             package2certs = new ConcurrentHashMap<>();
-            domains =
-                Collections.synchronizedSet(new HashSet<ProtectionDomain>());
             assertionLock = new Object();
         } else {
             // no finer-grained lock; lock on the classloader instance
             parallelLockMap = null;
             package2certs = new Hashtable<>();
-            domains = new HashSet<>();
             assertionLock = this;
         }
     }
@@ -505,7 +499,6 @@ public abstract class ClassLoader {
                 }, new AccessControlContext(new ProtectionDomain[] {pd}));
             }
         }
-        domains.add(pd);
     }
 
     /**
@@ -866,7 +859,7 @@ public abstract class ClassLoader {
 
     // true if the name is null or has the potential to be a valid binary name
     private boolean checkName(String name) {
-        if ((name == null) || (name.length() == 0))
+        if ((name == null) || (name.isEmpty()))
             return true;
         if ((name.indexOf('/') != -1)
             || (!VM.allowArraySyntax() && (name.charAt(0) == '[')))
@@ -1723,7 +1716,10 @@ public abstract class ClassLoader {
         boolean isBuiltin;
         // Indicates if the native library is loaded
         boolean loaded;
-        native void load(String name, boolean isBuiltin);
+
+        private static final boolean loadLibraryOnlyIfPresent = ClassLoaderHelper.loadLibraryOnlyIfPresent();
+
+        native void load(String name, boolean isBuiltin, boolean throwExceptionIfFail);
 
         native long find(String name);
         native void unload(String name, boolean isBuiltin);
@@ -1880,7 +1876,7 @@ public abstract class ClassLoader {
                         return file.exists() ? Boolean.TRUE : null;
                     }})
                 != null;
-            if (!exists) {
+            if (NativeLibrary.loadLibraryOnlyIfPresent && !exists) {
                 return false;
             }
             try {
@@ -1938,7 +1934,7 @@ public abstract class ClassLoader {
                 NativeLibrary lib = new NativeLibrary(fromClass, name, isBuiltin);
                 nativeLibraryContext.push(lib);
                 try {
-                    lib.load(name, isBuiltin);
+                    lib.load(name, isBuiltin, NativeLibrary.loadLibraryOnlyIfPresent);
                 } finally {
                     nativeLibraryContext.pop();
                 }

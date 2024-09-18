@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -25,19 +25,15 @@ package com.sun.org.apache.xml.internal.security.c14n.implementations;
 import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
 
 /**
- * @author Sean Mullan
  */
-public class Canonicalizer11_OmitComments extends Canonicalizer11 {
+public class Canonicalizer11_OmitComments extends Canonicalizer20010315 {
 
     public Canonicalizer11_OmitComments() {
-        super(false);
+        super(false, true);
     }
 
     public final String engineGetURI() {
         return Canonicalizer.ALGO_ID_C14N11_OMIT_COMMENTS;
     }
 
-    public final boolean engineGetIncludeComments() {
-        return false;
-    }
 }

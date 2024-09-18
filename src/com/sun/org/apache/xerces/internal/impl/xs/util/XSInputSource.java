@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
@@ -37,13 +37,13 @@ public final class XSInputSource extends XMLInputSource {
     private XSObject[] fComponents;
 
     public XSInputSource(SchemaGrammar[] grammars) {
-        super(null, null, null);
+        super(null, null, null, false);
         fGrammars = grammars;
         fComponents = null;
     }
 
     public XSInputSource(XSObject[] component) {
-        super(null, null, null);
+        super(null, null, null, false);
         fGrammars = null;
         fComponents = component;
     }

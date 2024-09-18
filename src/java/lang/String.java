@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -2024,11 +2024,11 @@ public final class String
      *          characters followed by the string argument's characters.
      */
     public String concat(String str) {
-        int otherLen = str.length();
-        if (otherLen == 0) {
+        if (str.isEmpty()) {
             return this;
         }
         int len = value.length;
+        int otherLen = str.length();
         char buf[] = Arrays.copyOf(value, len + otherLen);
         str.getChars(buf, len);
         return new String(buf, true);
@@ -2370,7 +2370,7 @@ public final class String
             // Construct result
             int resultSize = list.size();
             if (limit == 0) {
-                while (resultSize > 0 && list.get(resultSize - 1).length() == 0) {
+                while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
                     resultSize--;
                 }
             }

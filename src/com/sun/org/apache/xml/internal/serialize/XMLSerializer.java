@@ -18,8 +18,6 @@
  * limitations under the License.
  */
 
-
-
 // Sep 14, 2000:
 //  Fixed problem with namespace handling. Contributed by
 //  David Blondeau <blondeau@intalio.com>
@@ -48,6 +46,7 @@ import java.io.Writer;
 import java.util.Map;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMError;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -69,9 +68,9 @@ import org.xml.sax.helpers.AttributesImpl;
  * The serializer supports both DOM and SAX. SAX serializing is done by firing
  * SAX events and using the serializer as a document handler. DOM serializing is done
  * by calling {@link #serialize(Document)} or by using DOM Level 3
- * {@link org.w3c.dom.ls.DOMSerializer} and
- * serializing with {@link org.w3c.dom.ls.DOMSerializer#write},
- * {@link org.w3c.dom.ls.DOMSerializer#writeToString}.
+ * {@link org.w3c.dom.ls.LSSerializer} and
+ * serializing with {@link org.w3c.dom.ls.LSSerializer#write},
+ * {@link org.w3c.dom.ls.LSSerializer#writeToString}.
  * <p>
  * If an I/O exception occurs while serializing, the serializer
  * will not throw an exception directly, but only throw it
@@ -83,10 +82,16 @@ import org.xml.sax.helpers.AttributesImpl;
  * boundaries, indent lines, and serialize elements on separate
  * lines. Line terminators will be regarded as spaces, and
  * spaces at beginning of line will be stripped.
+ *
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
  * @author <a href="mailto:rahul.srivastava@sun.com">Rahul Srivastava</a>
  * @author Elena Litani IBM
  * @see Serializer
+ *
+ * @deprecated As of Xerces 2.9.0, Xerces DOM L3 Serializer implementation
+ * is replaced by that of Xalan. Main class
+ * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
+ * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
 public class XMLSerializer
 extends BaseMarkupSerializer {
@@ -193,7 +198,7 @@ extends BaseMarkupSerializer {
     /**
      * This methods turns on namespace fixup algorithm during
      * DOM serialization.
-     * @see org.w3c.dom.ls.DOMSerializer
+     * @see org.w3c.dom.ls.LSSerializer
      *
      * @param namespaces
      */
@@ -220,7 +225,6 @@ extends BaseMarkupSerializer {
         ElementState state;
         String       name;
         String       value;
-        boolean      addNSAttr = false;
 
         if (DEBUG) {
             System.out.println("==>startElement("+namespaceURI+","+localName+
@@ -275,13 +279,16 @@ extends BaseMarkupSerializer {
                 if (namespaceURI != null && ! namespaceURI.equals( "" )) {
                     String prefix;
                     prefix = getPrefix( namespaceURI );
-                    if (prefix != null && prefix.length() > 0)
+                    if (prefix != null && prefix.length() > 0) {
                         rawName = prefix + ":" + localName;
-                    else
+                    }
+                    else {
                         rawName = localName;
-                } else
+                    }
+                }
+                else {
                     rawName = localName;
-                addNSAttr = true;
+                }
             }
 
             _printer.printText( '<' );
@@ -765,13 +772,11 @@ extends BaseMarkupSerializer {
                                 //          xmlns:foo = ""
                             }
                             continue;
-                        } else { // xmlns
-                            // empty prefix is always bound ("" or some string)
-
-                            value = fSymbolTable.addSymbol(value);
-                            fNSBinder.declarePrefix(XMLSymbols.EMPTY_STRING, value);
-                            continue;
                         }
+                        // xmlns --- empty prefix is always bound ("" or some string)
+                        value = fSymbolTable.addSymbol(value);
+                        fNSBinder.declarePrefix(XMLSymbols.EMPTY_STRING, value);
+                        continue;
                     }  // end-else: valid declaration
                 } // end-if: namespace declaration
             }  // end-for
@@ -953,22 +958,20 @@ extends BaseMarkupSerializer {
                                 //          xmlns:foo = ""
                             }
                             continue;
-                        } else { // xmlns
-                            // empty prefix is always bound ("" or some string)
-
-                            uri = fNSBinder.getURI(XMLSymbols.EMPTY_STRING);
-                            localUri=fLocalNSBinder.getURI(XMLSymbols.EMPTY_STRING);
-                            value = fSymbolTable.addSymbol(value);
-                            if (localUri == null ){
-                                // declaration was not printed while fixing element namespace binding
-                                if (fNamespacePrefixes) {
-                                    printNamespaceAttr(XMLSymbols.EMPTY_STRING, value);
-                                }
-                                // case 4 does not apply here since attributes can't use
-                                // default namespace
-                            }
-                            continue;
                         }
+                        // xmlns --- empty prefix is always bound ("" or some string)
+                        uri = fNSBinder.getURI(XMLSymbols.EMPTY_STRING);
+                        localUri= fLocalNSBinder.getURI(XMLSymbols.EMPTY_STRING);
+                        value = fSymbolTable.addSymbol(value);
+                        if (localUri == null ) {
+                            // declaration was not printed while fixing element namespace binding
+                            if (fNamespacePrefixes) {
+                                printNamespaceAttr(XMLSymbols.EMPTY_STRING, value);
+                            }
+                            // case 4 does not apply here since attributes can't use
+                            // default namespace
+                        }
+                        continue;
 
                     }
                     uri = fSymbolTable.addSymbol(uri);
@@ -1190,8 +1193,6 @@ extends BaseMarkupSerializer {
         AttributesImpl attrsOnly;
         String         rawName;
         int            i;
-        int            indexColon;
-        String         prefix;
         int            length;
 
         if (attrs == null) {
@@ -1228,7 +1229,7 @@ extends BaseMarkupSerializer {
             int ch = source.charAt(i);
             if (!XMLChar.isValid(ch)) {
                 if (++i < length) {
-                    surrogates(ch, source.charAt(i));
+                    surrogates(ch, source.charAt(i), false);
                 } else {
                     fatalError("The character '" + (char) ch + "' is an invalid XML character");
                 }
@@ -1286,16 +1287,17 @@ extends BaseMarkupSerializer {
                 if (!XMLChar.isValid(ch)) {
                     // check if it is surrogate
                     if (++index <length) {
-                        surrogates(ch, text.charAt(index));
+                        surrogates(ch, text.charAt(index), true);
                     } else {
-                        fatalError("The character '"+(char)ch+"' is an invalid XML character");
+                        fatalError("The character '"+ch+"' is an invalid XML character");
                     }
                     continue;
                 }
                 if ( unescaped ) {
                     _printer.printText( ch );
-                } else
+                } else {
                     printXMLChar( ch );
+                }
             }
         } else {
             // Not preserving spaces: print one part at a time, and
@@ -1308,17 +1310,18 @@ extends BaseMarkupSerializer {
                 if (!XMLChar.isValid(ch)) {
                     // check if it is surrogate
                     if (++index <length) {
-                        surrogates(ch, text.charAt(index));
+                        surrogates(ch, text.charAt(index), true);
                     } else {
-                        fatalError("The character '"+(char)ch+"' is an invalid XML character");
+                        fatalError("The character '"+ch+"' is an invalid XML character");
                     }
                     continue;
                 }
 
-                                if ( unescaped )
+                if ( unescaped ) {
                     _printer.printText( ch );
-                else
-                    printXMLChar( ch);
+                } else {
+                    printXMLChar( ch );
+                }
             }
         }
     }
@@ -1327,8 +1330,6 @@ extends BaseMarkupSerializer {
 
     protected void printText( char[] chars, int start, int length,
                               boolean preserveSpace, boolean unescaped ) throws IOException {
-        int index;
-        char ch;
 
         if ( preserveSpace ) {
             // Preserving spaces: the text must print exactly as it is,
@@ -1336,13 +1337,13 @@ extends BaseMarkupSerializer {
             // consolidating spaces. If a line terminator is used, a line
             // break will occur.
             while ( length-- > 0 ) {
-                ch = chars[start++];
+                char ch = chars[start++];
                 if (!XMLChar.isValid(ch)) {
                     // check if it is surrogate
                     if ( length-- > 0 ) {
-                        surrogates(ch, chars[start++]);
+                        surrogates(ch, chars[start++], true);
                     } else {
-                        fatalError("The character '"+(char)ch+"' is an invalid XML character");
+                        fatalError("The character '"+ch+"' is an invalid XML character");
                     }
                     continue;
                 }
@@ -1358,13 +1359,13 @@ extends BaseMarkupSerializer {
             // by printing mechanism. Line terminator is treated
             // no different than other text part.
             while ( length-- > 0 ) {
-                ch = chars[start++];
+                char ch = chars[start++];
                 if (!XMLChar.isValid(ch)) {
                     // check if it is surrogate
                     if ( length-- > 0 ) {
-                        surrogates(ch, chars[start++]);
+                        surrogates(ch, chars[start++], true);
                     } else {
-                        fatalError("The character '"+(char)ch+"' is an invalid XML character");
+                        fatalError("The character '"+ch+"' is an invalid XML character");
                     }
                     continue;
                 }

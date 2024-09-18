@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,13 +21,8 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.traversers;
 
-import java.util.ArrayList;
-import java.util.Vector;
-
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeFacetException;
-import com.sun.org.apache.xerces.internal.impl.dv.SchemaDVFactory;
 import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
-import com.sun.org.apache.xerces.internal.impl.dv.xs.SchemaDVFactoryImpl;
 import com.sun.org.apache.xerces.internal.impl.dv.xs.XSSimpleTypeDecl;
 import com.sun.org.apache.xerces.internal.impl.xs.SchemaGrammar;
 import com.sun.org.apache.xerces.internal.impl.xs.SchemaSymbols;
@@ -36,8 +32,11 @@ import com.sun.org.apache.xerces.internal.impl.xs.util.XSObjectListImpl;
 import com.sun.org.apache.xerces.internal.util.DOMUtil;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xs.XSConstants;
+import com.sun.org.apache.xerces.internal.xs.XSObject;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import java.util.ArrayList;
+import java.util.List;
 import org.w3c.dom.Element;
 
 /**
@@ -243,7 +242,8 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
         QName baseTypeName = (QName)contentAttrs[restriction ?
                 XSAttributeChecker.ATTIDX_BASE :
                     XSAttributeChecker.ATTIDX_ITEMTYPE];
-        Vector memberTypes = (Vector)contentAttrs[XSAttributeChecker.ATTIDX_MEMBERTYPES];
+        @SuppressWarnings("unchecked")
+        List<QName> memberTypes = (ArrayList<QName>)contentAttrs[XSAttributeChecker.ATTIDX_MEMBERTYPES];
         //content = {annotation?,simpleType?...}
         Element content = DOMUtil.getFirstChildElement(child);
         //check content (annotation?, ...)
@@ -288,16 +288,16 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
             }
         }
         // get types from "memberTypes" attribute
-        ArrayList dTValidators = null;
+        List<XSObject> dTValidators = null;
         XSSimpleType dv = null;
         XSObjectList dvs;
         if (union && memberTypes != null && memberTypes.size() > 0) {
             int size = memberTypes.size();
-            dTValidators = new ArrayList(size);
+            dTValidators = new ArrayList<>(size);
             // for each qname in the list
             for (int i = 0; i < size; i++) {
                 // get the type decl
-                dv = findDTValidator(child, name, (QName)memberTypes.elementAt(i),
+                dv = findDTValidator(child, name, (QName)memberTypes.get(i),
                         XSConstants.DERIVATION_UNION, schemaDoc);
                 if (dv != null) {
                     // if it's a union, expand it
@@ -328,7 +328,7 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
             }
             else if (union) {
                 if (dTValidators == null) {
-                    dTValidators = new ArrayList(2);
+                    dTValidators = new ArrayList<>(2);
                 }
                 do {
                     // traverse this child to get the member type
@@ -396,7 +396,7 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
         }
         // now traverse facets, if it's derived by restriction
         if (restriction && content != null) {
-            FacetInfo fi = traverseFacets(content, baseValidator, schemaDoc);
+            FacetInfo fi = traverseFacets(content, newDecl, baseValidator, schemaDoc);
             content = fi.nodeAfterFacets;
 
             try {

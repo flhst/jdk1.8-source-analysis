@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -28,7 +28,6 @@ import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import org.w3c.dom.Element;
 
 /**
- * @author $Author: coheigea $
  * $todo$ implement
  */
 public class SPKIData extends SignatureElementProxy implements KeyInfoContent {
@@ -37,15 +36,15 @@ public class SPKIData extends SignatureElementProxy implements KeyInfoContent {
      * Constructor SPKIData
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public SPKIData(Element element, String BaseURI)
+    public SPKIData(Element element, String baseURI)
         throws XMLSecurityException {
-        super(element, BaseURI);
+        super(element, baseURI);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_SPKIDATA;
     }

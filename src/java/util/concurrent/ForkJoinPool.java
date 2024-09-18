@@ -733,6 +733,17 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
+     * Common Pool ForkJoinWorkerThreadFactory implementation; creates a
+     * new ForkJoinWorkerThread.
+     */
+    static final class CommonPoolForkJoinWorkerThreadFactory
+            implements ForkJoinWorkerThreadFactory {
+        public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
+            return new ForkJoinWorkerThread(pool, null);
+        }
+    }
+
+    /**
      * Class for artificial tasks that are used to replace the target
      * of local joins if they are removed from an interior queue slot
      * in WorkQueue.tryRemoveAndExec. We don't need the proxy to
@@ -3405,6 +3416,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * specified via system properties.
      */
     private static ForkJoinPool makeCommonPool() {
+
+        final ForkJoinWorkerThreadFactory commonPoolForkJoinWorkerThreadFactory =
+                new CommonPoolForkJoinWorkerThreadFactory();
         int parallelism = -1;
         ForkJoinWorkerThreadFactory factory = null;
         UncaughtExceptionHandler handler = null;
@@ -3427,7 +3441,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         if (factory == null) {
             if (System.getSecurityManager() == null)
-                factory = defaultForkJoinWorkerThreadFactory;
+                factory = commonPoolForkJoinWorkerThreadFactory;
             else // use security-managed default
                 factory = new InnocuousForkJoinWorkerThreadFactory();
         }

@@ -1,105 +1,236 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.sun.org.apache.bcel.internal.classfile;
 
-/* ====================================================================
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" and
- *    "Apache BCEL" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For
- *    written permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "Apache BCEL", nor may "Apache" appear in their name, without
- *    prior written permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- */
-
 /**
- * Interface to make use of the Visitor pattern programming style.
- * I.e. a class that implements this interface can traverse the contents of
- * a Java class just by calling the `accept' method which all classes have.
- *
- * Implemented by wish of
- * <A HREF="http://www.inf.fu-berlin.de/~bokowski">Boris Bokowski</A>.
- *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * Interface to make use of the Visitor pattern programming style. I.e. a class that implements this interface can
+ * traverse the contents of a Java class just by calling the 'accept' method which all classes have.
  */
 public interface Visitor {
-  public void visitCode(Code obj);
-  public void visitCodeException(CodeException obj);
-  public void visitConstantClass(ConstantClass obj);
-  public void visitConstantDouble(ConstantDouble obj);
-  public void visitConstantFieldref(ConstantFieldref obj);
-  public void visitConstantFloat(ConstantFloat obj);
-  public void visitConstantInteger(ConstantInteger obj);
-  public void visitConstantInterfaceMethodref(ConstantInterfaceMethodref obj);
-  public void visitConstantLong(ConstantLong obj);
-  public void visitConstantMethodref(ConstantMethodref obj);
-  public void visitConstantNameAndType(ConstantNameAndType obj);
-  public void visitConstantPool(ConstantPool obj);
-  public void visitConstantString(ConstantString obj);
-  public void visitConstantUtf8(ConstantUtf8 obj);
-  public void visitConstantValue(ConstantValue obj);
-  public void visitDeprecated(Deprecated obj);
-  public void visitExceptionTable(ExceptionTable obj);
-  public void visitField(Field obj);
-  public void visitInnerClass(InnerClass obj);
-  public void visitInnerClasses(InnerClasses obj);
-  public void visitJavaClass(JavaClass obj);
-  public void visitLineNumber(LineNumber obj);
-  public void visitLineNumberTable(LineNumberTable obj);
-  public void visitLocalVariable(LocalVariable obj);
-  public void visitLocalVariableTable(LocalVariableTable obj);
-  public void visitLocalVariableTypeTable(LocalVariableTypeTable obj);
-  public void visitMethod(Method obj);
-  public void visitSignature(Signature obj);
-  public void visitSourceFile(SourceFile obj);
-  public void visitSynthetic(Synthetic obj);
-  public void visitUnknown(Unknown obj);
-  public void visitStackMap(StackMap obj);
-  public void visitStackMapEntry(StackMapEntry obj);
+    /**
+     * @since 6.0
+     */
+    void visitAnnotation(Annotations obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitAnnotationDefault(AnnotationDefault obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitAnnotationEntry(AnnotationEntry obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitBootstrapMethods(BootstrapMethods obj);
+
+    void visitCode(Code obj);
+
+    void visitCodeException(CodeException obj);
+
+    void visitConstantClass(ConstantClass obj);
+
+    void visitConstantDouble(ConstantDouble obj);
+
+    /**
+     * @since 6.3
+     */
+    default void visitConstantDynamic(final ConstantDynamic constantDynamic) {
+        // empty
+    }
+
+    void visitConstantFieldref(ConstantFieldref obj);
+
+    void visitConstantFloat(ConstantFloat obj);
+
+    void visitConstantInteger(ConstantInteger obj);
+
+    void visitConstantInterfaceMethodref(ConstantInterfaceMethodref obj);
+
+    void visitConstantInvokeDynamic(ConstantInvokeDynamic obj);
+
+    void visitConstantLong(ConstantLong obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitConstantMethodHandle(ConstantMethodHandle obj);
+
+    void visitConstantMethodref(ConstantMethodref obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitConstantMethodType(ConstantMethodType obj);
+
+    /**
+     * @since 6.1
+     */
+    void visitConstantModule(ConstantModule constantModule);
+
+    void visitConstantNameAndType(ConstantNameAndType obj);
+
+    /**
+     * @since 6.1
+     */
+    void visitConstantPackage(ConstantPackage constantPackage);
+
+    void visitConstantPool(ConstantPool obj);
+
+    void visitConstantString(ConstantString obj);
+
+    void visitConstantUtf8(ConstantUtf8 obj);
+
+    void visitConstantValue(ConstantValue obj);
+
+    void visitDeprecated(Deprecated obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitEnclosingMethod(EnclosingMethod obj);
+
+    void visitExceptionTable(ExceptionTable obj);
+
+    void visitField(Field obj);
+
+    void visitInnerClass(InnerClass obj);
+
+    void visitInnerClasses(InnerClasses obj);
+
+    void visitJavaClass(JavaClass obj);
+
+    void visitLineNumber(LineNumber obj);
+
+    void visitLineNumberTable(LineNumberTable obj);
+
+    void visitLocalVariable(LocalVariable obj);
+
+    void visitLocalVariableTable(LocalVariableTable obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitLocalVariableTypeTable(LocalVariableTypeTable obj);
+
+    void visitMethod(Method obj);
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitMethodParameter(final MethodParameter obj) {
+        // empty
+    }
+
+    /**
+     * @since 6.0
+     */
+    void visitMethodParameters(MethodParameters obj);
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitModule(final Module constantModule) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitModuleExports(final ModuleExports constantModule) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitModuleMainClass(final ModuleMainClass obj) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitModuleOpens(final ModuleOpens constantModule) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitModulePackages(final ModulePackages constantModule) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitModuleProvides(final ModuleProvides constantModule) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitModuleRequires(final ModuleRequires constantModule) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitNestHost(final NestHost obj) {
+        // empty
+    }
+
+    /**
+     * @since 6.4.0
+     */
+    default void visitNestMembers(final NestMembers obj) {
+        // empty
+    }
+
+    /**
+     * @since 6.0
+     */
+    void visitParameterAnnotation(ParameterAnnotations obj);
+
+    /**
+     * @since 6.0
+     */
+    void visitParameterAnnotationEntry(ParameterAnnotationEntry obj);
+
+    void visitSignature(Signature obj);
+
+    void visitSourceFile(SourceFile obj);
+
+    void visitStackMap(StackMap obj);
+
+    void visitStackMapEntry(StackMapEntry obj);
+
+    void visitSynthetic(Synthetic obj);
+
+    void visitUnknown(Unknown obj);
 }

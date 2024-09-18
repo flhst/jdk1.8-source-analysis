@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2003,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -35,6 +36,24 @@ public interface XSFacet extends XSObject {
      * A value of this facet.
      */
     public String getLexicalFacetValue();
+
+    /**
+     * If this facet is length, minLength, maxLength, totalDigits, or
+     * fractionDigits, and if the value can fit in "int", then return the value
+     * of the facet as an int. If the value can't fit, return -1. Use
+     * getActualFacetValue() to get the BigInteger representation. For all other
+     * facets, return 0.
+     */
+    public int getIntFacetValue();
+
+    /**
+     * If this facet is minInclusive, maxInclusive, minExclusive, or
+     * maxExclusive, then return the actual value of the facet. If this facet
+     * is length, minLength, maxLength, totalDigits, or fractionDigits, then
+     * return a BigInteger representation of the value. If this facet is
+     * whiteSpace, then return the String representation of the facet.
+     */
+    public Object getActualFacetValue();
 
     /**
      * [Facets]: check whether a facet is fixed.

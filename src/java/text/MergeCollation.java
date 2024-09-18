@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -92,7 +92,7 @@ final class MergeCollation {
         int i;
         for (i = 0; i < patterns.size(); ++i) {
             PatternEntry entry = patterns.get(i);
-            if (entry.extension.length() != 0) {
+            if (!entry.extension.isEmpty()) {
                 if (extList == null)
                     extList = new ArrayList<>();
                 extList.add(entry);
@@ -122,7 +122,7 @@ final class MergeCollation {
     private final PatternEntry findLastWithNoExtension(int i) {
         for (--i;i >= 0; --i) {
             PatternEntry entry = patterns.get(i);
-            if (entry.extension.length() == 0) {
+            if (entry.extension.isEmpty()) {
                 return entry;
             }
         }

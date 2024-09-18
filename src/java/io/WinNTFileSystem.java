@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -25,7 +25,12 @@
 
 package java.io;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Locale;
 import sun.security.action.GetPropertyAction;
 
@@ -40,6 +45,21 @@ class WinNTFileSystem extends FileSystem {
     private final char slash;
     private final char altSlash;
     private final char semicolon;
+
+    // Whether to enable alternative data streams (ADS) by suppressing
+    // checking the path for invalid characters, in particular ":".
+    // By default, ADS support is enabled and will be disabled if and
+    // only if the property is set, ignoring case, to the string "false".
+    private static final boolean ENABLE_ADS;
+    static {
+        String enableADS = GetPropertyAction.privilegedGetProperty("jdk.io.File.enableADS");
+        if (enableADS != null) {
+            ENABLE_ADS = !enableADS.equalsIgnoreCase(Boolean.FALSE.toString());
+        } else {
+            ENABLE_ADS = true;
+        }
+    }
+
 
     public WinNTFileSystem() {
         slash = AccessController.doPrivileged(
@@ -58,7 +78,7 @@ class WinNTFileSystem extends FileSystem {
     }
 
     private String slashify(String p) {
-        if ((p.length() > 0) && (p.charAt(0) != slash)) return slash + p;
+        if (!p.isEmpty() && p.charAt(0) != slash) return slash + p;
         else return p;
     }
 
@@ -220,6 +240,36 @@ class WinNTFileSystem extends FileSystem {
             return 2;                   /* Directory-relative "z:foo" */
         }
         return 0;                       /* Completely relative */
+    }
+
+    @Override
+    public boolean isInvalid(File f) {
+        if (f.getPath().indexOf('\u0000') >= 0)
+            return true;
+
+        if (ENABLE_ADS)
+            return false;
+
+        // Invalid if there is a ":" at a position greater than 1, or if there
+        // is a ":" at position 1 and the first character is not a letter
+        String pathname = f.getPath();
+        int lastColon = pathname.lastIndexOf(":");
+
+        // Valid if there is no ":" present or if the last ":" present is
+        // at index 1 and the first character is a latter
+        if (lastColon < 0 ||
+            (lastColon == 1 && isLetter(pathname.charAt(0))))
+            return false;
+
+        // Invalid if path creation fails
+        Path path = null;
+        try {
+            path = sun.nio.fs.DefaultFileSystemProvider.theFileSystem().getPath(pathname);
+            return false;
+        } catch (InvalidPathException ignored) {
+        }
+
+        return true;
     }
 
     @Override

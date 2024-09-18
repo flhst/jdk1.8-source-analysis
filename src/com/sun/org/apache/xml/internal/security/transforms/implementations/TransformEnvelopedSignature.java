@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -22,11 +22,12 @@
  */
 package com.sun.org.apache.xml.internal.security.transforms.implementations;
 
+import java.io.IOException;
 import java.io.OutputStream;
 
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -36,31 +37,27 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
- * Implements the <CODE>http://www.w3.org/2000/09/xmldsig#enveloped-signature</CODE>
+ * Implements the {@code http://www.w3.org/2000/09/xmldsig#enveloped-signature}
  * transform.
  *
- * @author Christian Geuer-Pollmann
  */
 public class TransformEnvelopedSignature extends TransformSpi {
 
-    /** Field implementedTransformURI */
-    public static final String implementedTransformURI =
-        Transforms.TRANSFORM_ENVELOPED_SIGNATURE;
-
     /**
-     * Method engineGetURI
-     *
-     * @inheritDoc
+     * {@inheritDoc}
      */
+    @Override
     protected String engineGetURI() {
-        return implementedTransformURI;
+        return Transforms.TRANSFORM_ENVELOPED_SIGNATURE;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
+    @Override
     protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, OutputStream os, Transform transformObject
+        XMLSignatureInput input, OutputStream os, Element transformElement,
+        String baseURI, boolean secureValidation
     ) throws TransformationException {
         /**
          * If the actual input is an octet stream, then the application MUST
@@ -74,11 +71,13 @@ public class TransformEnvelopedSignature extends TransformSpi {
          * (including comments) in the node-set representing the octet stream.
          */
 
-        Node signatureElement = transformObject.getElement();
-
-        signatureElement = searchSignatureElement(signatureElement);
+        Node signatureElement = searchSignatureElement(transformElement);
         input.setExcludeNode(signatureElement);
-        input.addNodeFilter(new EnvelopedNodeFilter(signatureElement));
+        try {
+            input.addNodeFilter(new EnvelopedNodeFilter(signatureElement));
+        } catch (XMLParserException | IOException ex) {
+            throw new TransformationException(ex);
+        }
         return input;
     }
 
@@ -115,7 +114,7 @@ public class TransformEnvelopedSignature extends TransformSpi {
 
     static class EnvelopedNodeFilter implements NodeFilter {
 
-        Node exclude;
+        private final Node exclude;
 
         EnvelopedNodeFilter(Node n) {
             exclude = n;
@@ -136,7 +135,7 @@ public class TransformEnvelopedSignature extends TransformSpi {
                 return -1;
             }
             return 1;
-            //return !XMLUtils.isDescendantOrSelf(exclude,n);
+            //return !XMLUtils.isDescendantOrSelf(exclude, n);
         }
     }
 }

@@ -1,16 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
-// ResolvingParser.java - An interface for reading catalog files
-
 /*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -42,10 +39,10 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.parsers.SAXParser;
 
-import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xml.internal.resolver.Catalog;
 import com.sun.org.apache.xml.internal.resolver.CatalogManager;
 import com.sun.org.apache.xml.internal.resolver.helpers.FileURL;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  * A SAX Parser that performs catalog-based entity resolution.
@@ -77,7 +74,7 @@ public class ResolvingParser
    *
    * @see #parse(InputSource)
    */
-  public static boolean suppressExplanation = false;
+  private static final boolean suppressExplanation = false;
 
   /** The underlying parser. */
   private SAXParser saxParser = null;
@@ -103,9 +100,6 @@ public class ResolvingParser
   /** Are we in the prolog? Is an oasis-xml-catalog PI valid now? */
   private boolean allowXMLCatalogPI = false;
 
-  /** Has an oasis-xml-catalog PI been seen? */
-  private boolean oasisXMLCatalogPI = false;
-
   /** The base URI of the input document, if known. */
   private URL baseURL = null;
 
@@ -123,8 +117,7 @@ public class ResolvingParser
   /** Initialize the parser. */
   private void initParser() {
     catalogResolver = new CatalogResolver(catalogManager);
-    SAXParserFactory spf = catalogManager.useServicesMechanism() ?
-                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
+    SAXParserFactory spf = JdkXmlUtils.getSAXFactory(catalogManager.overrideDefaultParser());
     spf.setNamespaceAware(namespaceAware);
     spf.setValidating(validating);
 
@@ -289,7 +282,6 @@ public class ResolvingParser
           if (catalog != null) {
             try {
               catalogManager.debug.message(4,"oasis-xml-catalog", catalog.toString());
-              oasisXMLCatalogPI = true;
 
               if (piCatalogResolver == null) {
                 piCatalogResolver = new CatalogResolver(true);
@@ -396,7 +388,10 @@ public class ResolvingParser
 
         return iSource;
       } catch (Exception e) {
-        catalogManager.debug.message(1, "Failed to create InputSource", resolved);
+        catalogManager.debug.message(1,
+                                     "Failed to create InputSource ("
+                                     + e.toString()
+                                     + ")", resolved);
         return null;
       }
     } else {

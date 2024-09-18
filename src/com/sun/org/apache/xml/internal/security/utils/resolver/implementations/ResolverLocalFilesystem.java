@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -22,9 +22,11 @@
  */
 package com.sun.org.apache.xml.internal.security.utils.resolver.implementations;
 
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
@@ -36,19 +38,11 @@ import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverS
  */
 public class ResolverLocalFilesystem extends ResourceResolverSpi {
 
-    private static final int FILE_URI_LENGTH = "file:/".length();
-
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(ResolverLocalFilesystem.class.getName());
-
-    @Override
-    public boolean engineIsThreadSafe() {
-        return true;
-    }
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ResolverLocalFilesystem.class);
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public XMLSignatureInput engineResolveURI(ResourceResolverContext context)
@@ -57,94 +51,50 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
             // calculate new URI
             URI uriNew = getNewURI(context.uriToResolve, context.baseUri);
 
-            String fileName =
-                ResolverLocalFilesystem.translateUriToFilename(uriNew.toString());
-            FileInputStream inputStream = new FileInputStream(fileName);
+            InputStream inputStream = Files.newInputStream(Paths.get(uriNew));  //NOPMD
             XMLSignatureInput result = new XMLSignatureInput(inputStream);
+            result.setSecureValidation(context.secureValidation);
 
             result.setSourceURI(uriNew.toString());
 
             return result;
         } catch (Exception e) {
-            throw new ResourceResolverException("generic.EmptyMessage", e, context.attr, context.baseUri);
+            throw new ResourceResolverException(e, context.uriToResolve, context.baseUri, "generic.EmptyMessage");
         }
     }
 
     /**
-     * Method translateUriToFilename
-     *
-     * @param uri
-     * @return the string of the filename
-     */
-    private static String translateUriToFilename(String uri) {
-
-        String subStr = uri.substring(FILE_URI_LENGTH);
-
-        if (subStr.indexOf("%20") > -1) {
-            int offset = 0;
-            int index = 0;
-            StringBuilder temp = new StringBuilder(subStr.length());
-            do {
-                index = subStr.indexOf("%20",offset);
-                if (index == -1) {
-                    temp.append(subStr.substring(offset));
-                } else {
-                    temp.append(subStr.substring(offset, index));
-                    temp.append(' ');
-                    offset = index + 3;
-                }
-            } while(index != -1);
-            subStr = temp.toString();
-        }
-
-        if (subStr.charAt(1) == ':') {
-            // we're running M$ Windows, so this works fine
-            return subStr;
-        }
-        // we're running some UNIX, so we have to prepend a slash
-        return "/" + subStr;
-    }
-
-    /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public boolean engineCanResolveURI(ResourceResolverContext context) {
         if (context.uriToResolve == null) {
             return false;
         }
 
-        if (context.uriToResolve.equals("") || (context.uriToResolve.charAt(0)=='#') ||
-            context.uriToResolve.startsWith("http:")) {
+        if (context.uriToResolve.isEmpty() || context.uriToResolve.charAt(0) == '#' ||
+            context.uriToResolve.startsWith("http:") || context.uriToResolve.startsWith("https:")) {
             return false;
         }
 
         try {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "I was asked whether I can resolve " + context.uriToResolve);
-            }
+            LOG.debug("I was asked whether I can resolve {}", context.uriToResolve);
 
             if (context.uriToResolve.startsWith("file:") || context.baseUri.startsWith("file:")) {
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, "I state that I can resolve " + context.uriToResolve);
-                }
+                LOG.debug("I state that I can resolve {}", context.uriToResolve);
                 return true;
             }
         } catch (Exception e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-            }
+            LOG.debug(e.getMessage(), e);
         }
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "But I can't");
-        }
+        LOG.debug("But I can't");
 
         return false;
     }
 
     private static URI getNewURI(String uri, String baseURI) throws URISyntaxException {
         URI newUri = null;
-        if (baseURI == null || "".equals(baseURI)) {
+        if (baseURI == null || baseURI.length() == 0) {
             newUri = new URI(uri);
         } else {
             newUri = new URI(baseURI).resolve(uri);
@@ -152,9 +102,7 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
 
         // if the URI contains a fragment, ignore it
         if (newUri.getFragment() != null) {
-            URI uriNewNoFrag =
-                new URI(newUri.getScheme(), newUri.getSchemeSpecificPart(), null);
-            return uriNewNoFrag;
+            return new URI(newUri.getScheme(), newUri.getSchemeSpecificPart(), null);
         }
         return newUri;
     }

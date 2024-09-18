@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -44,6 +44,7 @@ import com.sun.org.apache.xml.internal.resolver.Catalog;
 import com.sun.org.apache.xml.internal.resolver.CatalogManager;
 import com.sun.org.apache.xml.internal.resolver.readers.OASISXMLCatalogReader;
 import com.sun.org.apache.xml.internal.resolver.readers.SAXCatalogReader;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  * <p>The catalog resolver handles the resolution of external
@@ -395,8 +396,7 @@ public class XMLCatalogResolver
         String resolvedId = resolveIdentifier(resourceIdentifier);
         if (resolvedId != null) {
             return new XMLInputSource(resourceIdentifier.getPublicId(),
-                                      resolvedId,
-                                      resourceIdentifier.getBaseSystemId());
+                    resolvedId, resourceIdentifier.getBaseSystemId(), false);
         }
         return null;
     }
@@ -574,8 +574,8 @@ public class XMLCatalogResolver
      */
     private void attachReaderToCatalog (Catalog catalog) {
 
-        SAXParserFactory spf = new SAXParserFactoryImpl();
-        spf.setNamespaceAware(true);
+        SAXParserFactory spf = JdkXmlUtils.getSAXFactory(
+                catalog.getCatalogManager().overrideDefaultParser());
         spf.setValidating(false);
 
         SAXCatalogReader saxReader = new SAXCatalogReader(spf);

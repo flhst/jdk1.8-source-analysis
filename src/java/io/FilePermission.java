@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.nio.file.InvalidPathException;
 import java.security.*;
 import java.util.Enumeration;
 import java.util.List;
@@ -151,6 +152,8 @@ public final class FilePermission extends Permission implements Serializable {
     // the last character (the "*" or "-").
 
     private transient String cpath;
+    private transient boolean invalid;  // whether input path is invalid
+    private transient boolean allFiles; // whether this is <<ALL FILES>>
 
     // static Strings used by init(int mask)
     private static final char RECURSIVE_CHAR = '-';
@@ -193,9 +196,15 @@ public final class FilePermission extends Permission implements Serializable {
         this.mask = mask;
 
         if (cpath.equals("<<ALL FILES>>")) {
+            allFiles = true;
             directory = true;
             recursive = true;
             cpath = "";
+            return;
+        }
+
+        if (isPathInvalid()) {
+            invalid = true;
             return;
         }
 
@@ -241,6 +250,19 @@ public final class FilePermission extends Permission implements Serializable {
         }
 
         // XXX: at this point the path should be absolute. die if it isn't?
+    }
+
+    // Check path for validity
+    private boolean isPathInvalid() {
+        if (cpath.indexOf(". ") != -1) {
+            try {
+                String name = cpath.endsWith("*") ? cpath.substring(0, cpath.length() - 1) + "-" : cpath;
+                new File(name).toPath();
+            } catch (InvalidPathException ipe) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -335,6 +357,18 @@ public final class FilePermission extends Permission implements Serializable {
      * @return the effective mask
      */
     boolean impliesIgnoreMask(FilePermission that) {
+        if (this == that) {
+            return true;
+        }
+        if (allFiles) {
+            return true;
+        }
+        if (this.invalid || that.invalid) {
+            return false;
+        }
+        if (that.allFiles) {
+            return false;
+        }
         if (this.directory) {
             if (this.recursive) {
                 // make sure that.path is longer then path so
@@ -395,7 +429,11 @@ public final class FilePermission extends Permission implements Serializable {
 
         FilePermission that = (FilePermission) obj;
 
+        if (this.invalid || that.invalid) {
+            return false;
+        }
         return (this.mask == that.mask) &&
+               (this.allFiles == that.allFiles) &&
             this.cpath.equals(that.cpath) &&
             (this.directory == that.directory) &&
             (this.recursive == that.recursive);
@@ -833,6 +871,8 @@ final class FilePermissionCollection extends PermissionCollection
         @SuppressWarnings("unchecked")
         Vector<Permission> permissions = (Vector<Permission>)gfields.get("permissions", null);
         perms = new ArrayList<>(permissions.size());
-        perms.addAll(permissions);
+        for (Permission perm : permissions) {
+            perms.add(perm);
+        }
     }
 }

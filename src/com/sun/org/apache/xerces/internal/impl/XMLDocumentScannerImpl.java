@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -22,6 +22,8 @@
 package com.sun.org.apache.xerces.internal.impl;
 
 import com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDDescription;
+import com.sun.org.apache.xerces.internal.impl.io.MalformedByteSequenceException;
+import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
@@ -39,6 +41,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.xml.internal.stream.Entity;
 import com.sun.xml.internal.stream.StaxXMLInputSource;
 import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
+import java.io.CharConversionException;
 import java.io.EOFException;
 import java.io.IOException;
 import javax.xml.stream.XMLInputFactory;
@@ -785,7 +788,19 @@ public class XMLDocumentScannerImpl
 
 
             }
-
+            // encoding errors
+            catch (MalformedByteSequenceException e) {
+                fErrorReporter.reportError(e.getDomain(), e.getKey(),
+                        e.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return -1;
+            } catch (CharConversionException e) {
+                fErrorReporter.reportError(
+                        XMLMessageFormatter.XML_DOMAIN,
+                        "CharConversionFailure",
+                        null,
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return -1;
+            }
             // premature end of file
             catch (EOFException e) {
                 reportFatalError("PrematureEOF", null);
@@ -1009,6 +1024,19 @@ public class XMLDocumentScannerImpl
                      */
                 }
             }
+            // encoding errors
+            catch (MalformedByteSequenceException e) {
+                fErrorReporter.reportError(e.getDomain(), e.getKey(),
+                        e.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return -1;
+            } catch (CharConversionException e) {
+                fErrorReporter.reportError(
+                        XMLMessageFormatter.XML_DOMAIN,
+                        "CharConversionFailure",
+                        null,
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return -1;
+            }
             // premature end of file
             catch (EOFException e) {
                 reportFatalError("PrematureEOF", null);
@@ -1151,7 +1179,7 @@ public class XMLDocumentScannerImpl
                             StaxXMLInputSource staxInputSource =  fEntityManager.resolveEntityAsPerStax(resourceIdentifier);
 
                             // Check access permission. If the source is resolved by a resolver, the check is skipped.
-                            if (!staxInputSource.hasResolver()) {
+                            if (!staxInputSource.isCreatedByResolver()) {
                                 String accessError = checkAccess(fDoctypeSystemId, fAccessExternalDTD);
                                 if (accessError != null) {
                                     reportFatalError("AccessExternalDTD", new Object[]{ SecuritySupport.sanitizePath(fDoctypeSystemId), accessError });
@@ -1189,7 +1217,19 @@ public class XMLDocumentScannerImpl
                     }
                 } while (complete || again);
             }
-
+            // encoding errors
+            catch (MalformedByteSequenceException e) {
+                fErrorReporter.reportError(e.getDomain(), e.getKey(),
+                        e.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return false;
+            } catch (CharConversionException e) {
+                fErrorReporter.reportError(
+                        XMLMessageFormatter.XML_DOMAIN,
+                        "CharConversionFailure",
+                        null,
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return false;
+            }
             // premature end of file
             catch (EOFException e) {
                 e.printStackTrace();
@@ -1454,7 +1494,18 @@ public class XMLDocumentScannerImpl
                     }
                     default: throw new XNIException("Scanner State " + fScannerState + " not Recognized ");
                 }//switch
-
+            // encoding errors
+            } catch (MalformedByteSequenceException e) {
+                fErrorReporter.reportError(e.getDomain(), e.getKey(),
+                        e.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return -1;
+            } catch (CharConversionException e) {
+                fErrorReporter.reportError(
+                        XMLMessageFormatter.XML_DOMAIN,
+                        "CharConversionFailure",
+                        null,
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                return -1;
             } catch (EOFException e) {
                 // NOTE: This is the only place we're allowed to reach
                 //       the real end of the document stream. Unless the

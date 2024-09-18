@@ -176,7 +176,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
             int ident = _enhancedDOM.getElementById(id);
 
             if (ident != DTM.NULL) {
-                Integer root = new Integer(_enhancedDOM.getDocument());
+                Integer root = _enhancedDOM.getDocument();
                 Map<String, IntegerArray> index = _rootToIndexMap.get(root);
 
                 if (index == null) {
@@ -294,7 +294,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
 
         // Get the mapping table for the document containing the context node
         Map<String,IntegerArray> index =
-                    _rootToIndexMap.get(new Integer(rootHandle));
+                    _rootToIndexMap.get(rootHandle);
 
         // Check whether the context node is present in the set of nodes
         // returned by the key function

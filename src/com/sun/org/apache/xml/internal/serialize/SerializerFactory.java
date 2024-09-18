@@ -37,6 +37,11 @@ import java.util.StringTokenizer;
  * @version $Revision: 1.6 $ $Date: 2010-11-01 04:40:36 $
  * @author <a href="mailto:Scott_Boag/CAM/Lotus@lotus.com">Scott Boag</a>
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
+ *
+ * @deprecated As of Xerces 2.9.0, Xerces DOM L3 Serializer implementation
+ * is replaced by that of Xalan. Main class
+ * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
+ * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
 public abstract class SerializerFactory
 {

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 1999-2004 The Apache Software Foundation.
@@ -23,19 +22,16 @@
 package com.sun.org.apache.xml.internal.utils;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import java.util.HashMap;
 
 import javax.xml.XMLConstants;
-import javax.xml.parsers.FactoryConfigurationError;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
+import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * Creates XMLReader objects and caches them for re-use.
@@ -43,29 +39,23 @@ import org.xml.sax.helpers.XMLReaderFactory;
  */
 public class XMLReaderManager {
 
-    private static final String NAMESPACES_FEATURE =
-                             "http://xml.org/sax/features/namespaces";
-    private static final String NAMESPACE_PREFIXES_FEATURE =
-                             "http://xml.org/sax/features/namespace-prefixes";
     private static final XMLReaderManager m_singletonManager =
                                                      new XMLReaderManager();
     private static final String property = "org.xml.sax.driver";
-    /**
-     * Parser factory to be used to construct XMLReader objects
-     */
-    private static SAXParserFactory m_parserFactory;
+
+    private final static String LEXICAL_HANDLER_PROPERTY = "http://xml.org/sax/properties/lexical-handler";
 
     /**
      * Cache of XMLReader objects
      */
-    private ThreadLocal m_readers;
+    private ThreadLocal<ReaderWrapper> m_readers;
+
+    private boolean m_overrideDefaultParser;
 
     /**
      * Keeps track of whether an XMLReader object is in use.
      */
     private HashMap m_inUse;
-
-    private boolean m_useServicesMechanism = true;
 
     private boolean _secureProcessing;
      /**
@@ -84,8 +74,8 @@ public class XMLReaderManager {
     /**
      * Retrieves the singleton reader manager
      */
-    public static XMLReaderManager getInstance(boolean useServicesMechanism) {
-        m_singletonManager.setServicesMechnism(useServicesMechanism);
+    public static XMLReaderManager getInstance(boolean overrideDefaultParser) {
+        m_singletonManager.setOverrideDefaultParser(overrideDefaultParser);
         return m_singletonManager;
     }
 
@@ -108,62 +98,29 @@ public class XMLReaderManager {
             m_inUse = new HashMap();
         }
 
-        // If the cached reader for this thread is in use, construct a new
-        // one; otherwise, return the cached reader unless it isn't an
-        // instance of the class set in the 'org.xml.sax.driver' property
-        reader = (XMLReader) m_readers.get();
-        boolean threadHasReader = (reader != null);
+        /**
+         * Constructs a new XMLReader if:
+         * (1) the cached reader for this thread is in use, or
+         * (2) the requirement for overriding has changed,
+         * (3) the cached reader isn't an instance of the class set in the
+         * 'org.xml.sax.driver' property
+         *
+         * otherwise, returns the cached reader
+         */
+        ReaderWrapper rw = m_readers.get();
+        boolean threadHasReader = (rw != null);
+        reader = threadHasReader ? rw.reader : null;
         String factory = SecuritySupport.getSystemProperty(property);
         if (threadHasReader && m_inUse.get(reader) != Boolean.TRUE &&
+                (rw.overrideDefaultParser == m_overrideDefaultParser) &&
                 ( factory == null || reader.getClass().getName().equals(factory))) {
             m_inUse.put(reader, Boolean.TRUE);
         } else {
-            try {
-                try {
-                    // According to JAXP 1.2 specification, if a SAXSource
-                    // is created using a SAX InputSource the Transformer or
-                    // TransformerFactory creates a reader via the
-                    // XMLReaderFactory if setXMLReader is not used
-                    reader = XMLReaderFactory.createXMLReader();
-                    try {
-                        reader.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _secureProcessing);
-                    } catch (SAXNotRecognizedException e) {
-                        XMLSecurityManager.printWarning(reader.getClass().getName(),
-                                XMLConstants.FEATURE_SECURE_PROCESSING, e);
-                    }
-                } catch (Exception e) {
-                   try {
-                        // If unable to create an instance, let's try to use
-                        // the XMLReader from JAXP
-                        if (m_parserFactory == null) {
-                            m_parserFactory = FactoryImpl.getSAXFactory(m_useServicesMechanism);
-                            m_parserFactory.setNamespaceAware(true);
-                        }
-
-                        reader = m_parserFactory.newSAXParser().getXMLReader();
-                   } catch (ParserConfigurationException pce) {
-                       throw pce;   // pass along pce
-                   }
-                }
-                try {
-                    reader.setFeature(NAMESPACES_FEATURE, true);
-                    reader.setFeature(NAMESPACE_PREFIXES_FEATURE, false);
-                } catch (SAXException se) {
-                    // Try to carry on if we've got a parser that
-                    // doesn't know about namespace prefixes.
-                }
-            } catch (ParserConfigurationException ex) {
-                throw new SAXException(ex);
-            } catch (FactoryConfigurationError ex1) {
-                throw new SAXException(ex1.toString());
-            } catch (NoSuchMethodError ex2) {
-            } catch (AbstractMethodError ame) {
-            }
-
+            reader = JdkXmlUtils.getXMLReader(m_overrideDefaultParser, _secureProcessing);
             // Cache the XMLReader if this is the first time we've created
             // a reader for this thread.
             if (!threadHasReader) {
-                m_readers.set(reader);
+                m_readers.set(new ReaderWrapper(reader, m_overrideDefaultParser));
                 m_inUse.put(reader, Boolean.TRUE);
             }
         }
@@ -180,9 +137,11 @@ public class XMLReaderManager {
         try {
             if (_xmlSecurityManager != null) {
                 for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
-                    lastProperty = limit.apiProperty();
-                    reader.setProperty(lastProperty,
-                            _xmlSecurityManager.getLimitValueAsString(limit));
+                    if (limit.isSupported(XMLSecurityManager.Processor.PARSER)) {
+                        lastProperty = limit.apiProperty();
+                        reader.setProperty(lastProperty,
+                                _xmlSecurityManager.getLimitValueAsString(limit));
+                    }
                 }
                 if (_xmlSecurityManager.printEntityCountInfo()) {
                     lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
@@ -204,23 +163,34 @@ public class XMLReaderManager {
      */
     public synchronized void releaseXMLReader(XMLReader reader) {
         // If the reader that's being released is the cached reader
-        // for this thread, remove it from the m_isUse list.
-        if (m_readers.get() == reader && reader != null) {
+        // for this thread, remove it from the m_inUse list.
+        ReaderWrapper rw = m_readers.get();
+        if (rw != null && rw.reader == reader && reader != null) {
+            // reset the reader for reuse
+            reader.setContentHandler(null);
+            reader.setDTDHandler(null);
+            reader.setEntityResolver(null);
+            try {
+                reader.setProperty(LEXICAL_HANDLER_PROPERTY, null);
+            } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
+                // shouldn't happen as the property is supported.
+            }
             m_inUse.remove(reader);
         }
     }
+
     /**
      * Return the state of the services mechanism feature.
      */
-    public boolean useServicesMechnism() {
-        return m_useServicesMechanism;
+    public boolean overrideDefaultParser() {
+        return m_overrideDefaultParser;
     }
 
     /**
      * Set the state of the services mechanism feature.
      */
-    public void setServicesMechnism(boolean flag) {
-        m_useServicesMechanism = flag;
+    public void setOverrideDefaultParser(boolean flag) {
+        m_overrideDefaultParser = flag;
     }
 
     /**
@@ -252,6 +222,16 @@ public class XMLReaderManager {
             _accessExternalDTD = (String)value;
         } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
             _xmlSecurityManager = (XMLSecurityManager)value;
+        }
+    }
+
+    class ReaderWrapper {
+        XMLReader reader;
+        boolean overrideDefaultParser;
+
+        public ReaderWrapper(XMLReader reader, boolean overrideDefaultParser) {
+            this.reader = reader;
+            this.overrideDefaultParser = overrideDefaultParser;
         }
     }
 }

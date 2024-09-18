@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -495,11 +495,6 @@ public final class System {
                                         int length);
 
     /**
-     * 返回给定对象的identity hash code，它只与当前对象的父类Object#hashCode()的值有关(即使被子类重写了hashCode方法，也会忽略)。
-     * 在Dubbo 和
-     * @see java.util.concurrent.ConcurrentHashMap.TreeBin#tieBreakOrder(java.lang.Object, java.lang.Object)
-     * 都有使用
-     *
      * Returns the same hash code for the given object as
      * would be returned by the default method hashCode(),
      * whether or not the given object's class overrides
@@ -562,6 +557,10 @@ public final class System {
      *     <td>Java installation directory</td></tr>
      * <tr><td><code>java.vm.specification.version</code></td>
      *     <td>Java Virtual Machine specification version</td></tr>
+     * <tr><td><code>java.specification.maintenance.version</code></td>
+     *     <td>Java Runtime Environment specification maintenance
+     *     version, may be interpreted as a positive integer
+     *     <em>(optional, see below)</em></td></tr>
      * <tr><td><code>java.vm.specification.vendor</code></td>
      *     <td>Java Virtual Machine specification vendor</td></tr>
      * <tr><td><code>java.vm.specification.name</code></td>
@@ -612,6 +611,16 @@ public final class System {
      * <tr><td><code>user.dir</code></td>
      *     <td>User's current working directory</td></tr>
      * </table>
+     * <p>
+     * The {@code java.specification.maintenance.version} property is
+     * defined if the specification implemented by this runtime at the
+     * time of its construction had undergone a <a
+     * href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
+     * release</a>. When defined, its value identifies that
+     * maintenance release. To indicate the first maintenance release
+     * this property will have the value {@code "1"}, to indicate the
+     * second maintenance release this property will have the value
+     * {@code "2"}, and so on.
      * <p>
      * Multiple paths in a system property value are separated by the path
      * separator character of the platform.
@@ -1021,29 +1030,27 @@ public final class System {
     }
 
     /**
-     * Enable or disable finalization on exit; doing so specifies that the
-     * finalizers of all objects that have finalizers that have not yet been
-     * automatically invoked are to be run before the Java runtime exits.
-     * By default, finalization on exit is disabled.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * <p>If there is a security manager,
-     * its <code>checkExit</code> method is first called
-     * with 0 as its argument to ensure the exit is allowed.
-     * This could result in a SecurityException.
+     * <p>The call {@code System.runFinalizersOnExit()} is effectively
+     * equivalent to the call:
+     * <blockquote><pre>
+     * Runtime.runFinalizersOnExit()
+     * </pre></blockquote>
      *
-     * @deprecated  This method is inherently unsafe.  It may result in
-     *      finalizers being called on live objects while other threads are
-     *      concurrently manipulating those objects, resulting in erratic
-     *      behavior or deadlock.
-     * @param value indicating enabling or disabling of finalization
-     * @throws  SecurityException
-     *        if a security manager exists and its <code>checkExit</code>
-     *        method doesn't allow the exit.
+     * @param value ignored
      *
-     * @see     java.lang.Runtime#exit(int)
-     * @see     java.lang.Runtime#gc()
-     * @see     java.lang.SecurityManager#checkExit(int)
-     * @since   JDK1.1
+     * @deprecated This method was originally designed to enable or disable
+     * running finalizers on exit. Running finalizers on exit was disabled
+     * by default. If enabled, then the finalizers of all objects whose
+     * finalizers had not yet been automatically invoked were to be run before
+     * the Java runtime exits. That behavior is inherently unsafe. It may
+     * result in finalizers being called on live objects while other threads
+     * are concurrently manipulating those objects, resulting in erratic
+     * behavior or deadlock.
+     *
+     * @see java.lang.Runtime#runFinalizersOnExit(boolean)
+     * @since JDK1.1
      */
     @Deprecated
     public static void runFinalizersOnExit(boolean value) {

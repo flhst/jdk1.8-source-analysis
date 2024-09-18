@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -32,26 +32,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
-import com.sun.org.apache.xml.internal.security.c14n.implementations.CanonicalizerBase;
-import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer20010315OmitComments;
 import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer11_OmitComments;
-import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityRuntimeException;
+import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer20010315OmitComments;
+import com.sun.org.apache.xml.internal.security.c14n.implementations.CanonicalizerBase;
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 /**
  * Class XMLSignatureInput
  *
- * @author Christian Geuer-Pollmann
  * $todo$ check whether an XMLSignatureInput can be _both_, octet stream _and_ node set?
  */
 public class XMLSignatureInput {
@@ -68,19 +61,19 @@ public class XMLSignatureInput {
      * Some InputStreams do not support the {@link java.io.InputStream#reset}
      * method, so we read it in completely and work on our Proxy.
      */
-    private InputStream inputOctetStreamProxy = null;
+    private InputStream inputOctetStreamProxy;
     /**
      * The original NodeSet for this XMLSignatureInput
      */
-    private Set<Node> inputNodeSet = null;
+    private Set<Node> inputNodeSet;
     /**
      * The original Element
      */
-    private Node subNode = null;
+    private Node subNode;
     /**
      * Exclude Node *for enveloped transformations*
      */
-    private Node excludeNode = null;
+    private Node excludeNode;
     /**
      *
      */
@@ -90,7 +83,8 @@ public class XMLSignatureInput {
     /**
      * A cached bytes
      */
-    private byte[] bytes = null;
+    private byte[] bytes;
+    private boolean secureValidation;
 
     /**
      * Some Transforms may require explicit MIME type, charset (IANA registered
@@ -101,22 +95,25 @@ public class XMLSignatureInput {
      * Transform algorithm and should be described in the specification for the
      * algorithm.
      */
-    private String mimeType = null;
+    private String mimeType;
 
     /**
      * Field sourceURI
      */
-    private String sourceURI = null;
+    private String sourceURI;
 
     /**
      * Node Filter list.
      */
-    private List<NodeFilter> nodeFilters = new ArrayList<NodeFilter>();
+    private List<NodeFilter> nodeFilters = new ArrayList<>();
 
     private boolean needsToBeExpanded = false;
-    private OutputStream outputStream = null;
+    private OutputStream outputStream;
 
-    private DocumentBuilderFactory dfactory;
+    /**
+     * Pre-calculated digest value of the object in base64.
+     */
+    private String preCalculatedDigest;
 
     /**
      * Construct a XMLSignatureInput from an octet array.
@@ -132,7 +129,7 @@ public class XMLSignatureInput {
     }
 
     /**
-     * Constructs a <code>XMLSignatureInput</code> from an octet stream. The
+     * Constructs a {@code XMLSignatureInput} from an octet stream. The
      * stream is directly read.
      *
      * @param inputOctetStream
@@ -143,7 +140,7 @@ public class XMLSignatureInput {
 
     /**
      * Construct a XMLSignatureInput from a subtree rooted by rootNode. This
-     * method included the node and <I>all</I> his descendants in the output.
+     * method included the node and <I>all</I> its descendants in the output.
      *
      * @param rootNode
      */
@@ -158,6 +155,15 @@ public class XMLSignatureInput {
      */
     public XMLSignatureInput(Set<Node> inputNodeSet) {
         this.inputNodeSet = inputNodeSet;
+    }
+
+    /**
+     * Construct a {@code XMLSignatureInput} from a known digest value in Base64.
+     * This makes it possible to compare the element digest with the provided digest value.
+     * @param preCalculatedDigest digest value in base64.
+     */
+    public XMLSignatureInput(String preCalculatedDigest) {
+        this.preCalculatedDigest = preCalculatedDigest;
     }
 
     /**
@@ -181,13 +187,10 @@ public class XMLSignatureInput {
      * {@link XMLSignatureInput} constructor
      *
      * @return the node set
-     * @throws SAXException
+     * @throws XMLParserException
      * @throws IOException
-     * @throws ParserConfigurationException
-     * @throws CanonicalizationException
      */
-    public Set<Node> getNodeSet() throws CanonicalizationException, ParserConfigurationException,
-        IOException, SAXException {
+    public Set<Node> getNodeSet() throws XMLParserException, IOException {
         return getNodeSet(false);
     }
 
@@ -205,13 +208,10 @@ public class XMLSignatureInput {
      * @param circumvent
      *
      * @return the node set
-     * @throws SAXException
+     * @throws XMLParserException
      * @throws IOException
-     * @throws ParserConfigurationException
-     * @throws CanonicalizationException
      */
-    public Set<Node> getNodeSet(boolean circumvent) throws ParserConfigurationException,
-        IOException, SAXException, CanonicalizationException {
+    public Set<Node> getNodeSet(boolean circumvent) throws XMLParserException, IOException {
         if (inputNodeSet != null) {
             return inputNodeSet;
         }
@@ -219,12 +219,12 @@ public class XMLSignatureInput {
             if (circumvent) {
                 XMLUtils.circumventBug2650(XMLUtils.getOwnerDocument(subNode));
             }
-            inputNodeSet = new LinkedHashSet<Node>();
+            inputNodeSet = new LinkedHashSet<>();
             XMLUtils.getSet(subNode, inputNodeSet, excludeNode, excludeComments);
             return inputNodeSet;
         } else if (isOctetStream()) {
             convertToNodes();
-            Set<Node> result = new LinkedHashSet<Node>();
+            Set<Node> result = new LinkedHashSet<>();
             XMLUtils.getSet(subNode, result, null, false);
             return result;
         }
@@ -275,8 +275,13 @@ public class XMLSignatureInput {
         if (inputBytes != null) {
             return inputBytes;
         }
-        Canonicalizer20010315OmitComments c14nizer = new Canonicalizer20010315OmitComments();
-        bytes = c14nizer.engineCanonicalize(this);
+        if (isOctetStream() || isElement() || isNodeSet()) {
+            Canonicalizer20010315OmitComments c14nizer = new Canonicalizer20010315OmitComments();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                c14nizer.engineCanonicalize(this, baos, secureValidation);
+                bytes = baos.toByteArray();
+            }
+        }
         return bytes;
     }
 
@@ -286,8 +291,7 @@ public class XMLSignatureInput {
      * @return true if the object has been set up with a Node set
      */
     public boolean isNodeSet() {
-        return ((inputOctetStreamProxy == null
-            && inputNodeSet != null) || isNodeSet);
+        return inputOctetStreamProxy == null && inputNodeSet != null || isNodeSet;
     }
 
     /**
@@ -296,8 +300,8 @@ public class XMLSignatureInput {
      * @return true if the object has been set up with an Element
      */
     public boolean isElement() {
-        return (inputOctetStreamProxy == null && subNode != null
-            && inputNodeSet == null && !isNodeSet);
+        return inputOctetStreamProxy == null && subNode != null
+            && inputNodeSet == null && !isNodeSet;
     }
 
     /**
@@ -306,8 +310,8 @@ public class XMLSignatureInput {
      * @return true if the object has been set up with an octet stream
      */
     public boolean isOctetStream() {
-        return ((inputOctetStreamProxy != null || bytes != null)
-          && (inputNodeSet == null && subNode == null));
+        return (inputOctetStreamProxy != null || bytes != null)
+          && inputNodeSet == null && subNode == null;
     }
 
     /**
@@ -324,10 +328,18 @@ public class XMLSignatureInput {
     /**
      * Determines if the object has been set up with a ByteArray
      *
-     * @return true is the object has been set up with an octet stream
+     * @return true if the object has been set up with an octet stream
      */
     public boolean isByteArray() {
-        return (bytes != null && (this.inputNodeSet == null && subNode == null));
+        return bytes != null && this.inputNodeSet == null && subNode == null;
+    }
+
+    /**
+     * Determines if the object has been set up with a pre-calculated digest.
+     * @return true if the object has been set up with a pre-calculated digest.
+     */
+    public boolean isPreCalculatedDigest() {
+        return preCalculatedDigest != null;
     }
 
     /**
@@ -377,7 +389,7 @@ public class XMLSignatureInput {
 
     /**
      * Method toString
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public String toString() {
         if (isNodeSet()) {
@@ -390,11 +402,11 @@ public class XMLSignatureInput {
                 + excludeComments +"/" + getSourceURI();
         }
         try {
-            return "XMLSignatureInput/OctetStream/" + getBytes().length
+            byte[] bytes = getBytes();
+            return "XMLSignatureInput/OctetStream/"
+                   + (bytes != null ? bytes.length : 0)
                    + " octets/" + getSourceURI();
-        } catch (IOException iex) {
-            return "XMLSignatureInput/OctetStream//" + getSourceURI();
-        } catch (CanonicalizationException cex) {
+        } catch (IOException | CanonicalizationException ex) {
             return "XMLSignatureInput/OctetStream//" + getSourceURI();
         }
     }
@@ -486,8 +498,7 @@ public class XMLSignatureInput {
             } else {
                 c14nizer = new Canonicalizer20010315OmitComments();
             }
-            c14nizer.setWriter(diOs);
-            c14nizer.engineCanonicalize(this);
+            c14nizer.engineCanonicalize(this, diOs, secureValidation);
         } else {
             byte[] buffer = new byte[4 * 1024];
             int bytesread = 0;
@@ -516,7 +527,7 @@ public class XMLSignatureInput {
         if (inputOctetStreamProxy == null) {
             return null;
         }
-        try {
+        try {   //NOPMD
             bytes = JavaUtils.getBytesFromStream(inputOctetStreamProxy);
         } finally {
             inputOctetStreamProxy.close();
@@ -527,15 +538,9 @@ public class XMLSignatureInput {
     /**
      * @param filter
      */
-    public void addNodeFilter(NodeFilter filter) {
+    public void addNodeFilter(NodeFilter filter)  throws XMLParserException, IOException {
         if (isOctetStream()) {
-            try {
-                convertToNodes();
-            } catch (Exception e) {
-                throw new XMLSecurityRuntimeException(
-                    "signature.XMLSignatureInput.nodesetReference", e
-                );
-            }
+            convertToNodes();
         }
         nodeFilters.add(filter);
     }
@@ -554,32 +559,11 @@ public class XMLSignatureInput {
         isNodeSet = b;
     }
 
-    void convertToNodes() throws CanonicalizationException,
-        ParserConfigurationException, IOException, SAXException {
-        if (dfactory == null) {
-            dfactory = DocumentBuilderFactory.newInstance();
-            dfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
-            dfactory.setValidating(false);
-            dfactory.setNamespaceAware(true);
-        }
-        DocumentBuilder db = dfactory.newDocumentBuilder();
+    private void convertToNodes() throws XMLParserException, IOException {
         // select all nodes, also the comments.
         try {
-            db.setErrorHandler(new com.sun.org.apache.xml.internal.security.utils.IgnoreAllErrorHandler());
-
-            Document doc = db.parse(this.getOctetStream());
+            Document doc = XMLUtils.read(this.getOctetStream(), secureValidation);
             this.subNode = doc;
-        } catch (SAXException ex) {
-            // if a not-wellformed nodeset exists, put a container around it...
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            baos.write("<container>".getBytes("UTF-8"));
-            baos.write(this.getBytes());
-            baos.write("</container>".getBytes("UTF-8"));
-
-            byte result[] = baos.toByteArray();
-            Document document = db.parse(new ByteArrayInputStream(result));
-            this.subNode = document.getDocumentElement().getFirstChild().getFirstChild();
         } finally {
             if (this.inputOctetStreamProxy != null) {
                 this.inputOctetStreamProxy.close();
@@ -589,4 +573,15 @@ public class XMLSignatureInput {
         }
     }
 
+    public boolean isSecureValidation() {
+        return secureValidation;
+    }
+
+    public void setSecureValidation(boolean secureValidation) {
+        this.secureValidation = secureValidation;
+    }
+
+    public String getPreCalculatedDigest() {
+        return preCalculatedDigest;
+    }
 }

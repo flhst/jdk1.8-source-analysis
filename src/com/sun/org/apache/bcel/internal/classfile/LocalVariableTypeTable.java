@@ -1,41 +1,47 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package com.sun.org.apache.bcel.internal.classfile;
-/**
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+package com.sun.org.apache.bcel.internal.classfile;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
+
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 // The new table is used when generic types are about...
 
 //LocalVariableTable_attribute {
-//         u2 attribute_name_index;
-//         u4 attribute_length;
-//         u2 local_variable_table_length;
-//         {  u2 start_pc;
-//            u2 length;
-//            u2 name_index;
-//            u2 descriptor_index;
-//            u2 index;
-//         } local_variable_table[local_variable_table_length];
-//       }
+//       u2 attribute_name_index;
+//       u4 attribute_length;
+//       u2 local_variable_table_length;
+//       {  u2 start_pc;
+//          u2 length;
+//          u2 name_index;
+//          u2 descriptor_index;
+//          u2 index;
+//       } local_variable_table[local_variable_table_length];
+//     }
 
 //LocalVariableTypeTable_attribute {
 //    u2 attribute_name_index;
@@ -47,100 +53,109 @@ import  java.io.*;
 //      u2 name_index;
 //      u2 signature_index;
 //      u2 index;
-//    } local_variable_type_table[local_variable_type_table_length];
+//    } localVariableTypeTable[local_variable_type_table_length];
 //  }
 // J5TODO: Needs some testing !
-public class LocalVariableTypeTable extends Attribute {
-  private static final long serialVersionUID = -1082157891095177114L;
-private int             local_variable_type_table_length; // Table of local
-  private LocalVariable[] local_variable_type_table;        // variables
 
-  public LocalVariableTypeTable(LocalVariableTypeTable c) {
-    this(c.getNameIndex(), c.getLength(), c.getLocalVariableTypeTable(),
-         c.getConstantPool());
-  }
+/**
+ * @since 6.0
+ */
+public class LocalVariableTypeTable extends Attribute implements Iterable<LocalVariable> {
 
-  public LocalVariableTypeTable(int name_index, int length,
-                            LocalVariable[] local_variable_table,
-                            ConstantPool    constant_pool)
-  {
-    super(Constants.ATTR_LOCAL_VARIABLE_TYPE_TABLE, name_index, length, constant_pool);
-    setLocalVariableTable(local_variable_table);
-  }
+    private LocalVariable[] localVariableTypeTable; // variables
 
-  LocalVariableTypeTable(int nameIdx, int len, DataInputStream dis,ConstantPool cpool) throws IOException {
-    this(nameIdx, len, (LocalVariable[])null, cpool);
+    LocalVariableTypeTable(final int nameIdx, final int len, final DataInput input, final ConstantPool cpool) throws IOException {
+        this(nameIdx, len, (LocalVariable[]) null, cpool);
 
-    local_variable_type_table_length = (dis.readUnsignedShort());
-    local_variable_type_table = new LocalVariable[local_variable_type_table_length];
+        final int localVariableTypeTableLength = input.readUnsignedShort();
+        localVariableTypeTable = new LocalVariable[localVariableTypeTableLength];
 
-    for(int i=0; i < local_variable_type_table_length; i++)
-      local_variable_type_table[i] = new LocalVariable(dis, cpool);
-  }
-
-  @Override
-public void accept(Visitor v) {
-    v.visitLocalVariableTypeTable(this);
-  }
-
-  @Override
-public final void dump(DataOutputStream file) throws IOException
-  {
-    super.dump(file);
-    file.writeShort(local_variable_type_table_length);
-    for(int i=0; i < local_variable_type_table_length; i++)
-      local_variable_type_table[i].dump(file);
-  }
-
-  public final LocalVariable[] getLocalVariableTypeTable() {
-    return local_variable_type_table;
-  }
-
-  public final LocalVariable getLocalVariable(int index) {
-    for(int i=0; i < local_variable_type_table_length; i++)
-      if(local_variable_type_table[i].getIndex() == index)
-        return local_variable_type_table[i];
-
-    return null;
-  }
-
-  public final void setLocalVariableTable(LocalVariable[] local_variable_table)
-  {
-    this.local_variable_type_table = local_variable_table;
-    local_variable_type_table_length = (local_variable_table == null)? 0 :
-      local_variable_table.length;
-  }
-
-  /**
-   * @return String representation.
-   */
-  @Override
-public final String toString() {
-      StringBuilder buf = new StringBuilder();
-
-    for(int i=0; i < local_variable_type_table_length; i++) {
-      buf.append(local_variable_type_table[i].toString());
-
-      if(i < local_variable_type_table_length - 1) buf.append('\n');
+        for (int i = 0; i < localVariableTypeTableLength; i++) {
+            localVariableTypeTable[i] = new LocalVariable(input, cpool);
+        }
     }
 
-    return buf.toString();
-  }
+    public LocalVariableTypeTable(final int nameIndex, final int length, final LocalVariable[] localVariableTypeTable, final ConstantPool constantPool) {
+        super(Const.ATTR_LOCAL_VARIABLE_TYPE_TABLE, nameIndex, length, constantPool);
+        this.localVariableTypeTable = localVariableTypeTable != null ? localVariableTypeTable : LocalVariable.EMPTY_ARRAY;
+        Args.requireU2(this.localVariableTypeTable.length, "localVariableTypeTable.length");
+    }
 
-  /**
-   * @return deep copy of this attribute
-   */
-  @Override
-public Attribute copy(ConstantPool constant_pool) {
-    LocalVariableTypeTable c = (LocalVariableTypeTable)clone();
+    public LocalVariableTypeTable(final LocalVariableTypeTable c) {
+        this(c.getNameIndex(), c.getLength(), c.getLocalVariableTypeTable(), c.getConstantPool());
+    }
 
-    c.local_variable_type_table = new LocalVariable[local_variable_type_table_length];
-    for(int i=0; i < local_variable_type_table_length; i++)
-      c.local_variable_type_table[i] = local_variable_type_table[i].copy();
+    @Override
+    public void accept(final Visitor v) {
+        v.visitLocalVariableTypeTable(this);
+    }
 
-    c.constant_pool = constant_pool;
-    return c;
-  }
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        final LocalVariableTypeTable c = (LocalVariableTypeTable) clone();
 
-  public final int getTableLength() { return local_variable_type_table_length; }
+        c.localVariableTypeTable = new LocalVariable[localVariableTypeTable.length];
+        for (int i = 0; i < localVariableTypeTable.length; i++) {
+            c.localVariableTypeTable[i] = localVariableTypeTable[i].copy();
+        }
+        c.setConstantPool(constantPool);
+        return c;
+    }
+
+    @Override
+    public final void dump(final DataOutputStream file) throws IOException {
+        super.dump(file);
+        file.writeShort(localVariableTypeTable.length);
+        for (final LocalVariable variable : localVariableTypeTable) {
+            variable.dump(file);
+        }
+    }
+
+    public final LocalVariable getLocalVariable(final int index) {
+        for (final LocalVariable variable : localVariableTypeTable) {
+            if (variable.getIndex() == index) {
+                return variable;
+            }
+        }
+
+        return null;
+    }
+
+    public final LocalVariable[] getLocalVariableTypeTable() {
+        return localVariableTypeTable;
+    }
+
+    public final int getTableLength() {
+        return localVariableTypeTable == null ? 0 : localVariableTypeTable.length;
+    }
+
+    @Override
+    public Iterator<LocalVariable> iterator() {
+        return Arrays.asList(localVariableTypeTable).iterator();
+    }
+
+    public final void setLocalVariableTable(final LocalVariable[] localVariableTable) {
+        this.localVariableTypeTable = localVariableTable;
+    }
+
+    /**
+     * @return String representation.
+     */
+    @Override
+    public final String toString() {
+        final StringBuilder buf = new StringBuilder();
+
+        for (int i = 0; i < localVariableTypeTable.length; i++) {
+            buf.append(localVariableTypeTable[i].toStringShared(true));
+
+            if (i < localVariableTypeTable.length - 1) {
+                buf.append('\n');
+            }
+        }
+
+        return buf.toString();
+    }
 }

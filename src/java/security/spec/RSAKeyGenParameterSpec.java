@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -43,6 +43,7 @@ public class RSAKeyGenParameterSpec implements AlgorithmParameterSpec {
 
     private int keysize;
     private BigInteger publicExponent;
+    private AlgorithmParameterSpec keyParams;
 
     /**
      * The public-exponent value F0 = 3.
@@ -55,15 +56,31 @@ public class RSAKeyGenParameterSpec implements AlgorithmParameterSpec {
     public static final BigInteger F4 = BigInteger.valueOf(65537);
 
     /**
-     * Constructs a new {@code RSAParameterSpec} object from the
-     * given keysize and public-exponent value.
+     * Constructs a new {@code RSAKeyGenParameterSpec} object from the
+     * given keysize, public-exponent value, and null key parameters.
      *
      * @param keysize the modulus size (specified in number of bits)
      * @param publicExponent the public exponent
      */
     public RSAKeyGenParameterSpec(int keysize, BigInteger publicExponent) {
+        this(keysize, publicExponent, null);
+    }
+
+    /**
+     * Constructs a new {@code RSAKeyGenParameterSpec} object from the
+     * given keysize, public-exponent value, and key parameters.
+     *
+     * @apiNote This method is defined in Java SE 8 Maintenance Release 3.
+     * @param keysize the modulus size (specified in number of bits)
+     * @param publicExponent the public exponent
+     * @param keyParams the key parameters, may be null
+     * @since 8
+     */
+    public RSAKeyGenParameterSpec(int keysize, BigInteger publicExponent,
+            AlgorithmParameterSpec keyParams) {
         this.keysize = keysize;
         this.publicExponent = publicExponent;
+        this.keyParams = keyParams;
     }
 
     /**
@@ -82,5 +99,17 @@ public class RSAKeyGenParameterSpec implements AlgorithmParameterSpec {
      */
     public BigInteger getPublicExponent() {
         return publicExponent;
+    }
+
+    /**
+     * Returns the parameters to be associated with key.
+     *
+     * @apiNote This method is defined in Java SE 8 Maintenance Release 3.
+     * @return the associated parameters, may be null if
+     *         not present
+     * @since 8
+     */
+    public AlgorithmParameterSpec getKeyParams() {
+        return keyParams;
     }
 }

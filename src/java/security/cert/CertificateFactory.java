@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -31,8 +31,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.security.Provider;
 import java.security.Security;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
@@ -336,7 +334,10 @@ public class CertificateFactory {
     public final Certificate generateCertificate(InputStream inStream)
         throws CertificateException
     {
-        return certFacSpi.engineGenerateCertificate(inStream);
+        Certificate c = certFacSpi.engineGenerateCertificate(inStream);
+        JCAUtil.tryCommitCertEvent(c);
+        return c;
+
     }
 
     /**

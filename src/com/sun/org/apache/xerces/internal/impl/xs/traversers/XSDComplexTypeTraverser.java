@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xerces.internal.impl.xs.traversers;
 
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeFacetException;
@@ -62,6 +63,7 @@ import org.w3c.dom.Element;
  *
  * @xerces.internal
  *
+ * @LastModified: Apr 2019
  * @version $Id: XSDComplexTypeTraverser.java,v 1.8 2010-11-01 04:40:02 joehw Exp $
  */
 
@@ -574,7 +576,7 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
             short fixedFacets = 0 ;
 
             if (simpleContent!=null) {
-                FacetInfo fi = traverseFacets(simpleContent, baseValidator, schemaDoc);
+                FacetInfo fi = traverseFacets(simpleContent, fComplexTypeDecl, baseValidator, schemaDoc);
                 attrNode = fi.nodeAfterFacets;
                 facetData = fi.facetdata;
                 presentFacets = fi.fPresentFacets;
@@ -1193,9 +1195,6 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
         // REVISIT: do we need to remove all attribute uses already added into
         // the attribute group? maybe it's ok to leave them there. -SG
         fAttrGrp.fAttributeWC = getErrorWildcard();
-
-        return;
-
     }
 
     private void contentBackup() {
@@ -1213,8 +1212,8 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
         fGlobalStore[fGlobalStorePos++] = fName ;
         fGlobalStore[fGlobalStorePos++] = fTargetNamespace;
         // let's save ourselves a couple of objects...
-        fGlobalStore[fGlobalStorePos++] = new Integer((fDerivedBy << 16) + fFinal);
-        fGlobalStore[fGlobalStorePos++] = new Integer((fBlock << 16) + fContentType);
+        fGlobalStore[fGlobalStorePos++] = (fDerivedBy << 16) + fFinal;
+        fGlobalStore[fGlobalStorePos++] = (fBlock << 16) + fContentType;
         fGlobalStore[fGlobalStorePos++] = fBaseType;
         fGlobalStore[fGlobalStorePos++] = fAttrGrp;
         fGlobalStore[fGlobalStorePos++] = fParticle;
@@ -1228,15 +1227,15 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
         fParticle = (XSParticleDecl)fGlobalStore[--fGlobalStorePos];
         fAttrGrp = (XSAttributeGroupDecl)fGlobalStore[--fGlobalStorePos];
         fBaseType = (XSTypeDefinition)fGlobalStore[--fGlobalStorePos];
-        int i = ((Integer)(fGlobalStore[--fGlobalStorePos])).intValue();
+        int i = ((Integer)(fGlobalStore[--fGlobalStorePos]));
         fBlock = (short)(i >> 16);
         fContentType = (short)i;
-        i = ((Integer)(fGlobalStore[--fGlobalStorePos])).intValue();
+        i = ((Integer)(fGlobalStore[--fGlobalStorePos]));
         fDerivedBy = (short)(i >> 16);
         fFinal = (short)i;
         fTargetNamespace = (String)fGlobalStore[--fGlobalStorePos];
         fName = (String)fGlobalStore[--fGlobalStorePos];
-        fIsAbstract = ((Boolean)fGlobalStore[--fGlobalStorePos]).booleanValue();
+        fIsAbstract = ((Boolean)fGlobalStore[--fGlobalStorePos]);
         fComplexTypeDecl = (XSComplexTypeDecl)fGlobalStore[--fGlobalStorePos];
     }
 

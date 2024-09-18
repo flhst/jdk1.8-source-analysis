@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -221,7 +221,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
      */
     public String toString() {
         String actions = getActions();
-        if ((actions == null) || (actions.length() == 0)) { // OPTIONAL
+        if (actions == null || actions.isEmpty()) { // OPTIONAL
             return "(\"" + getClass().getName() + "\" \"" + name + "\")";
         } else {
             return "(\"" + getClass().getName() + "\" \"" + name +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -348,7 +348,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * supported by this KeyPairGenerator object.
      */
     public void initialize(int keysize) {
-        initialize(keysize, JCAUtil.getSecureRandom());
+        initialize(keysize, JCAUtil.getDefSecureRandom());
     }
 
     /**
@@ -408,7 +408,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      */
     public void initialize(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
-        initialize(params, JCAUtil.getSecureRandom());
+        initialize(params, JCAUtil.getDefSecureRandom());
     }
 
     /**

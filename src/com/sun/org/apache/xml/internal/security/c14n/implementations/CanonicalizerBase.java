@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -22,7 +22,6 @@
  */
 package com.sun.org.apache.xml.internal.security.c14n.implementations;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -34,35 +33,38 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizerSpi;
 import com.sun.org.apache.xml.internal.security.c14n.helper.AttrCompare;
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
-import com.sun.org.apache.xml.internal.security.utils.UnsyncByteArrayOutputStream;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
-import org.w3c.dom.Element;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.ProcessingInstruction;
-import org.xml.sax.SAXException;
 
 /**
  * Abstract base class for canonicalization algorithms.
- *
- * @author Christian Geuer-Pollmann <geuerp@apache.org>
+ * Please note that these implementations are NOT thread safe - please see the following JIRA for more information:
+ * https://issues.apache.org/jira/browse/SANTUARIO-463
  */
 public abstract class CanonicalizerBase extends CanonicalizerSpi {
     public static final String XML = "xml";
     public static final String XMLNS = "xmlns";
+    public static final String XMLNS_URI = Constants.NamespaceSpecNS;
+    public static final String XML_LANG_URI = Constants.XML_LANG_SPACE_SpecNS;
 
-    protected static final AttrCompare COMPARE = new AttrCompare();
+    protected static final AttrCompare COMPARE = new AttrCompare();     // thread-safe
+    protected static final int NODE_BEFORE_DOCUMENT_ELEMENT = -1;
+    protected static final int NODE_NOT_BEFORE_OR_AFTER_DOCUMENT_ELEMENT = 0;
+    protected static final int NODE_AFTER_DOCUMENT_ELEMENT = 1;
 
     // Make sure you clone the following mutable arrays before passing to
     // potentially untrusted objects such as OutputStreams.
@@ -80,21 +82,10 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
     private static final byte[] AMP = {'&','a','m','p',';'};
     private static final byte[] EQUALS_STR = {'=','\"'};
 
-    protected static final int NODE_BEFORE_DOCUMENT_ELEMENT = -1;
-    protected static final int NODE_NOT_BEFORE_OR_AFTER_DOCUMENT_ELEMENT = 0;
-    protected static final int NODE_AFTER_DOCUMENT_ELEMENT = 1;
-
+    private boolean includeComments;
     private List<NodeFilter> nodeFilter;
 
-    private boolean includeComments;
     private Set<Node> xpathNodeSet;
-
-    /**
-     * The node to be skipped/excluded from the DOM tree
-     * in subtree canonicalizations.
-     */
-    private Node excludeNode;
-    private OutputStream writer = new ByteArrayOutputStream();
 
     /**
      * The null xmlns definition.
@@ -106,77 +97,66 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      *
      * @param includeComments
      */
-    public CanonicalizerBase(boolean includeComments) {
+    protected CanonicalizerBase(boolean includeComments) {
         this.includeComments = includeComments;
     }
 
     /**
      * Method engineCanonicalizeSubTree
-     * @inheritDoc
+     * {@inheritDoc}
      * @param rootNode
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalizeSubTree(Node rootNode)
+    public void engineCanonicalizeSubTree(Node rootNode, OutputStream writer)
         throws CanonicalizationException {
-        return engineCanonicalizeSubTree(rootNode, (Node)null);
+        engineCanonicalizeSubTree(rootNode, (Node)null, writer);
     }
 
     /**
      * Method engineCanonicalizeXPathNodeSet
-     * @inheritDoc
+     * {@inheritDoc}
      * @param xpathNodeSet
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet)
+    public void engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, OutputStream writer)
         throws CanonicalizationException {
         this.xpathNodeSet = xpathNodeSet;
-        return engineCanonicalizeXPathNodeSetInternal(XMLUtils.getOwnerDocument(this.xpathNodeSet));
+        engineCanonicalizeXPathNodeSetInternal(XMLUtils.getOwnerDocument(this.xpathNodeSet), writer);
     }
 
     /**
      * Canonicalizes a Subtree node.
      * @param input the root of the subtree to canicalize
-     * @return The canonicalize stream.
+     * @param writer OutputStream to write the canonicalization result
+     * @param secureValidation Whether secure validation is enabled
+     *
      * @throws CanonicalizationException
      */
-    public byte[] engineCanonicalize(XMLSignatureInput input) throws CanonicalizationException {
+    public void engineCanonicalize(XMLSignatureInput input, OutputStream writer, boolean secureValidation) throws CanonicalizationException {
         try {
             if (input.isExcludeComments()) {
                 includeComments = false;
             }
             if (input.isOctetStream()) {
-                return engineCanonicalize(input.getBytes());
-            }
-            if (input.isElement()) {
-                return engineCanonicalizeSubTree(input.getSubNode(), input.getExcludeNode());
+                engineCanonicalize(input.getBytes(), writer, secureValidation);
+            } else if (input.isElement()) {
+                engineCanonicalizeSubTree(input.getSubNode(), input.getExcludeNode(), writer);
             } else if (input.isNodeSet()) {
                 nodeFilter = input.getNodeFilters();
 
                 circumventBugIfNeeded(input);
 
                 if (input.getSubNode() != null) {
-                    return engineCanonicalizeXPathNodeSetInternal(input.getSubNode());
+                    engineCanonicalizeXPathNodeSetInternal(input.getSubNode(), writer);
                 } else {
-                    return engineCanonicalizeXPathNodeSet(input.getNodeSet());
+                    engineCanonicalizeXPathNodeSet(input.getNodeSet(), writer);
                 }
             }
-            return null;
-        } catch (CanonicalizationException ex) {
-            throw new CanonicalizationException("empty", ex);
-        } catch (ParserConfigurationException ex) {
-            throw new CanonicalizationException("empty", ex);
-        } catch (IOException ex) {
-            throw new CanonicalizationException("empty", ex);
-        } catch (SAXException ex) {
-            throw new CanonicalizationException("empty", ex);
+        } catch (XMLParserException | IOException ex) {
+            throw new CanonicalizationException(ex);
         }
-    }
-
-    /**
-     * @param writer The writer to set.
-     */
-    public void setWriter(OutputStream writer) {
-        this.writer = writer;
     }
 
     /**
@@ -186,12 +166,11 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      *            the root of the subtree to canonicalize
      * @param excludeNode
      *            a node to be excluded from the canonicalize operation
-     * @return The canonicalize stream.
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    protected byte[] engineCanonicalizeSubTree(Node rootNode, Node excludeNode)
+    protected void engineCanonicalizeSubTree(Node rootNode, Node excludeNode, OutputStream writer)
         throws CanonicalizationException {
-        this.excludeNode = excludeNode;
         try {
             NameSpaceSymbTable ns = new NameSpaceSymbTable();
             int nodeLevel = NODE_BEFORE_DOCUMENT_ELEMENT;
@@ -200,33 +179,12 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                 getParentNameSpaces((Element)rootNode, ns);
                 nodeLevel = NODE_NOT_BEFORE_OR_AFTER_DOCUMENT_ELEMENT;
             }
-            this.canonicalizeSubTree(rootNode, ns, rootNode, nodeLevel);
-            this.writer.flush();
-            if (this.writer instanceof ByteArrayOutputStream) {
-                byte[] result = ((ByteArrayOutputStream)this.writer).toByteArray();
-                if (reset) {
-                    ((ByteArrayOutputStream)this.writer).reset();
-                } else {
-                    this.writer.close();
-                }
-                return result;
-            } else if (this.writer instanceof UnsyncByteArrayOutputStream) {
-                byte[] result = ((UnsyncByteArrayOutputStream)this.writer).toByteArray();
-                if (reset) {
-                    ((UnsyncByteArrayOutputStream)this.writer).reset();
-                } else {
-                    this.writer.close();
-                }
-                return result;
-            } else {
-                this.writer.close();
-            }
-            return null;
-
+            this.canonicalizeSubTree(rootNode, ns, rootNode, nodeLevel, excludeNode, writer);
+            writer.flush();
         } catch (UnsupportedEncodingException ex) {
-            throw new CanonicalizationException("empty", ex);
+            throw new CanonicalizationException(ex);
         } catch (IOException ex) {
-            throw new CanonicalizationException("empty", ex);
+            throw new CanonicalizationException(ex);
         }
     }
 
@@ -237,29 +195,31 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      * @param currentNode
      * @param ns
      * @param endnode
+     * @param documentLevel
+     * @param excludeNode
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      * @throws IOException
      */
-    protected final void canonicalizeSubTree(
-        Node currentNode, NameSpaceSymbTable ns, Node endnode, int documentLevel
+    private void canonicalizeSubTree(
+        Node currentNode, NameSpaceSymbTable ns, Node endnode, int documentLevel,
+        Node excludeNode, OutputStream writer
     ) throws CanonicalizationException, IOException {
-        if (isVisibleInt(currentNode) == -1) {
+        if (currentNode == null || isVisibleInt(currentNode) == -1) {
             return;
         }
         Node sibling = null;
         Node parentNode = null;
-        final OutputStream writer = this.writer;
-        final Node excludeNode = this.excludeNode;
-        final boolean includeComments = this.includeComments;
-        Map<String, byte[]> cache = new HashMap<String, byte[]>();
-        do {
+        Map<String, byte[]> cache = new HashMap<>();
+        do {    //NOPMD
             switch (currentNode.getNodeType()) {
 
             case Node.ENTITY_NODE :
             case Node.NOTATION_NODE :
             case Node.ATTRIBUTE_NODE :
                 // illegal node type during traversal
-                throw new CanonicalizationException("empty");
+                throw new CanonicalizationException("empty",
+                                                    new Object[]{"illegal node type during traversal"});
 
             case Node.DOCUMENT_FRAGMENT_NODE :
             case Node.DOCUMENT_NODE :
@@ -294,14 +254,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                 String name = currentElement.getTagName();
                 UtfHelpper.writeByte(name, writer, cache);
 
-                Iterator<Attr> attrs = this.handleAttributesSubtree(currentElement, ns);
-                if (attrs != null) {
-                    //we output all Attrs which are available
-                    while (attrs.hasNext()) {
-                        Attr attr = attrs.next();
-                        outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
-                    }
-                }
+                outputAttributesSubtree(currentElement, ns, cache, writer);
+
                 writer.write('>');
                 sibling = currentNode.getFirstChild();
                 if (sibling == null) {
@@ -347,35 +301,13 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
     }
 
 
-    private byte[] engineCanonicalizeXPathNodeSetInternal(Node doc)
+    private void engineCanonicalizeXPathNodeSetInternal(Node doc, OutputStream writer)
         throws CanonicalizationException {
         try {
-            this.canonicalizeXPathNodeSet(doc, doc);
-            this.writer.flush();
-            if (this.writer instanceof ByteArrayOutputStream) {
-                byte[] sol = ((ByteArrayOutputStream)this.writer).toByteArray();
-                if (reset) {
-                    ((ByteArrayOutputStream)this.writer).reset();
-                } else {
-                    this.writer.close();
-                }
-                return sol;
-            } else if (this.writer instanceof UnsyncByteArrayOutputStream) {
-                byte[] result = ((UnsyncByteArrayOutputStream)this.writer).toByteArray();
-                if (reset) {
-                    ((UnsyncByteArrayOutputStream)this.writer).reset();
-                } else {
-                    this.writer.close();
-                }
-                return result;
-            } else {
-                this.writer.close();
-            }
-            return null;
-        } catch (UnsupportedEncodingException ex) {
-            throw new CanonicalizationException("empty", ex);
+            this.canonicalizeXPathNodeSet(doc, doc, writer);
+            writer.flush();
         } catch (IOException ex) {
-            throw new CanonicalizationException("empty", ex);
+            throw new CanonicalizationException(ex);
         }
     }
 
@@ -385,10 +317,11 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      *
      * @param currentNode
      * @param endnode
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      * @throws IOException
      */
-    protected final void canonicalizeXPathNodeSet(Node currentNode, Node endnode)
+    private void canonicalizeXPathNodeSet(Node currentNode, Node endnode, OutputStream writer)
         throws CanonicalizationException, IOException {
         if (isVisibleInt(currentNode) == -1) {
             return;
@@ -403,17 +336,17 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         }
         Node sibling = null;
         Node parentNode = null;
-        OutputStream writer = this.writer;
         int documentLevel = NODE_BEFORE_DOCUMENT_ELEMENT;
-        Map<String, byte[]> cache = new HashMap<String, byte[]>();
-        do {
+        Map<String, byte[]> cache = new HashMap<>();
+        do {    //NOPMD
             switch (currentNode.getNodeType()) {
 
             case Node.ENTITY_NODE :
             case Node.NOTATION_NODE :
             case Node.ATTRIBUTE_NODE :
                 // illegal node type during traversal
-                throw new CanonicalizationException("empty");
+                throw new CanonicalizationException("empty",
+                                                    new Object[]{"illegal node type during traversal"});
 
             case Node.DOCUMENT_FRAGMENT_NODE :
             case Node.DOCUMENT_NODE :
@@ -422,7 +355,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                 break;
 
             case Node.COMMENT_NODE :
-                if (this.includeComments && (isVisibleDO(currentNode, ns.getLevel()) == 1)) {
+                if (includeComments && isVisibleDO(currentNode, ns.getLevel()) == 1) {
                     outputCommentToWriter((Comment) currentNode, writer, documentLevel);
                 }
                 break;
@@ -438,8 +371,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                 if (isVisible(currentNode)) {
                     outputTextToWriter(currentNode.getNodeValue(), writer);
                     for (Node nextSibling = currentNode.getNextSibling();
-                        (nextSibling != null) && ((nextSibling.getNodeType() == Node.TEXT_NODE)
-                            || (nextSibling.getNodeType() == Node.CDATA_SECTION_NODE));
+                        nextSibling != null && (nextSibling.getNodeType() == Node.TEXT_NODE
+                            || nextSibling.getNodeType() == Node.CDATA_SECTION_NODE);
                         nextSibling = nextSibling.getNextSibling()) {
                         outputTextToWriter(nextSibling.getNodeValue(), writer);
                         currentNode = nextSibling;
@@ -458,7 +391,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                     sibling = currentNode.getNextSibling();
                     break;
                 }
-                currentNodeIsVisible = (i == 1);
+                currentNodeIsVisible = i == 1;
                 if (currentNodeIsVisible) {
                     ns.outputNodePush();
                     writer.write('<');
@@ -468,14 +401,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                     ns.push();
                 }
 
-                Iterator<Attr> attrs = handleAttributes(currentElement,ns);
-                if (attrs != null) {
-                    //we output all Attrs which are available
-                    while (attrs.hasNext()) {
-                        Attr attr = attrs.next();
-                        outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
-                    }
-                }
+                outputAttributes(currentElement, ns, cache, writer);
+
                 if (currentNodeIsVisible) {
                     writer.write('>');
                 }
@@ -535,13 +462,13 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         if (nodeFilter != null) {
             Iterator<NodeFilter> it = nodeFilter.iterator();
             while (it.hasNext()) {
-                int i = (it.next()).isNodeIncludeDO(currentNode, level);
+                int i = it.next().isNodeIncludeDO(currentNode, level);
                 if (i != 1) {
                     return i;
                 }
             }
         }
-        if ((this.xpathNodeSet != null) && !this.xpathNodeSet.contains(currentNode)) {
+        if (this.xpathNodeSet != null && !this.xpathNodeSet.contains(currentNode)) {
             return 0;
         }
         return 1;
@@ -551,13 +478,13 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         if (nodeFilter != null) {
             Iterator<NodeFilter> it = nodeFilter.iterator();
             while (it.hasNext()) {
-                int i = (it.next()).isNodeInclude(currentNode);
+                int i = it.next().isNodeInclude(currentNode);
                 if (i != 1) {
                     return i;
                 }
             }
         }
-        if ((this.xpathNodeSet != null) && !this.xpathNodeSet.contains(currentNode)) {
+        if (this.xpathNodeSet != null && !this.xpathNodeSet.contains(currentNode)) {
             return 0;
         }
         return 1;
@@ -572,10 +499,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                 }
             }
         }
-        if ((this.xpathNodeSet != null) && !this.xpathNodeSet.contains(currentNode)) {
-            return false;
-        }
-        return true;
+
+        return this.xpathNodeSet == null || this.xpathNodeSet.contains(currentNode);
     }
 
     protected void handleParent(Element e, NameSpaceSymbTable ns) {
@@ -598,7 +523,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
             String NName = e.getPrefix();
             String NValue = e.getNamespaceURI();
             String Name;
-            if (NName == null || NName.equals("")) {
+            if (NName == null || NName.isEmpty()) {
                 NName = XMLNS;
                 Name = XMLNS;
             } else {
@@ -615,13 +540,13 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      * @param el
      * @param ns
      */
-    protected final void getParentNameSpaces(Element el, NameSpaceSymbTable ns)  {
+    private void getParentNameSpaces(Element el, NameSpaceSymbTable ns)  {
         Node n1 = el.getParentNode();
         if (n1 == null || Node.ELEMENT_NODE != n1.getNodeType()) {
             return;
         }
         //Obtain all the parents of the element
-        List<Element> parents = new ArrayList<Element>();
+        List<Element> parents = new ArrayList<>();
         Node parent = n1;
         while (parent != null && Node.ELEMENT_NODE == parent.getNodeType()) {
             parents.add((Element)parent);
@@ -634,51 +559,54 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
             handleParent(ele, ns);
         }
         parents.clear();
-        Attr nsprefix;
-        if (((nsprefix = ns.getMappingWithoutRendered(XMLNS)) != null)
-                && "".equals(nsprefix.getValue())) {
+        Attr nsprefix = ns.getMappingWithoutRendered(XMLNS);
+        if (nsprefix != null && nsprefix.getValue().length() == 0) {
             ns.addMappingAndRender(
                     XMLNS, "", getNullNode(nsprefix.getOwnerDocument()));
         }
     }
 
     /**
-     * Obtain the attributes to output for this node in XPathNodeSet c14n.
+     * Output the attributes for this node in XPathNodeSet c14n.
      *
      * @param element
      * @param ns
-     * @return the attributes nodes to output.
-     * @throws CanonicalizationException
+     * @param cache
+     * @param writer OutputStream to write the canonicalization result
+     * @throws CanonicalizationException, DOMException, IOException
      */
-    abstract Iterator<Attr> handleAttributes(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException;
+    abstract void outputAttributes(Element element, NameSpaceSymbTable ns,
+                                   Map<String, byte[]> cache, OutputStream writer)
+        throws CanonicalizationException, DOMException, IOException;
 
     /**
-     * Obtain the attributes to output for this node in a Subtree c14n.
+     * Output the attributes for this node in a Subtree c14n.
      *
      * @param element
      * @param ns
-     * @return the attributes nodes to output.
-     * @throws CanonicalizationException
+     * @param cache
+     * @param writer OutputStream to write the canonicalization result
+     * @throws CanonicalizationException, DOMException, IOException
      */
-    abstract Iterator<Attr> handleAttributesSubtree(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException;
+    abstract void outputAttributesSubtree(Element element, NameSpaceSymbTable ns,
+                                          Map<String, byte[]> cache, OutputStream writer)
+        throws CanonicalizationException, DOMException, IOException;
 
     abstract void circumventBugIfNeeded(XMLSignatureInput input)
-        throws CanonicalizationException, ParserConfigurationException, IOException, SAXException;
+        throws XMLParserException, IOException;
 
     /**
      * Outputs an Attribute to the internal Writer.
      *
      * The string value of the node is modified by replacing
      * <UL>
-     * <LI>all ampersands (&) with <CODE>&amp;amp;</CODE></LI>
-     * <LI>all open angle brackets (<) with <CODE>&amp;lt;</CODE></LI>
-     * <LI>all quotation mark characters with <CODE>&amp;quot;</CODE></LI>
-     * <LI>and the whitespace characters <CODE>#x9</CODE>, #xA, and #xD, with character
+     * <LI>all ampersands with {@code &amp;amp;}</LI>
+     * <LI>all open angle brackets with {@code &amp;lt;}</LI>
+     * <LI>all quotation mark characters with {@code &amp;quot;}</LI>
+     * <LI>and the whitespace characters {@code #x9}, #xA, and #xD, with character
      * references. The character references are written in uppercase
-     * hexadecimal with no leading zeroes (for example, <CODE>#xD</CODE> is represented
-     * by the character reference <CODE>&amp;#xD;</CODE>)</LI>
+     * hexadecimal with no leading zeroes (for example, {@code #xD} is represented
+     * by the character reference {@code &amp;#xD;})</LI>
      * </UL>
      *
      * @param name
@@ -697,7 +625,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         final int length = value.length();
         int i = 0;
         while (i < length) {
-            char c = value.charAt(i++);
+            int c = value.codePointAt(i);
+            i += Character.charCount(c);
 
             switch (c) {
 
@@ -729,7 +658,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                 if (c < 0x80) {
                     writer.write(c);
                 } else {
-                    UtfHelpper.writeCharToUtf8(c, writer);
+                    UtfHelpper.writeCodePointToUtf8(c, writer);
                 }
                 continue;
             }
@@ -757,15 +686,16 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         final String target = currentPI.getTarget();
         int length = target.length();
 
-        for (int i = 0; i < length; i++) {
-            char c = target.charAt(i);
+        for (int i = 0; i < length; ) {
+            int c = target.codePointAt(i);
+            i += Character.charCount(c);
             if (c == 0x0D) {
                 writer.write(XD.clone());
             } else {
                 if (c < 0x80) {
                     writer.write(c);
                 } else {
-                    UtfHelpper.writeCharToUtf8(c, writer);
+                    UtfHelpper.writeCodePointToUtf8(c, writer);
                 }
             }
         }
@@ -777,12 +707,13 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         if (length > 0) {
             writer.write(' ');
 
-            for (int i = 0; i < length; i++) {
-                char c = data.charAt(i);
+            for (int i = 0; i < length; ) {
+                int c = data.codePointAt(i);
+                i += Character.charCount(c);
                 if (c == 0x0D) {
                     writer.write(XD.clone());
                 } else {
-                    UtfHelpper.writeCharToUtf8(c, writer);
+                    UtfHelpper.writeCodePointToUtf8(c, writer);
                 }
             }
         }
@@ -811,15 +742,16 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         final String data = currentComment.getData();
         final int length = data.length();
 
-        for (int i = 0; i < length; i++) {
-            char c = data.charAt(i);
+        for (int i = 0; i < length; ) {
+            int c = data.codePointAt(i);
+            i += Character.charCount(c);
             if (c == 0x0D) {
                 writer.write(XD.clone());
             } else {
                 if (c < 0x80) {
                     writer.write(c);
                 } else {
-                    UtfHelpper.writeCharToUtf8(c, writer);
+                    UtfHelpper.writeCodePointToUtf8(c, writer);
                 }
             }
         }
@@ -837,13 +769,14 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      * @param writer writer where to write the things
      * @throws IOException
      */
-    protected static final void outputTextToWriter(
+    private static final void outputTextToWriter(
         final String text, final OutputStream writer
     ) throws IOException {
         final int length = text.length();
         byte[] toWrite;
-        for (int i = 0; i < length; i++) {
-            char c = text.charAt(i);
+        for (int i = 0; i < length; ) {
+            int c = text.codePointAt(i);
+            i += Character.charCount(c);
 
             switch (c) {
 
@@ -867,7 +800,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
                 if (c < 0x80) {
                     writer.write(c);
                 } else {
-                    UtfHelpper.writeCharToUtf8(c, writer);
+                    UtfHelpper.writeCodePointToUtf8(c, writer);
                 }
                 continue;
             }

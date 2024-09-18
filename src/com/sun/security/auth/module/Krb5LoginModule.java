@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -668,7 +668,11 @@ public class Krb5LoginModule implements LoginModule {
                     // check to renew credentials
                     if (!isCurrent(cred)) {
                         if (renewTGT) {
-                            cred = renewCredentials(cred);
+                            Credentials newCred = renewCredentials(cred);
+                            if (newCred != null) {
+                                newCred.setProxy(cred.getProxy());
+                                cred = newCred;
+                            }
                         } else {
                             // credentials have expired
                             cred = null;
@@ -680,10 +684,12 @@ public class Krb5LoginModule implements LoginModule {
                 }
 
                 if (cred != null) {
-                   // get the principal name from the ticket cache
-                   if (principal == null) {
-                        principal = cred.getClient();
-                   }
+                    // get the principal name from the ticket cache
+                    if (principal == null) {
+                        principal = cred.getProxy() != null
+                            ? cred.getProxy().getClient()
+                            : cred.getClient();
+                    }
                 }
                 if (debug) {
                     System.out.println("Principal is " + principal);
@@ -1074,6 +1080,10 @@ public class Krb5LoginModule implements LoginModule {
             // create Kerberos Ticket
             if (isInitiator) {
                 kerbTicket = Krb5Util.credsToTicket(cred);
+                if (cred.getProxy() != null) {
+                    KerberosSecrets.getJavaxSecurityAuthKerberosAccess()
+                            .kerberosTicketSetProxy(kerbTicket,Krb5Util.credsToTicket(cred.getProxy()));
+                }
             }
 
             if (storeKey && encKeys != null) {

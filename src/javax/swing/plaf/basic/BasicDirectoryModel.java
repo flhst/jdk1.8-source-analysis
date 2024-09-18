@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -25,13 +25,20 @@
 
 package javax.swing.plaf.basic;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.File;
-import java.util.*;
+import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.Callable;
-import javax.swing.*;
-import javax.swing.filechooser.*;
-import javax.swing.event.*;
-import java.beans.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.AbstractListModel;
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ListDataEvent;
+import javax.swing.filechooser.FileSystemView;
 
 import sun.awt.shell.ShellFolder;
 
@@ -42,13 +49,13 @@ import sun.awt.shell.ShellFolder;
  */
 public class BasicDirectoryModel extends AbstractListModel<Object> implements PropertyChangeListener {
 
-    private JFileChooser filechooser = null;
+    private final JFileChooser filechooser;
     // PENDING(jeff) pick the size more sensibly
-    private Vector<File> fileCache = new Vector<File>(50);
+    private final Vector<File> fileCache = new Vector<File>(50);
     private LoadFilesThread loadThread = null;
     private Vector<File> files = null;
     private Vector<File> directories = null;
-    private int fetchID = 0;
+    private final AtomicInteger fetchID = new AtomicInteger();
 
     private PropertyChangeSupport changeSupport;
 
@@ -135,9 +142,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             loadThread.cancelRunnables();
         }
 
-        setBusy(true, ++fetchID);
-
-        loadThread = new LoadFilesThread(currentDirectory, fetchID);
+        int fid = fetchID.incrementAndGet();
+        setBusy(true, fid);
+        loadThread = new LoadFilesThread(currentDirectory, fid);
         loadThread.start();
     }
 
@@ -213,15 +220,21 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     }
 
 
-    class LoadFilesThread extends Thread {
-        File currentDirectory = null;
-        int fid;
-        Vector<DoChangeContents> runnables = new Vector<DoChangeContents>(10);
+    private final class LoadFilesThread extends Thread {
+        private final FileSystemView fileSystemView;
+        private final boolean useFileHiding;
+        private final boolean fileSelectionEnabled;
+        private final int fid;
+        private final File currentDirectory;
+        private volatile DoChangeContents runnable;
 
-        public LoadFilesThread(File currentDirectory, int fid) {
+        private LoadFilesThread(File currentDirectory, int fid) {
             super("Basic L&F File Loading Thread");
             this.currentDirectory = currentDirectory;
             this.fid = fid;
+            fileSystemView = filechooser.getFileSystemView();
+            useFileHiding = filechooser.isFileHidingEnabled();
+            fileSelectionEnabled = filechooser.isFileSelectionEnabled();
         }
 
         public void run() {
@@ -229,14 +242,14 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             setBusy(false, fid);
         }
 
-        public void run0() {
-            FileSystemView fileSystem = filechooser.getFileSystemView();
+        private void run0() {
+            FileSystemView fileSystem = fileSystemView;
 
             if (isInterrupted()) {
                 return;
             }
 
-            File[] list = fileSystem.getFiles(currentDirectory, filechooser.isFileHidingEnabled());
+            File[] list = fileSystem.getFiles(currentDirectory, useFileHiding);
 
             if (isInterrupted()) {
                 return;
@@ -254,7 +267,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
                     if (isTraversable) {
                         newFileCache.addElement(file);
-                    } else if (filechooser.isFileSelectionEnabled()) {
+                    } else if (fileSelectionEnabled) {
                         newFiles.addElement(file);
                     }
 
@@ -272,7 +285,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
             // To avoid loads of synchronizations with Invoker and improve performance we
             // execute the whole block on the COM thread
-            DoChangeContents doChangeContents = ShellFolder.invoke(new Callable<DoChangeContents>() {
+            runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
                 public DoChangeContents call() {
                     int newSize = newFileCache.size();
                     int oldSize = fileCache.size();
@@ -321,7 +334,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                     }
                     if (!fileCache.equals(newFileCache)) {
                         if (isInterrupted()) {
-                            cancelRunnables(runnables);
+                            cancelRunnables();
                         }
                         return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
                     }
@@ -329,21 +342,15 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                 }
             });
 
-            if (doChangeContents != null) {
-                runnables.addElement(doChangeContents);
-                SwingUtilities.invokeLater(doChangeContents);
+            if (runnable != null && !isInterrupted()) {
+                SwingUtilities.invokeLater(runnable);
             }
         }
 
-
-        public void cancelRunnables(Vector<DoChangeContents> runnables) {
-            for (DoChangeContents runnable : runnables) {
+        private void cancelRunnables() {
+            if (runnable != null) {
                 runnable.cancel();
             }
-        }
-
-        public void cancelRunnables() {
-            cancelRunnables(runnables);
         }
    }
 
@@ -435,7 +442,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * thread in order to load the contents of a directory.
      */
     private synchronized void setBusy(final boolean busy, int fid) {
-        if (fid == fetchID) {
+        if (fid == fetchID.get()) {
             boolean oldValue = this.busy;
             this.busy = busy;
 
@@ -450,15 +457,16 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     }
 
 
-    class DoChangeContents implements Runnable {
-        private List<File> addFiles;
-        private List<File> remFiles;
+    private final class DoChangeContents implements Runnable {
+        private final List<File> addFiles;
+        private final List<File> remFiles;
         private boolean doFire = true;
-        private int fid;
+        private final int fid;
         private int addStart = 0;
         private int remStart = 0;
 
-        public DoChangeContents(List<File> addFiles, int addStart, List<File> remFiles, int remStart, int fid) {
+        DoChangeContents(List<File> addFiles, int addStart, List<File> remFiles,
+                         int remStart, int fid) {
             this.addFiles = addFiles;
             this.addStart = addStart;
             this.remFiles = remFiles;
@@ -467,11 +475,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
 
         synchronized void cancel() {
-                doFire = false;
+            doFire = false;
         }
 
         public synchronized void run() {
-            if (fetchID == fid && doFire) {
+            if (fetchID.get() == fid && doFire) {
                 int remSize = (remFiles == null) ? 0 : remFiles.size();
                 int addSize = (addFiles == null) ? 0 : addFiles.size();
                 synchronized(fileCache) {

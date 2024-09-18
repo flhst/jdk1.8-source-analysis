@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,18 +17,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: ExsltStrings.java,v 1.1.2.1 2005/08/01 02:08:48 jeffsuttor Exp $
- */
+
 package com.sun.org.apache.xalan.internal.lib;
 
 import java.util.StringTokenizer;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.FactoryConfigurationError;
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.sun.org.apache.xpath.internal.NodeSet;
+import jdk.xml.internal.JdkXmlUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -52,7 +46,6 @@ import org.w3c.dom.Text;
  */
 public class ExsltStrings extends ExsltBase
 {
-   static final String JDK_DEFAULT_DOM = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
 
   /**
    * The str:align function aligns a string within another string.
@@ -227,7 +220,7 @@ public class ExsltStrings extends ExsltBase
         token = str.substring(fromIndex);
       }
 
-      Document doc = getDocument();
+      Document doc = JdkXmlUtils.getDOMDocument();
       synchronized (doc)
       {
         Element element = doc.createElement("token");
@@ -291,7 +284,7 @@ public class ExsltStrings extends ExsltBase
     {
       StringTokenizer lTokenizer = new StringTokenizer(toTokenize, delims);
 
-      Document doc = getDocument();
+      Document doc = JdkXmlUtils.getDOMDocument();
       synchronized (doc)
       {
         while (lTokenizer.hasMoreTokens())
@@ -307,7 +300,7 @@ public class ExsltStrings extends ExsltBase
     else
     {
 
-      Document doc = getDocument();
+      Document doc = JdkXmlUtils.getDOMDocument();
       synchronized (doc)
       {
         for (int i = 0; i < toTokenize.length(); i++)
@@ -329,23 +322,4 @@ public class ExsltStrings extends ExsltBase
   {
     return tokenize(toTokenize, " \t\n\r");
   }
-
-    /**
-   * @return an instance of DOM Document
-     */
-   private static Document getDocument()
-   {
-        try
-        {
-            if (System.getSecurityManager() == null) {
-                return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-            } else {
-                return DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
-            }
-        }
-        catch(ParserConfigurationException pce)
-        {
-            throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
-        }
-    }
 }

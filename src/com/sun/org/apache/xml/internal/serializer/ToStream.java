@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -35,10 +37,16 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import jdk.xml.internal.JdkXmlUtils;
 
+import com.sun.org.apache.xml.internal.serializer.dom3.DOMConstants;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Set;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -51,16 +59,15 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
+ * @LastModified: Nov 2021
  */
-abstract public class ToStream extends SerializerBase
-{
+public abstract class ToStream extends SerializerBase {
 
     private static final String COMMENT_BEGIN = "<!--";
     private static final String COMMENT_END = "-->";
 
     /** Stack to keep track of disabling output escaping. */
     protected BoolStack m_disableOutputEscapingStates = new BoolStack();
-
 
     /**
      * The encoding information associated with this serializer.
@@ -81,20 +88,16 @@ abstract public class ToStream extends SerializerBase
      */
     java.lang.reflect.Method m_canConvertMeth;
 
-
-
     /**
      * Boolean that tells if we already tried to get the converter.
      */
     boolean m_triedToGetConverter = false;
-
 
     /**
      * Opaque reference to the sun.io.CharToByteConverter for this
      * encoding.
      */
     Object m_charToByteConverter = null;
-
 
     /**
      * Stack to keep track of whether or not we need to
@@ -132,7 +135,6 @@ abstract public class ToStream extends SerializerBase
      * to escaping.
      */
     protected int m_maxCharacter = Encodings.getLastPrintable();
-
 
     /**
      * The system line separator for writing out line breaks.
@@ -182,12 +184,9 @@ abstract public class ToStream extends SerializerBase
     protected boolean m_inDoctype = false;
 
     /**
-       * Flag to quickly tell if the encoding is UTF8.
-       */
+     * Flag to quickly tell if the encoding is UTF8.
+     */
     boolean m_isUTF8 = false;
-
-    /** The xsl:output properties. */
-    protected Properties m_format;
 
     /**
      * remembers if we are in between the startCDATA() and endCDATA() callbacks
@@ -200,29 +199,25 @@ abstract public class ToStream extends SerializerBase
      */
     private boolean m_expandDTDEntities = true;
 
+    private char m_highSurrogate = 0;
 
     /**
      * Default constructor
      */
-    public ToStream()
-    {
-    }
+    public ToStream() { }
 
     /**
      * This helper method to writes out "]]>" when closing a CDATA section.
      *
      * @throws org.xml.sax.SAXException
      */
-    protected void closeCDATA() throws org.xml.sax.SAXException
-    {
-        try
-        {
+    protected void closeCDATA() throws org.xml.sax.SAXException {
+        try {
             m_writer.write(CDATA_DELIMITER_CLOSE);
             // write out a CDATA section closing "]]>"
             m_cdataTagOpen = false; // Remember that we have done so.
         }
-        catch (IOException e)
-        {
+        catch (IOException e) {
             throw new SAXException(e);
         }
     }
@@ -234,18 +229,11 @@ abstract public class ToStream extends SerializerBase
      * @param node Node to serialize.
      * @throws IOException An I/O exception occured while serializing
      */
-    public void serialize(Node node) throws IOException
-    {
-
-        try
-        {
-            TreeWalker walker =
-                new TreeWalker(this);
-
+    public void serialize(Node node) throws IOException {
+        try {
+            TreeWalker walker = new TreeWalker(this);
             walker.traverse(node);
-        }
-        catch (org.xml.sax.SAXException se)
-        {
+        } catch (org.xml.sax.SAXException se) {
             throw new WrappedRuntimeException(se);
         }
     }
@@ -257,8 +245,7 @@ abstract public class ToStream extends SerializerBase
      *
      * NEEDSDOC ($objectName$) @return
      */
-    static final boolean isUTF16Surrogate(char c)
-    {
+    static final boolean isUTF16Surrogate(char c) {
         return (c & 0xFC00) == 0xD800;
     }
 
@@ -272,39 +259,32 @@ abstract public class ToStream extends SerializerBase
      *
      * @throws org.xml.sax.SAXException
      */
-    protected final void flushWriter() throws org.xml.sax.SAXException
-    {
-        final java.io.Writer writer = m_writer;
-        if (null != writer)
-        {
-            try
-            {
-                if (writer instanceof WriterToUTF8Buffered)
-                {
+    protected final void flushWriter() throws org.xml.sax.SAXException {
+        final Writer writer = m_writer;
+        if (null != writer) {
+            try {
+                if (writer instanceof WriterToUTF8Buffered) {
                     if (m_shouldFlush)
-                         ((WriterToUTF8Buffered) writer).flush();
+                        ((WriterToUTF8Buffered)writer).flush();
                     else
-                         ((WriterToUTF8Buffered) writer).flushBuffer();
+                        ((WriterToUTF8Buffered)writer).flushBuffer();
                 }
-                if (writer instanceof WriterToASCI)
-                {
+                if (writer instanceof WriterToASCI) {
                     if (m_shouldFlush)
                         writer.flush();
-                }
-                else
-                {
+                } else {
                     // Flush always.
                     // Not a great thing if the writer was created
                     // by this class, but don't have a choice.
                     writer.flush();
                 }
-            }
-            catch (IOException ioe)
-            {
+            } catch (IOException ioe) {
                 throw new org.xml.sax.SAXException(ioe);
             }
         }
     }
+
+    OutputStream m_outputStream;
 
     /**
      * Get the output stream where the events will be serialized to.
@@ -312,15 +292,8 @@ abstract public class ToStream extends SerializerBase
      * @return reference to the result stream, or null of only a writer was
      * set.
      */
-    public OutputStream getOutputStream()
-    {
-
-        if (m_writer instanceof WriterToUTF8Buffered)
-            return ((WriterToUTF8Buffered) m_writer).getOutputStream();
-        if (m_writer instanceof WriterToASCI)
-            return ((WriterToASCI) m_writer).getOutputStream();
-        else
-            return null;
+    public OutputStream getOutputStream() {
+        return m_outputStream;
     }
 
     // Implement DeclHandler
@@ -343,9 +316,8 @@ abstract public class ToStream extends SerializerBase
         // Do not inline external DTD
         if (m_inExternalDTD)
             return;
-        try
-        {
-            final java.io.Writer writer = m_writer;
+        try {
+            final Writer writer = m_writer;
             DTDprolog();
 
             writer.write("<!ELEMENT ");
@@ -381,13 +353,10 @@ abstract public class ToStream extends SerializerBase
         // Do not inline external DTD
         if (m_inExternalDTD)
             return;
-        try
-        {
+        try {
             DTDprolog();
             outputEntityDecl(name, value);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new SAXException(e);
         }
 
@@ -403,7 +372,7 @@ abstract public class ToStream extends SerializerBase
      */
     void outputEntityDecl(String name, String value) throws IOException
     {
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
         writer.write("<!ENTITY ");
         writer.write(name);
         writer.write(" \"");
@@ -417,10 +386,175 @@ abstract public class ToStream extends SerializerBase
      *
      * @throws org.xml.sax.SAXException
      */
-    protected final void outputLineSep() throws IOException
-    {
-
+    protected final void outputLineSep() throws IOException {
         m_writer.write(m_lineSep, 0, m_lineSepLen);
+    }
+
+    void setProp(String name, String val, boolean defaultVal) {
+        if (val != null) {
+
+            char first = getFirstCharLocName(name);
+            switch (first) {
+            case 'c':
+                if (OutputKeys.CDATA_SECTION_ELEMENTS.equals(name)) {
+                    addCdataSectionElements(val); // val is cdataSectionNames
+                }
+                break;
+            case 'd':
+                if (OutputKeys.DOCTYPE_SYSTEM.equals(name)) {
+                    this.m_doctypeSystem = val;
+                } else if (OutputKeys.DOCTYPE_PUBLIC.equals(name)) {
+                    this.m_doctypePublic = val;
+                    if (val.startsWith("-//W3C//DTD XHTML"))
+                        m_spaceBeforeClose = true;
+                }
+                break;
+            case 'e':
+                String newEncoding = val;
+                if (OutputKeys.ENCODING.equals(name)) {
+                    String possible_encoding = Encodings.getMimeEncoding(val);
+                    if (possible_encoding != null) {
+                        // if the encoding is being set, try to get the
+                        // preferred
+                        // mime-name and set it too.
+                        super.setProp("mime-name", possible_encoding,
+                                defaultVal);
+                    }
+                    final String oldExplicitEncoding = getOutputPropertyNonDefault(OutputKeys.ENCODING);
+                    final String oldDefaultEncoding  = getOutputPropertyDefault(OutputKeys.ENCODING);
+                    if ( (defaultVal && ( oldDefaultEncoding == null || !oldDefaultEncoding.equalsIgnoreCase(newEncoding)))
+                            || ( !defaultVal && (oldExplicitEncoding == null || !oldExplicitEncoding.equalsIgnoreCase(newEncoding) ))) {
+                       // We are trying to change the default or the non-default setting of the encoding to a different value
+                       // from what it was
+
+                       EncodingInfo encodingInfo = Encodings.getEncodingInfo(newEncoding);
+                       if (newEncoding != null && encodingInfo.name == null) {
+                        // We tried to get an EncodingInfo for Object for the given
+                        // encoding, but it came back with an internall null name
+                        // so the encoding is not supported by the JDK, issue a message.
+                        final String msg = Utils.messages.createMessage(
+                                MsgKey.ER_ENCODING_NOT_SUPPORTED,new Object[]{ newEncoding });
+
+                        final String msg2 =
+                            "Warning: encoding \"" + newEncoding + "\" not supported, using "
+                                   + Encodings.DEFAULT_MIME_ENCODING;
+                        try {
+                                // Prepare to issue the warning message
+                                final Transformer tran = super.getTransformer();
+                                if (tran != null) {
+                                    final ErrorListener errHandler = tran
+                                            .getErrorListener();
+                                    // Issue the warning message
+                                    if (null != errHandler
+                                            && m_sourceLocator != null) {
+                                        errHandler
+                                                .warning(new TransformerException(
+                                                        msg, m_sourceLocator));
+                                        errHandler
+                                                .warning(new TransformerException(
+                                                        msg2, m_sourceLocator));
+                                    } else {
+                                        System.out.println(msg);
+                                        System.out.println(msg2);
+                                    }
+                                } else {
+                                    System.out.println(msg);
+                                    System.out.println(msg2);
+                                }
+                            } catch (Exception e) {
+                            }
+
+                            // We said we are using UTF-8, so use it
+                            newEncoding = Encodings.DEFAULT_MIME_ENCODING;
+                            val = Encodings.DEFAULT_MIME_ENCODING; // to store the modified value into the properties a little later
+                            encodingInfo = Encodings.getEncodingInfo(newEncoding);
+                        }
+                       // The encoding was good, or was forced to UTF-8 above
+
+
+                       // If there is already a non-default set encoding and we
+                       // are trying to set the default encoding, skip the this block
+                       // as the non-default value is already the one to use.
+                       if (defaultVal == false || oldExplicitEncoding == null) {
+                           m_encodingInfo = encodingInfo;
+                           if (newEncoding != null)
+                               m_isUTF8 = newEncoding.equals(Encodings.DEFAULT_MIME_ENCODING);
+
+                           // if there was a previously set OutputStream
+                           OutputStream os = getOutputStream();
+                           if (os != null) {
+                               Writer w = getWriter();
+
+                               // If the writer was previously set, but
+                               // set by the user, or if the new encoding is the same
+                               // as the old encoding, skip this block
+                               String oldEncoding = getOutputProperty(OutputKeys.ENCODING);
+                               if ((w == null || !m_writer_set_by_user)
+                                       && !newEncoding.equalsIgnoreCase(oldEncoding)) {
+                                   // Make the change of encoding in our internal
+                                   // table, then call setOutputStreamInternal
+                                   // which will stomp on the old Writer (if any)
+                                   // with a new Writer with the new encoding.
+                                   super.setProp(name, val, defaultVal);
+                                   setOutputStreamInternal(os,false);
+                               }
+                           }
+                       }
+                    }
+                }
+                break;
+            case 'i':
+                if (OutputPropertiesFactory.S_KEY_INDENT_AMOUNT.equals(name)) {
+                    setIndentAmount(Integer.parseInt(val));
+                } else if (OutputKeys.INDENT.equals(name)) {
+                    m_doIndent = val.endsWith("yes");
+                } else if ((DOMConstants.S_JDK_PROPERTIES_NS + DOMConstants.S_IS_STANDALONE)
+                        .equals(name)) {
+                    m_isStandalone = val.endsWith("yes");
+                }
+
+                break;
+            case 'l':
+                if (OutputPropertiesFactory.S_KEY_LINE_SEPARATOR.equals(name)) {
+                    m_lineSep = val.toCharArray();
+                    m_lineSepLen = m_lineSep.length;
+                }
+
+                break;
+            case 'm':
+                if (OutputKeys.MEDIA_TYPE.equals(name)) {
+                    m_mediatype = val;
+                }
+                break;
+            case 'o':
+                if (OutputKeys.OMIT_XML_DECLARATION.equals(name)) {
+                    boolean b = val.endsWith("yes") ? true : false;
+                    this.m_shouldNotWriteXMLHeader = b;
+                }
+                break;
+            case 's':
+                // if standalone was explicitly specified
+                if (OutputKeys.STANDALONE.equals(name)) {
+                    if (defaultVal) {
+                        setStandaloneInternal(val);
+                    } else {
+                        m_standaloneWasSpecified = true;
+                        setStandaloneInternal(val);
+                    }
+                }
+
+                break;
+            case 'v':
+                if (OutputKeys.VERSION.equals(name)) {
+                    m_version = val;
+                }
+                break;
+            default:
+                break;
+
+            }
+            super.setProp(name, val, defaultVal);
+        }
     }
 
     /**
@@ -432,232 +566,45 @@ abstract public class ToStream extends SerializerBase
      *
      * @param format The output format to use
      */
-    public void setOutputFormat(Properties format)
-    {
-
+    public void setOutputFormat(Properties format) {
         boolean shouldFlush = m_shouldFlush;
 
-        init(m_writer, format, false, false);
-
-        m_shouldFlush = shouldFlush;
-    }
-
-    /**
-     * Initialize the serializer with the specified writer and output format.
-     * Must be called before calling any of the serialize methods.
-     * This method can be called multiple times and the xsl:output properties
-     * passed in the 'format' parameter are accumulated across calls.
-     *
-     * @param writer The writer to use
-     * @param format The output format
-     * @param shouldFlush True if the writer should be flushed at EndDocument.
-     */
-    private synchronized void init(
-        Writer writer,
-        Properties format,
-        boolean defaultProperties,
-        boolean shouldFlush)
-    {
-
-        m_shouldFlush = shouldFlush;
-
-
-        // if we are tracing events we need to trace what
-        // characters are written to the output writer.
-        if (m_tracer != null
-         && !(writer instanceof SerializerTraceWriter)  )
-            m_writer = new SerializerTraceWriter(writer, m_tracer);
-        else
-            m_writer = writer;
-
-
-        m_format = format;
-        //        m_cdataSectionNames =
-        //            OutputProperties.getQNameProperties(
-        //                OutputKeys.CDATA_SECTION_ELEMENTS,
-        //                format);
-        setCdataSectionElements(OutputKeys.CDATA_SECTION_ELEMENTS, format);
-
-        setIndentAmount(
-            OutputPropertyUtils.getIntProperty(
-                OutputPropertiesFactory.S_KEY_INDENT_AMOUNT,
-                format));
-        setIndent(
-            OutputPropertyUtils.getBooleanProperty(OutputKeys.INDENT, format));
-
+        if (format != null)
         {
-            String sep =
-                    format.getProperty(OutputPropertiesFactory.S_KEY_LINE_SEPARATOR);
-            if (sep != null) {
-                m_lineSep = sep.toCharArray();
-                m_lineSepLen = sep.length();
+            // Set the default values first,
+            // and the non-default values after that,
+            // just in case there is some unexpected
+            // residual values left over from over-ridden default values
+            Enumeration propNames;
+            propNames = format.propertyNames();
+            while (propNames.hasMoreElements()) {
+                String key = (String) propNames.nextElement();
+                // Get the value, possibly a default value
+                String value = format.getProperty(key);
+                // Get the non-default value (if any).
+                String explicitValue = (String) format.get(key);
+                if (explicitValue == null && value != null) {
+                    // This is a default value
+                    this.setOutputPropertyDefault(key,value);
+                }
+                if (explicitValue != null) {
+                    // This is an explicit non-default value
+                    this.setOutputProperty(key,explicitValue);
+                }
             }
         }
-
-        boolean shouldNotWriteXMLHeader =
-            OutputPropertyUtils.getBooleanProperty(
-                OutputKeys.OMIT_XML_DECLARATION,
-                format);
-        setOmitXMLDeclaration(shouldNotWriteXMLHeader);
-        setDoctypeSystem(format.getProperty(OutputKeys.DOCTYPE_SYSTEM));
-        String doctypePublic = format.getProperty(OutputKeys.DOCTYPE_PUBLIC);
-        setDoctypePublic(doctypePublic);
-
-        // if standalone was explicitly specified
-        if (format.get(OutputKeys.STANDALONE) != null)
-        {
-            String val = format.getProperty(OutputKeys.STANDALONE);
-            if (defaultProperties)
-                setStandaloneInternal(val);
-            else
-                setStandalone(val);
-        }
-
-        setMediaType(format.getProperty(OutputKeys.MEDIA_TYPE));
-
-        if (null != doctypePublic)
-        {
-            if (doctypePublic.startsWith("-//W3C//DTD XHTML"))
-                m_spaceBeforeClose = true;
-        }
-
-        /*
-         * This code is added for XML 1.1 Version output.
-         */
-        String version = getVersion();
-        if (null == version)
-        {
-            version = format.getProperty(OutputKeys.VERSION);
-            setVersion(version);
-        }
-
-        // initCharsMap();
-        String encoding = getEncoding();
-        if (null == encoding)
-        {
-            encoding =
-                Encodings.getMimeEncoding(
-                    format.getProperty(OutputKeys.ENCODING));
-            setEncoding(encoding);
-        }
-
-        m_isUTF8 = encoding.equals(Encodings.DEFAULT_MIME_ENCODING);
 
         // Access this only from the Hashtable level... we don't want to
         // get default properties.
         String entitiesFileName =
             (String) format.get(OutputPropertiesFactory.S_KEY_ENTITIES);
 
-        if (null != entitiesFileName)
-        {
-
-            String method =
-                (String) format.get(OutputKeys.METHOD);
-
+        if (null != entitiesFileName) {
+            String method = (String) format.get(OutputKeys.METHOD);
             m_charInfo = CharInfo.getCharInfo(entitiesFileName, method);
         }
 
-    }
-
-    /**
-     * Initialize the serializer with the specified writer and output format.
-     * Must be called before calling any of the serialize methods.
-     *
-     * @param writer The writer to use
-     * @param format The output format
-     */
-    private synchronized void init(Writer writer, Properties format)
-    {
-        init(writer, format, false, false);
-    }
-    /**
-     * Initialize the serializer with the specified output stream and output
-     * format. Must be called before calling any of the serialize methods.
-     *
-     * @param output The output stream to use
-     * @param format The output format
-     * @param defaultProperties true if the properties are the default
-     * properties
-     *
-     * @throws UnsupportedEncodingException The encoding specified   in the
-     * output format is not supported
-     */
-    protected synchronized void init(
-        OutputStream output,
-        Properties format,
-        boolean defaultProperties)
-        throws UnsupportedEncodingException
-    {
-
-        String encoding = getEncoding();
-        if (encoding == null)
-        {
-            // if not already set then get it from the properties
-            encoding =
-                Encodings.getMimeEncoding(
-                    format.getProperty(OutputKeys.ENCODING));
-            setEncoding(encoding);
-        }
-
-        if (encoding.equalsIgnoreCase("UTF-8"))
-        {
-            m_isUTF8 = true;
-            //            if (output instanceof java.io.BufferedOutputStream)
-            //            {
-            //                init(new WriterToUTF8(output), format, defaultProperties, true);
-            //            }
-            //            else if (output instanceof java.io.FileOutputStream)
-            //            {
-            //                init(new WriterToUTF8Buffered(output), format, defaultProperties, true);
-            //            }
-            //            else
-            //            {
-            //                // Not sure what to do in this case.  I'm going to be conservative
-            //                // and not buffer.
-            //                init(new WriterToUTF8(output), format, defaultProperties, true);
-            //            }
-
-
-                init(
-                    new WriterToUTF8Buffered(output),
-                    format,
-                    defaultProperties,
-                    true);
-
-
-        }
-        else if (
-            encoding.equals("WINDOWS-1250")
-                || encoding.equals("US-ASCII")
-                || encoding.equals("ASCII"))
-        {
-            init(new WriterToASCI(output), format, defaultProperties, true);
-        }
-        else
-        {
-            Writer osw;
-
-            try
-            {
-                osw = Encodings.getWriter(output, encoding);
-            }
-            catch (UnsupportedEncodingException uee)
-            {
-                System.out.println(
-                    "Warning: encoding \""
-                        + encoding
-                        + "\" not supported"
-                        + ", using "
-                        + Encodings.DEFAULT_MIME_ENCODING);
-
-                encoding = Encodings.DEFAULT_MIME_ENCODING;
-                setEncoding(encoding);
-                osw = Encodings.getWriter(output, encoding);
-            }
-
-            init(osw, format, defaultProperties, true);
-        }
-
+        m_shouldFlush = shouldFlush;
     }
 
     /**
@@ -665,9 +612,26 @@ abstract public class ToStream extends SerializerBase
      *
      * @return The output format in use
      */
-    public Properties getOutputFormat()
-    {
-        return m_format;
+    public Properties getOutputFormat() {
+        Properties def = new Properties();
+        {
+            Set<String> s = getOutputPropDefaultKeys();
+            for (String key : s) {
+                String val = getOutputPropertyDefault(key);
+                def.put(key, val);
+            }
+        }
+
+        Properties props = new Properties(def);
+        {
+            Set<String> s = getOutputPropKeys();
+            for (String key : s) {
+                String val = getOutputPropertyNonDefault(key);
+                if (val != null)
+                    props.put(key, val);
+            }
+        }
+        return props;
     }
 
     /**
@@ -677,15 +641,29 @@ abstract public class ToStream extends SerializerBase
      *
      * @param writer The output writer stream
      */
-    public void setWriter(Writer writer)
-    {
+    public void setWriter(Writer writer) {
+        setWriterInternal(writer, true);
+    }
+
+    private boolean m_writer_set_by_user;
+    private void setWriterInternal(Writer writer, boolean setByUser) {
+        m_writer_set_by_user = setByUser;
+        m_writer = writer;
         // if we are tracing events we need to trace what
         // characters are written to the output writer.
-        if (m_tracer != null
-         && !(writer instanceof SerializerTraceWriter)  )
-            m_writer = new SerializerTraceWriter(writer, m_tracer);
-        else
-            m_writer = writer;
+        if (m_tracer != null) {
+            boolean noTracerYet = true;
+            Writer w2 = m_writer;
+            while (w2 instanceof WriterChain) {
+                if (w2 instanceof SerializerTraceWriter) {
+                    noTracerYet = false;
+                    break;
+                }
+                w2 = ((WriterChain)w2).getWriter();
+            }
+            if (noTracerYet)
+                m_writer = new SerializerTraceWriter(m_writer, m_tracer);
+        }
     }
 
     /**
@@ -700,8 +678,7 @@ abstract public class ToStream extends SerializerBase
      * operating systems end-of-line separator.
      * @return The previously set value of the serializer.
      */
-    public boolean setLineSepUse(boolean use_sytem_line_break)
-    {
+    public boolean setLineSepUse(boolean use_sytem_line_break) {
         boolean oldValue = m_lineSepUse;
         m_lineSepUse = use_sytem_line_break;
         return oldValue;
@@ -718,26 +695,68 @@ abstract public class ToStream extends SerializerBase
      *
      * @param output The output stream
      */
-    public void setOutputStream(OutputStream output)
+    public void setOutputStream(OutputStream output) {
+        setOutputStreamInternal(output, true);
+    }
+
+    private void setOutputStreamInternal(OutputStream output, boolean setByUser)
     {
-
-        try
+        m_outputStream = output;
+        String encoding = getOutputProperty(OutputKeys.ENCODING);
+        if (Encodings.DEFAULT_MIME_ENCODING.equalsIgnoreCase(encoding))
         {
-            Properties format;
-            if (null == m_format)
-                format =
-                    OutputPropertiesFactory.getDefaultMethodProperties(
-                        Method.XML);
-            else
-                format = m_format;
-            init(output, format, true);
+            // We wrap the OutputStream with a writer, but
+            // not one set by the user
+            try {
+                setWriterInternal(new WriterToUTF8Buffered(output), false);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        } else if (
+                "WINDOWS-1250".equals(encoding)
+                || "US-ASCII".equals(encoding)
+                || "ASCII".equals(encoding))
+        {
+            setWriterInternal(new WriterToASCI(output), false);
+        } else if (encoding != null) {
+            Writer osw = null;
+                try
+                {
+                    osw = Encodings.getWriter(output, encoding);
+                }
+                catch (UnsupportedEncodingException uee)
+                {
+                    osw = null;
+                }
+
+
+            if (osw == null) {
+                System.out.println(
+                    "Warning: encoding \""
+                        + encoding
+                        + "\" not supported"
+                        + ", using "
+                        + Encodings.DEFAULT_MIME_ENCODING);
+
+                encoding = Encodings.DEFAULT_MIME_ENCODING;
+                setEncoding(encoding);
+                try {
+                    osw = Encodings.getWriter(output, encoding);
+                } catch (UnsupportedEncodingException e) {
+                    // We can't really get here, UTF-8 is always supported
+                    // This try-catch exists to make the compiler happy
+                    e.printStackTrace();
+                }
+            }
+            setWriterInternal(osw,false);
         }
-        catch (UnsupportedEncodingException uee)
-        {
-
-            // Should have been warned in init, I guess...
+        else {
+            // don't have any encoding, but we have an OutputStream
+            Writer osw = new OutputStreamWriter(output);
+            setWriterInternal(osw,false);
         }
     }
+
 
     /**
      * @see SerializationHandler#setEscaping(boolean)
@@ -789,7 +808,7 @@ abstract public class ToStream extends SerializerBase
      */
     private void printSpace(int n) throws IOException
     {
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
         for (int i = 0; i < n; i++)
         {
             writer.write(' ');
@@ -829,7 +848,7 @@ abstract public class ToStream extends SerializerBase
             return;
         try
         {
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             DTDprolog();
 
             writer.write("<!ATTLIST ");
@@ -892,16 +911,8 @@ abstract public class ToStream extends SerializerBase
 
             m_writer.write("<!ENTITY ");
             m_writer.write(name);
-            if (publicId != null) {
-                m_writer.write(" PUBLIC \"");
-                m_writer.write(publicId);
-
-            }
-            else {
-                m_writer.write(" SYSTEM \"");
-                m_writer.write(systemId);
-            }
-            m_writer.write("\" >");
+            m_writer.write(JdkXmlUtils.getDTDExternalDecl(publicId, systemId));
+            m_writer.write(">");
             m_writer.write(m_lineSep, 0, m_lineSepLen);
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -947,45 +958,45 @@ abstract public class ToStream extends SerializerBase
      * @param ch Character array.
      * @param i position Where the surrogate was detected.
      * @param end The end index of the significant characters.
-     * @return 0 if the pair of characters was written out as-is,
-     * the unicode code point of the character represented by
-     * the surrogate pair if an entity reference with that value
-     * was written out.
+     * @return the status of writing a surrogate pair.
+     *         -1 -- nothing is written
+     *         0 -- the pair is written as-is
+     *         code point -- the pair is written as an entity reference
      *
      * @throws IOException
      * @throws org.xml.sax.SAXException if invalid UTF-16 surrogate detected.
      */
     protected int writeUTF16Surrogate(char c, char ch[], int i, int end)
-        throws IOException
+        throws IOException, SAXException
     {
-        int codePoint = 0;
+        int status = -1;
         if (i + 1 >= end)
         {
-            throw new IOException(
-                Utils.messages.createMessage(
-                    MsgKey.ER_INVALID_UTF16_SURROGATE,
-                    new Object[] { Integer.toHexString((int) c)}));
+            m_highSurrogate = c;
+            return status;
+        }
+        char high, low;
+        if (m_highSurrogate == 0) {
+            high = c;
+            low = ch[i+1];
+            status = 0;
+        } else {
+            high = m_highSurrogate;
+            low = c;
+            m_highSurrogate = 0;
         }
 
-        final char high = c;
-        final char low = ch[i+1];
         if (!Encodings.isLowUTF16Surrogate(low)) {
-            throw new IOException(
-                Utils.messages.createMessage(
-                    MsgKey.ER_INVALID_UTF16_SURROGATE,
-                    new Object[] {
-                        Integer.toHexString((int) c)
-                            + " "
-                            + Integer.toHexString(low)}));
+            throwIOE(high, low);
         }
 
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
 
         // If we make it to here we have a valid high, low surrogate pair
-        if (m_encodingInfo.isInEncoding(c,low)) {
+        if (m_encodingInfo.isInEncoding(high,low)) {
             // If the character formed by the surrogate pair
             // is in the encoding, so just write it out
-            writer.write(ch,i,2);
+            writer.write(new char[]{high, low}, 0, 2);
         }
         else {
             // Don't know what to do with this char, it is
@@ -993,24 +1004,16 @@ abstract public class ToStream extends SerializerBase
             // a surrogate pair, so write out as an entity ref
             final String encoding = getEncoding();
             if (encoding != null) {
-                /* The output encoding is known,
-                 * so somthing is wrong.
-                  */
-                codePoint = Encodings.toCodePoint(high, low);
-                // not in the encoding, so write out a character reference
-                writer.write('&');
-                writer.write('#');
-                writer.write(Integer.toString(codePoint));
-                writer.write(';');
+                status = writeCharRef(writer, high, low);
             } else {
                 /* The output encoding is not known,
                  * so just write it out as-is.
                  */
-                writer.write(ch, i, 2);
+                writer.write(new char[]{high, low}, 0, 2);
             }
         }
         // non-zero only if character reference was written out.
-        return codePoint;
+        return status;
     }
 
     /**
@@ -1030,7 +1033,7 @@ abstract public class ToStream extends SerializerBase
      * @throws java.io.IOException
      */
     protected int accumDefaultEntity(
-        java.io.Writer writer,
+        Writer writer,
         char ch,
         int i,
         char[] chars,
@@ -1087,7 +1090,7 @@ abstract public class ToStream extends SerializerBase
         boolean useSystemLineSeparator)
         throws IOException, org.xml.sax.SAXException
     {
-        final java.io.Writer writer = m_writer;
+        final Writer writer = m_writer;
         int end = start + length;
 
         for (int i = start; i < end; i++)
@@ -1100,33 +1103,8 @@ abstract public class ToStream extends SerializerBase
             }
             else if (isCData && (!escapingNotNeeded(c)))
             {
-                //                if (i != 0)
-                if (m_cdataTagOpen)
-                    closeCDATA();
-
-                // This needs to go into a function...
-                if (Encodings.isHighUTF16Surrogate(c))
-                {
-                    writeUTF16Surrogate(c, ch, i, end);
-                    i++ ; // process two input characters
+                i = handleEscaping(writer, c, ch, i, end);
                 }
-                else
-                {
-                    writer.write("&#");
-
-                    String intStr = Integer.toString((int) c);
-
-                    writer.write(intStr);
-                    writer.write(';');
-                }
-
-                //                if ((i != 0) && (i < (end - 1)))
-                //                if (!m_cdataTagOpen && (i < (end - 1)))
-                //                {
-                //                    writer.write(CDATA_DELIMITER_OPEN);
-                //                    m_cdataTagOpen = true;
-                //                }
-            }
             else if (
                 isCData
                     && ((i < (end - 2))
@@ -1149,29 +1127,44 @@ abstract public class ToStream extends SerializerBase
                     }
                     writer.write(c);
                 }
-
-                // This needs to go into a function...
-                else if (Encodings.isHighUTF16Surrogate(c))
-                {
-                    if (m_cdataTagOpen)
-                        closeCDATA();
-                    writeUTF16Surrogate(c, ch, i, end);
-                    i++; // process two input characters
-                }
-                else
-                {
-                    if (m_cdataTagOpen)
-                        closeCDATA();
-                    writer.write("&#");
-
-                    String intStr = Integer.toString((int) c);
-
-                    writer.write(intStr);
-                    writer.write(';');
+                else {
+                    i = handleEscaping(writer, c, ch, i, end);
                 }
             }
         }
 
+    }
+
+    /**
+     * Handles escaping, writes either with a surrogate pair or a character
+     * reference.
+     *
+     * @param c the current char
+     * @param ch the character array
+     * @param i the current position
+     * @param end the end index of the array
+     * @return the next index
+     *
+     * @throws IOException
+     * @throws org.xml.sax.SAXException if invalid UTF-16 surrogate detected.
+     */
+    private int handleEscaping(Writer writer, char c, char ch[], int i, int end)
+            throws IOException, SAXException {
+        if (Encodings.isHighUTF16Surrogate(c) || Encodings.isLowUTF16Surrogate(c))
+        {
+            if (writeUTF16Surrogate(c, ch, i, end) >= 0) {
+                // move the index if the low surrogate is consumed
+                // as writeUTF16Surrogate has written the pair
+                if (Encodings.isHighUTF16Surrogate(c)) {
+                    i++ ;
+                }
+            }
+        }
+        else
+        {
+            writeCharRef(writer, c);
+        }
+        return i;
     }
 
     /**
@@ -1242,7 +1235,7 @@ abstract public class ToStream extends SerializerBase
             }
             m_ispreserve = true;
 
-            if (shouldIndent())
+            if (!m_cdataTagOpen && shouldIndent())
                 indent();
 
             boolean writeCDataBrackets =
@@ -1564,7 +1557,7 @@ abstract public class ToStream extends SerializerBase
         int i,
         char ch,
         int lastDirty,
-        boolean fromTextNode) throws IOException
+        boolean fromTextNode) throws IOException, SAXException
     {
         int startClean = lastDirty + 1;
         // if we have some clean characters accumulated
@@ -1643,54 +1636,40 @@ abstract public class ToStream extends SerializerBase
         int len,
         boolean fromTextNode,
         boolean escLF)
-        throws IOException
+        throws IOException, SAXException
     {
 
         int pos = accumDefaultEntity(writer, ch, i, chars, len, fromTextNode, escLF);
 
         if (i == pos)
         {
+            if (m_highSurrogate != 0) {
+                if (!(Encodings.isLowUTF16Surrogate(ch))) {
+                    throwIOE(m_highSurrogate, ch);
+                }
+                writeCharRef(writer, m_highSurrogate, ch);
+                m_highSurrogate = 0;
+                return ++pos;
+            }
+
             if (Encodings.isHighUTF16Surrogate(ch))
             {
-
-                // Should be the UTF-16 low surrogate of the hig/low pair.
-                char next;
-                // Unicode code point formed from the high/low pair.
-                int codePoint = 0;
-
                 if (i + 1 >= len)
                 {
-                    throw new IOException(
-                        Utils.messages.createMessage(
-                            MsgKey.ER_INVALID_UTF16_SURROGATE,
-                            new Object[] { Integer.toHexString(ch)}));
-                    //"Invalid UTF-16 surrogate detected: "
-
-                    //+Integer.toHexString(ch)+ " ?");
+                    // save for the next read
+                    m_highSurrogate = ch;
+                    pos++;
                 }
                 else
                 {
-                    next = chars[++i];
-
+                    // the next should be the UTF-16 low surrogate of the hig/low pair.
+                    char next = chars[++i];
                     if (!(Encodings.isLowUTF16Surrogate(next)))
-                        throw new IOException(
-                            Utils.messages.createMessage(
-                                MsgKey
-                                    .ER_INVALID_UTF16_SURROGATE,
-                                new Object[] {
-                                    Integer.toHexString(ch)
-                                        + " "
-                                        + Integer.toHexString(next)}));
-                    //"Invalid UTF-16 surrogate detected: "
+                        throwIOE(ch, next);
 
-                    //+Integer.toHexString(ch)+" "+Integer.toHexString(next));
-                    codePoint = Encodings.toCodePoint(ch,next);
+                    writeCharRef(writer, ch, next);
+                    pos += 2; // count the two characters that went into writing out this entity
                 }
-
-                writer.write("&#");
-                writer.write(Integer.toString(codePoint));
-                writer.write(';');
-                pos += 2; // count the two characters that went into writing out this entity
             }
             else
             {
@@ -1702,18 +1681,14 @@ abstract public class ToStream extends SerializerBase
                 if (isCharacterInC0orC1Range(ch) ||
                         (XMLVERSION11.equals(getVersion()) && isNELorLSEPCharacter(ch)))
                 {
-                    writer.write("&#");
-                    writer.write(Integer.toString(ch));
-                    writer.write(';');
+                    writeCharRef(writer, ch);
                 }
                 else if ((!escapingNotNeeded(ch) ||
                     (  (fromTextNode && m_charInfo.isSpecialTextChar(ch))
                      || (!fromTextNode && m_charInfo.isSpecialAttrChar(ch))))
                 && m_elemContext.m_currentElemDepth > 0)
                 {
-                    writer.write("&#");
-                    writer.write(Integer.toString(ch));
-                    writer.write(';');
+                    writeCharRef(writer, ch);
                 }
                 else
                 {
@@ -1724,6 +1699,45 @@ abstract public class ToStream extends SerializerBase
 
         }
         return pos;
+    }
+
+    /**
+     * Writes out a character reference.
+     * @param writer the writer
+     * @param c the character
+     * @throws IOException
+     */
+    private void writeCharRef(Writer writer, char c) throws IOException, SAXException {
+        if (m_cdataTagOpen)
+            closeCDATA();
+        writer.write("&#");
+        writer.write(Integer.toString(c));
+        writer.write(';');
+    }
+
+    /**
+     * Writes out a pair of surrogates as a character reference
+     * @param writer the writer
+     * @param high the high surrogate
+     * @param low the low surrogate
+     * @throws IOException
+     */
+    private int writeCharRef(Writer writer, char high, char low) throws IOException, SAXException {
+        if (m_cdataTagOpen)
+            closeCDATA();
+        // Unicode code point formed from the high/low pair.
+        int codePoint = Encodings.toCodePoint(high, low);
+        writer.write("&#");
+        writer.write(Integer.toString(codePoint));
+        writer.write(';');
+        return codePoint;
+    }
+
+    private void throwIOE(char ch, char next) throws IOException {
+        throw new IOException(Utils.messages.createMessage(
+                MsgKey.ER_INVALID_UTF16_SURROGATE,
+                new Object[] {Integer.toHexString(ch) + " "
+                        + Integer.toHexString(next)}));
     }
 
     /**
@@ -1796,7 +1810,7 @@ abstract public class ToStream extends SerializerBase
 
             m_startNewLine = true;
 
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             writer.write('<');
             writer.write(name);
         }
@@ -1867,46 +1881,19 @@ abstract public class ToStream extends SerializerBase
             closeCDATA();
         try
         {
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             writer.write("<!DOCTYPE ");
             writer.write(name);
+            String systemId = getDoctypeSystem();
+            writer.write(JdkXmlUtils.getDTDExternalDecl(getDoctypePublic(), systemId));
 
-            String doctypePublic = getDoctypePublic();
-            if (null != doctypePublic)
+            if (null != systemId)
             {
-                writer.write(" PUBLIC \"");
-                writer.write(doctypePublic);
-                writer.write('\"');
-            }
-
-            String doctypeSystem = getDoctypeSystem();
-            if (null != doctypeSystem)
-            {
-                if (null == doctypePublic)
-                    writer.write(" SYSTEM \"");
-                else
-                    writer.write(" \"");
-
-                writer.write(doctypeSystem);
-
                 if (closeDecl)
                 {
-                    writer.write("\">");
+                    writer.write(">");
                     writer.write(m_lineSep, 0, m_lineSepLen);
                     closeDecl = false; // done closing
-                }
-                else
-                    writer.write('\"');
-            }
-            boolean dothis = false;
-            if (dothis)
-            {
-                // at one point this code seemed right,
-                // but not anymore - Brian M.
-                if (closeDecl)
-                {
-                    writer.write('>');
-                    writer.write(m_lineSep, 0, m_lineSepLen);
                 }
             }
         }
@@ -1928,7 +1915,7 @@ abstract public class ToStream extends SerializerBase
      * @throws java.io.IOException
      * @throws org.xml.sax.SAXException
      */
-    public void processAttributes(java.io.Writer writer, int nAttrs) throws IOException, SAXException
+    public void processAttributes(Writer writer, int nAttrs) throws IOException, SAXException
     {
             /* real SAX attributes are not passed in, so process the
              * attributes that were collected after the startElement call.
@@ -1962,7 +1949,7 @@ abstract public class ToStream extends SerializerBase
         Writer writer,
         String string,
         String encoding)
-        throws IOException
+        throws IOException, SAXException
     {
         final int len = string.length();
         if (len > m_attrBuff.length)
@@ -2025,7 +2012,7 @@ abstract public class ToStream extends SerializerBase
 
         try
         {
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             if (m_elemContext.m_startTagOpen)
             {
                 if (m_tracer != null)
@@ -2231,7 +2218,7 @@ abstract public class ToStream extends SerializerBase
             if (shouldIndent() && !m_isStandalone)
                 indent();
 
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             writer.write(COMMENT_BEGIN);
             // Detect occurrences of two consecutive dashes, handle as necessary.
             for (int i = start; i < limit; i++)
@@ -2311,7 +2298,7 @@ abstract public class ToStream extends SerializerBase
                 outputDocTypeDecl(m_elemContext.m_elementName, false);
                 m_needToOutputDocTypeDecl = false;
             }
-            final java.io.Writer writer = m_writer;
+            final Writer writer = m_writer;
             if (!m_inDoctype)
                 writer.write("]>");
             else
@@ -2455,7 +2442,7 @@ abstract public class ToStream extends SerializerBase
              * lets determine if the current element is specified in the cdata-
              * section-elements list.
              */
-            if (m_cdataSectionElements != null)
+            if (m_StringOfCDATASections != null)
                 m_elemContext.m_isCdataSection = isCdataSection();
 
             if (m_doIndent)
@@ -2532,25 +2519,22 @@ abstract public class ToStream extends SerializerBase
      * @param   key   the property key.
      * @param props the list of properties to search in.
      *
-     * Sets the vector of local-name/URI pairs of the cdata section elements
+     * Sets the ArrayList of local-name/URI pairs of the cdata section elements
      * specified in the cdata-section-elements property.
      *
      * This method is essentially a copy of getQNameProperties() from
      * OutputProperties. Eventually this method should go away and a call
-     * to setCdataSectionElements(Vector v) should be made directly.
+     * to setCdataSectionElements(ArrayList<String> v) should be made directly.
      */
-    private void setCdataSectionElements(String key, Properties props)
-    {
-
+    private void setCdataSectionElements(String key, Properties props) {
         String s = props.getProperty(key);
 
-        if (null != s)
-        {
-            // Vector of URI/LocalName pairs
-            Vector v = new Vector();
+        if (null != s) {
+            // ArrayList<String> of URI/LocalName pairs
+            ArrayList<String> al = new ArrayList<>();
             int l = s.length();
             boolean inCurly = false;
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
 
             // parse through string, breaking on whitespaces.  I do this instead
             // of a tokenizer so I can track whitespace inside of curly brackets,
@@ -2565,7 +2549,7 @@ abstract public class ToStream extends SerializerBase
                     {
                         if (buf.length() > 0)
                         {
-                            addCdataSectionElement(buf.toString(), v);
+                            addCdataSectionElement(buf.toString(), al);
                             buf.setLength(0);
                         }
                         continue;
@@ -2581,11 +2565,11 @@ abstract public class ToStream extends SerializerBase
 
             if (buf.length() > 0)
             {
-                addCdataSectionElement(buf.toString(), v);
+                addCdataSectionElement(buf.toString(), al);
                 buf.setLength(0);
             }
             // call the official, public method to set the collected names
-            setCdataSectionElements(v);
+            setCdataSectionElements(al);
         }
 
     }
@@ -2597,25 +2581,19 @@ abstract public class ToStream extends SerializerBase
      *
      * @return a QName object
      */
-    private void addCdataSectionElement(String URI_and_localName, Vector v)
-    {
-
-        StringTokenizer tokenizer =
-            new StringTokenizer(URI_and_localName, "{}", false);
+    private void addCdataSectionElement(String URI_and_localName, List<String> al) {
+        StringTokenizer tokenizer = new StringTokenizer(URI_and_localName, "{}", false);
         String s1 = tokenizer.nextToken();
         String s2 = tokenizer.hasMoreTokens() ? tokenizer.nextToken() : null;
 
-        if (null == s2)
-        {
+        if (null == s2) {
             // add null URI and the local name
-            v.addElement(null);
-            v.addElement(s1);
-        }
-        else
-        {
+            al.add(null);
+            al.add(s1);
+        } else {
             // add URI, then local name
-            v.addElement(s1);
-            v.addElement(s2);
+            al.add(s1);
+            al.add(s2);
         }
     }
 
@@ -2624,11 +2602,33 @@ abstract public class ToStream extends SerializerBase
      * The "official way to set URI and localName pairs.
      * This method should be used by both Xalan and XSLTC.
      *
-     * @param URI_and_localNames a vector of pairs of Strings (URI/local)
+     * @param URI_and_localNames an ArrayList of pairs of Strings (URI/local)
      */
-    public void setCdataSectionElements(Vector URI_and_localNames)
-    {
-        m_cdataSectionElements = URI_and_localNames;
+    public void setCdataSectionElements(List<String> URI_and_localNames) {
+        // convert to the new way.
+        if (URI_and_localNames != null) {
+            final int len = URI_and_localNames.size() - 1;
+            if (len > 0) {
+                final StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < len; i += 2) {
+                    // whitspace separated "{uri1}local1 {uri2}local2 ..."
+                    if (i != 0)
+                        sb.append(' ');
+                    final String uri = (String) URI_and_localNames.get(i);
+                    final String localName =
+                        (String) URI_and_localNames.get(i + 1);
+                    if (uri != null) {
+                        // If there is no URI don't put this in, just the localName then.
+                        sb.append('{');
+                        sb.append(uri);
+                        sb.append('}');
+                    }
+                    sb.append(localName);
+                }
+                m_StringOfCDATASections = sb.toString();
+            }
+        }
+        initCdataElems(m_StringOfCDATASections);
     }
 
     /**
@@ -2921,25 +2921,19 @@ abstract public class ToStream extends SerializerBase
      * exist. This method should be called everytime an attribute is added,
      * or when an attribute value is changed, or an element is created.
      */
-
-    protected void firePseudoAttributes()
-    {
-        if (m_tracer != null)
-        {
-            try
-            {
+    protected void firePseudoAttributes() {
+        if (m_tracer != null) {
+            try {
                 // flush out the "<elemName" if not already flushed
                 m_writer.flush();
 
                 // make a StringBuffer to write the name="value" pairs to.
                 StringBuffer sb = new StringBuffer();
                 int nAttrs = m_attributes.getLength();
-                if (nAttrs > 0)
-                {
+                if (nAttrs > 0) {
                     // make a writer that internally appends to the same
                     // StringBuffer
-                    java.io.Writer writer =
-                        new ToStream.WritertoStringBuffer(sb);
+                    Writer writer = new ToStream.WritertoStringBuffer(sb);
 
                     processAttributes(writer, nAttrs);
                     // Don't clear the attributes!
@@ -2956,13 +2950,9 @@ abstract public class ToStream extends SerializerBase
                     ch,
                     0,
                     ch.length);
-            }
-            catch (IOException ioe)
-            {
+            } catch (IOException ioe) {
                 // ignore ?
-            }
-            catch (SAXException se)
-            {
+            } catch (SAXException se) {
                 // ignore ?
             }
         }
@@ -2974,41 +2964,35 @@ abstract public class ToStream extends SerializerBase
      * In this manner trace events, and the real writing of attributes will use
      * the same code.
      */
-    private class WritertoStringBuffer extends java.io.Writer
-    {
+    private class WritertoStringBuffer extends Writer {
         final private StringBuffer m_stringbuf;
+
         /**
          * @see java.io.Writer#write(char[], int, int)
          */
-        WritertoStringBuffer(StringBuffer sb)
-        {
+        WritertoStringBuffer(StringBuffer sb) {
             m_stringbuf = sb;
         }
 
-        public void write(char[] arg0, int arg1, int arg2) throws IOException
-        {
+        public void write(char[] arg0, int arg1, int arg2) throws IOException {
             m_stringbuf.append(arg0, arg1, arg2);
         }
+
         /**
          * @see java.io.Writer#flush()
          */
-        public void flush() throws IOException
-        {
-        }
+        public void flush() throws IOException {}
+
         /**
          * @see java.io.Writer#close()
          */
-        public void close() throws IOException
-        {
-        }
+        public void close() throws IOException {}
 
-        public void write(int i)
-        {
+        public void write(int i) {
             m_stringbuf.append((char) i);
         }
 
-        public void write(String s)
-        {
+        public void write(String s) {
             m_stringbuf.append(s);
         }
     }
@@ -3018,12 +3002,11 @@ abstract public class ToStream extends SerializerBase
      */
     public void setTransformer(Transformer transformer) {
         super.setTransformer(transformer);
-        if (m_tracer != null
-         && !(m_writer instanceof SerializerTraceWriter)  )
+        if (m_tracer != null && !(m_writer instanceof SerializerTraceWriter)) {
             m_writer = new SerializerTraceWriter(m_writer, m_tracer);
-
-
+        }
     }
+
     /**
      * Try's to reset the super class and reset this class for
      * re-use, so that you don't need to create a new serializer
@@ -3031,11 +3014,9 @@ abstract public class ToStream extends SerializerBase
      *
      * @return true if the class was successfuly reset.
      */
-    public boolean reset()
-    {
+    public boolean reset() {
         boolean wasReset = false;
-        if (super.reset())
-        {
+        if (super.reset()) {
             resetToStream();
             wasReset = true;
         }
@@ -3046,14 +3027,12 @@ abstract public class ToStream extends SerializerBase
      * Reset all of the fields owned by ToStream class
      *
      */
-    private void resetToStream()
-    {
+    private void resetToStream() {
          this.m_cdataStartCalled = false;
          /* The stream is being reset. It is one of
           * ToXMLStream, ToHTMLStream ... and this type can't be changed
           * so neither should m_charInfo which is associated with the
           * type of Stream. Just leave m_charInfo as-is for the next re-use.
-          *
           */
          // this.m_charInfo = null; // don't set to null
 
@@ -3084,37 +3063,7 @@ abstract public class ToStream extends SerializerBase
       */
      public void setEncoding(String encoding)
      {
-         String old = getEncoding();
-         super.setEncoding(encoding);
-         if (old == null || !old.equals(encoding)) {
-            // If we have changed the setting of the
-            m_encodingInfo = Encodings.getEncodingInfo(encoding);
-
-            if (encoding != null && m_encodingInfo.name == null) {
-                // We tried to get an EncodingInfo for Object for the given
-                // encoding, but it came back with an internall null name
-                // so the encoding is not supported by the JDK, issue a message.
-                String msg = Utils.messages.createMessage(
-                                MsgKey.ER_ENCODING_NOT_SUPPORTED,new Object[]{ encoding });
-                try
-                {
-                        // Prepare to issue the warning message
-                        Transformer tran = super.getTransformer();
-                        if (tran != null) {
-                                ErrorListener errHandler = tran.getErrorListener();
-                                // Issue the warning message
-                                if (null != errHandler && m_sourceLocator != null)
-                                        errHandler.warning(new TransformerException(msg, m_sourceLocator));
-                                else
-                                        System.out.println(msg);
-                    }
-                        else
-                                System.out.println(msg);
-                }
-                catch (Exception e){}
-            }
-         }
-         return;
+         setOutputProperty(OutputKeys.ENCODING,encoding);
      }
 
     /**
@@ -3127,173 +3076,150 @@ abstract public class ToStream extends SerializerBase
      *
      * @xsl.usage internal
      */
-    static final class BoolStack
-    {
+    static final class BoolStack {
+        /** Array of boolean values */
+        private boolean m_values[];
 
-      /** Array of boolean values          */
-      private boolean m_values[];
+        /** Array size allocated */
+        private int m_allocatedSize;
 
-      /** Array size allocated           */
-      private int m_allocatedSize;
+        /** Index into the array of booleans */
+        private int m_index;
 
-      /** Index into the array of booleans          */
-      private int m_index;
+        /**
+         * Default constructor.  Note that the default
+         * block size is very small, for small lists.
+         */
+        public BoolStack() {
+            this(32);
+        }
 
-      /**
-       * Default constructor.  Note that the default
-       * block size is very small, for small lists.
-       */
-      public BoolStack()
-      {
-        this(32);
-      }
+        /**
+         * Construct a IntVector, using the given block size.
+         *
+         * @param size array size to allocate
+         */
+        public BoolStack(int size) {
+            m_allocatedSize = size;
+            m_values = new boolean[size];
+            m_index = -1;
+        }
 
-      /**
-       * Construct a IntVector, using the given block size.
-       *
-       * @param size array size to allocate
-       */
-      public BoolStack(int size)
-      {
+        /**
+         * Get the length of the list.
+         *
+         * @return Current length of the list
+         */
+        public final int size() {
+            return m_index + 1;
+        }
 
-        m_allocatedSize = size;
-        m_values = new boolean[size];
-        m_index = -1;
-      }
+        /**
+         * Clears the stack.
+         *
+         */
+        public final void clear() {
+            m_index = -1;
+        }
 
-      /**
-       * Get the length of the list.
-       *
-       * @return Current length of the list
-       */
-      public final int size()
-      {
-        return m_index + 1;
-      }
+        /**
+         * Pushes an item onto the top of this stack.
+         *
+         *
+         * @param val the boolean to be pushed onto this stack.
+         * @return  the <code>item</code> argument.
+         */
+        public final boolean push(boolean val) {
+            if (m_index == m_allocatedSize - 1)
+                grow();
 
-      /**
-       * Clears the stack.
-       *
-       */
-      public final void clear()
-      {
-        m_index = -1;
-      }
+            return (m_values[++m_index] = val);
+        }
 
-      /**
-       * Pushes an item onto the top of this stack.
-       *
-       *
-       * @param val the boolean to be pushed onto this stack.
-       * @return  the <code>item</code> argument.
-       */
-      public final boolean push(boolean val)
-      {
+        /**
+         * Removes the object at the top of this stack and returns that
+         * object as the value of this function.
+         *
+         * @return     The object at the top of this stack.
+         * @throws  EmptyStackException  if this stack is empty.
+         */
+        public final boolean pop() {
+            return m_values[m_index--];
+        }
 
-        if (m_index == m_allocatedSize - 1)
-          grow();
+        /**
+         * Removes the object at the top of this stack and returns the
+         * next object at the top as the value of this function.
+         *
+         *
+         * @return Next object to the top or false if none there
+         */
+        public final boolean popAndTop() {
+            m_index--;
+            return (m_index >= 0) ? m_values[m_index] : false;
+        }
 
-        return (m_values[++m_index] = val);
-      }
+        /**
+         * Set the item at the top of this stack
+         *
+         *
+         * @param b Object to set at the top of this stack
+         */
+        public final void setTop(boolean b) {
+            m_values[m_index] = b;
+        }
 
-      /**
-       * Removes the object at the top of this stack and returns that
-       * object as the value of this function.
-       *
-       * @return     The object at the top of this stack.
-       * @throws  EmptyStackException  if this stack is empty.
-       */
-      public final boolean pop()
-      {
-        return m_values[m_index--];
-      }
+        /**
+         * Looks at the object at the top of this stack without removing it
+         * from the stack.
+         *
+         * @return     the object at the top of this stack.
+         * @throws  EmptyStackException  if this stack is empty.
+         */
+        public final boolean peek() {
+            return m_values[m_index];
+        }
 
-      /**
-       * Removes the object at the top of this stack and returns the
-       * next object at the top as the value of this function.
-       *
-       *
-       * @return Next object to the top or false if none there
-       */
-      public final boolean popAndTop()
-      {
+        /**
+         * Looks at the object at the top of this stack without removing it
+         * from the stack.  If the stack is empty, it returns false.
+         *
+         * @return     the object at the top of this stack.
+         */
+        public final boolean peekOrFalse() {
+            return (m_index > -1) ? m_values[m_index] : false;
+        }
 
-        m_index--;
+        /**
+         * Looks at the object at the top of this stack without removing it
+         * from the stack.  If the stack is empty, it returns true.
+         *
+         * @return     the object at the top of this stack.
+         */
+        public final boolean peekOrTrue() {
+            return (m_index > -1) ? m_values[m_index] : true;
+        }
 
-        return (m_index >= 0) ? m_values[m_index] : false;
-      }
+        /**
+         * Tests if this stack is empty.
+         *
+         * @return  <code>true</code> if this stack is empty;
+         *          <code>false</code> otherwise.
+         */
+        public boolean isEmpty() {
+            return (m_index == -1);
+        }
 
-      /**
-       * Set the item at the top of this stack
-       *
-       *
-       * @param b Object to set at the top of this stack
-       */
-      public final void setTop(boolean b)
-      {
-        m_values[m_index] = b;
-      }
-
-      /**
-       * Looks at the object at the top of this stack without removing it
-       * from the stack.
-       *
-       * @return     the object at the top of this stack.
-       * @throws  EmptyStackException  if this stack is empty.
-       */
-      public final boolean peek()
-      {
-        return m_values[m_index];
-      }
-
-      /**
-       * Looks at the object at the top of this stack without removing it
-       * from the stack.  If the stack is empty, it returns false.
-       *
-       * @return     the object at the top of this stack.
-       */
-      public final boolean peekOrFalse()
-      {
-        return (m_index > -1) ? m_values[m_index] : false;
-      }
-
-      /**
-       * Looks at the object at the top of this stack without removing it
-       * from the stack.  If the stack is empty, it returns true.
-       *
-       * @return     the object at the top of this stack.
-       */
-      public final boolean peekOrTrue()
-      {
-        return (m_index > -1) ? m_values[m_index] : true;
-      }
-
-      /**
-       * Tests if this stack is empty.
-       *
-       * @return  <code>true</code> if this stack is empty;
-       *          <code>false</code> otherwise.
-       */
-      public boolean isEmpty()
-      {
-        return (m_index == -1);
-      }
-
-      /**
-       * Grows the size of the stack
-       *
-       */
-      private void grow()
-      {
-
-        m_allocatedSize *= 2;
-
-        boolean newVector[] = new boolean[m_allocatedSize];
-
-        System.arraycopy(m_values, 0, newVector, 0, m_index + 1);
-
-        m_values = newVector;
-      }
+        /**
+         * Grows the size of the stack
+         *
+         */
+        private void grow() {
+            m_allocatedSize *= 2;
+            boolean newVector[] = new boolean[m_allocatedSize];
+            System.arraycopy(m_values, 0, newVector, 0, m_index + 1);
+            m_values = newVector;
+        }
     }
 
     // Implement DTDHandler
@@ -3340,16 +3266,8 @@ abstract public class ToStream extends SerializerBase
 
             m_writer.write("<!ENTITY ");
             m_writer.write(name);
-            if (pubID != null) {
-                m_writer.write(" PUBLIC \"");
-                m_writer.write(pubID);
-
-            }
-            else {
-                m_writer.write(" SYSTEM \"");
-                m_writer.write(sysID);
-            }
-            m_writer.write("\" NDATA ");
+            m_writer.write(JdkXmlUtils.getDTDExternalDecl(pubID, sysID));
+            m_writer.write(" NDATA ");
             m_writer.write(notationName);
             m_writer.write(" >");
             m_writer.write(m_lineSep, 0, m_lineSepLen);
@@ -3365,14 +3283,12 @@ abstract public class ToStream extends SerializerBase
      * @throws IOException
      */
     private void DTDprolog() throws SAXException, IOException {
-        final java.io.Writer writer = m_writer;
-        if (m_needToOutputDocTypeDecl)
-        {
+        final Writer writer = m_writer;
+        if (m_needToOutputDocTypeDecl) {
             outputDocTypeDecl(m_elemContext.m_elementName, false);
             m_needToOutputDocTypeDecl = false;
         }
-        if (m_inDoctype)
-        {
+        if (m_inDoctype) {
             writer.write(" [");
             writer.write(m_lineSep, 0, m_lineSepLen);
             m_inDoctype = false;
@@ -3385,5 +3301,25 @@ abstract public class ToStream extends SerializerBase
      */
     public void setDTDEntityExpansion(boolean expand) {
         m_expandDTDEntities = expand;
+    }
+
+    /**
+     * Remembers the cdata sections specified in the cdata-section-elements by appending the given
+     * cdata section elements to the list. This method can be called multiple times, but once an
+     * element is put in the list of cdata section elements it can not be removed.
+     * This method should be used by both Xalan and XSLTC.
+     *
+     * @param URI_and_localNames a whitespace separated list of element names, each element
+     * is a URI in curly braces (optional) and a local name. An example of such a parameter is:
+     * "{http://company.com}price {myURI2}book chapter"
+     */
+    public void addCdataSectionElements(String URI_and_localNames)
+    {
+        if (URI_and_localNames != null)
+            initCdataElems(URI_and_localNames);
+        if (m_StringOfCDATASections == null)
+            m_StringOfCDATASections = URI_and_localNames;
+        else
+            m_StringOfCDATASections += (" " + URI_and_localNames);
     }
 }

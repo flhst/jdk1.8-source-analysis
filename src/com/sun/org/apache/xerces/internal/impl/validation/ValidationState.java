@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /*
- * Copyright 2001, 2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,11 +21,12 @@
 
 package com.sun.org.apache.xerces.internal.impl.validation;
 
-import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
-
+import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 
 /**
@@ -51,7 +53,7 @@ public class ValidationState implements ValidationContext {
     private SymbolTable fSymbolTable            = null;
     private Locale fLocale                      = null;
 
-    private ArrayList<String> fIdList;
+    private HashSet<String> fIds;
     private ArrayList<String> fIdRefList;
 
     //
@@ -87,32 +89,31 @@ public class ValidationState implements ValidationContext {
 
     /**
      * return null if all IDREF values have a corresponding ID value;
-     * otherwise return the first IDREF value without a matching ID value.
+     * otherwise return an iterator for all the IDREF values without
+     * a matching ID value.
      */
-    public String checkIDRefID () {
-        if (fIdList == null) {
-            if (fIdRefList != null) {
-                return fIdRefList.get(0);
-            }
-        }
-
+    public Iterator checkIDRefID () {
+        HashSet missingIDs = null;
         if (fIdRefList != null) {
             String key;
             for (int i = 0; i < fIdRefList.size(); i++) {
                 key = fIdRefList.get(i);
-                if (!fIdList.contains(key)) {
-                      return key;
+                if (fIds == null || !fIds.contains(key)) {
+                    if (missingIDs == null) {
+                        missingIDs = new HashSet();
+                    }
+                    missingIDs.add(key);
                 }
             }
         }
-        return null;
+        return (missingIDs != null) ? missingIDs.iterator() : null;
     }
 
     public void reset () {
         fExtraChecking = true;
         fFacetChecking = true;
         fNamespaces = true;
-        fIdList = null;
+        fIds = null;
         fIdRefList = null;
         fEntityState = null;
         fNamespaceContext = null;
@@ -126,7 +127,7 @@ public class ValidationState implements ValidationContext {
      * the two tables.
      */
     public void resetIDTables() {
-        fIdList = null;
+        fIds = null;
         fIdRefList = null;
     }
 
@@ -168,12 +169,11 @@ public class ValidationState implements ValidationContext {
 
     // id
     public boolean isIdDeclared(String name) {
-        if (fIdList == null) return false;
-        return fIdList.contains(name);
+        return fIds != null && fIds.contains(name);
     }
     public void addId(String name) {
-        if (fIdList == null) fIdList = new ArrayList();
-        fIdList.add(name);
+        if (fIds == null) fIds = new HashSet<>();
+        fIds.add(name);
     }
 
     // idref

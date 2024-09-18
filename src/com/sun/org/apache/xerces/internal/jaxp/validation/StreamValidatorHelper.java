@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2005 The Apache Software Foundation.
@@ -35,12 +34,12 @@ import javax.xml.XMLConstants;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.SAXException;
 
 /**
@@ -84,8 +83,6 @@ final class StreamValidatorHelper implements ValidatorHelper {
     private static final String VALIDATION_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.VALIDATION_MANAGER_PROPERTY;
 
-    private static final String DEFAULT_TRANSFORMER_IMPL = "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
-
     /** Property id: security manager. */
     private static final String SECURITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
@@ -118,9 +115,9 @@ final class StreamValidatorHelper implements ValidatorHelper {
 
             if( result!=null ) {
                 try {
-                    SAXTransformerFactory tf = fComponentManager.getFeature(Constants.ORACLE_FEATURE_SERVICE_MECHANISM) ?
-                                    (SAXTransformerFactory)SAXTransformerFactory.newInstance()
-                                    : (SAXTransformerFactory) TransformerFactory.newInstance(DEFAULT_TRANSFORMER_IMPL, StreamValidatorHelper.class.getClassLoader());
+                    SAXTransformerFactory tf = JdkXmlUtils.getSAXTransformFactory(
+                            fComponentManager.getFeature(JdkXmlUtils.OVERRIDE_PARSER));
+
                     identityTransformerHandler = tf.newTransformerHandler();
                 } catch (TransformerConfigurationException e) {
                     throw new TransformerFactoryConfigurationError(e);
@@ -131,7 +128,7 @@ final class StreamValidatorHelper implements ValidatorHelper {
                 identityTransformerHandler.setResult(result);
             }
 
-            XMLInputSource input = new XMLInputSource(streamSource.getPublicId(), streamSource.getSystemId(), null);
+            XMLInputSource input = new XMLInputSource(streamSource.getPublicId(), streamSource.getSystemId(), null, false);
             input.setByteStream(streamSource.getInputStream());
             input.setCharacterStream(streamSource.getReader());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 /**
@@ -23,6 +23,7 @@
 package com.sun.org.apache.xml.internal.security.algorithms;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
@@ -31,19 +32,22 @@ import com.sun.org.apache.xml.internal.security.utils.EncryptionConstants;
 import org.w3c.dom.Document;
 
 /**
- * Digest Message wrapper & selector class.
+ * Digest Message wrapper and selector class.
  *
  * <pre>
  * MessageDigestAlgorithm.getInstance()
  * </pre>
  */
-public class MessageDigestAlgorithm extends Algorithm {
+public final class MessageDigestAlgorithm extends Algorithm {
 
     /** Message Digest - NOT RECOMMENDED MD5*/
     public static final String ALGO_ID_DIGEST_NOT_RECOMMENDED_MD5 =
         Constants.MoreAlgorithmsSpecNS + "md5";
     /** Digest - Required SHA1*/
     public static final String ALGO_ID_DIGEST_SHA1 = Constants.SignatureSpecNS + "sha1";
+    /** Message Digest - OPTIONAL SHA224*/
+    public static final String ALGO_ID_DIGEST_SHA224 =
+        Constants.MoreAlgorithmsSpecNS + "sha224";
     /** Message Digest - RECOMMENDED SHA256*/
     public static final String ALGO_ID_DIGEST_SHA256 =
         EncryptionConstants.EncryptionSpecNS + "sha256";
@@ -56,6 +60,18 @@ public class MessageDigestAlgorithm extends Algorithm {
     /** Message Digest - OPTIONAL RIPEMD-160*/
     public static final String ALGO_ID_DIGEST_RIPEMD160 =
         EncryptionConstants.EncryptionSpecNS + "ripemd160";
+
+    // Newer digest algorithms...all optional
+    public static final String ALGO_ID_DIGEST_WHIRLPOOL =
+        Constants.XML_DSIG_NS_MORE_07_05 + "whirlpool";
+    public static final String ALGO_ID_DIGEST_SHA3_224 =
+        Constants.XML_DSIG_NS_MORE_07_05 + "sha3-224";
+    public static final String ALGO_ID_DIGEST_SHA3_256 =
+        Constants.XML_DSIG_NS_MORE_07_05 + "sha3-256";
+    public static final String ALGO_ID_DIGEST_SHA3_384 =
+        Constants.XML_DSIG_NS_MORE_07_05 + "sha3-384";
+    public static final String ALGO_ID_DIGEST_SHA3_512 =
+        Constants.XML_DSIG_NS_MORE_07_05 + "sha3-512";
 
     /** Field algorithm stores the actual {@link java.security.MessageDigest} */
     private final MessageDigest algorithm;
@@ -103,11 +119,7 @@ public class MessageDigestAlgorithm extends Algorithm {
             } else {
                 md = MessageDigest.getInstance(algorithmID, provider);
             }
-        } catch (java.security.NoSuchAlgorithmException ex) {
-            Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
-
-            throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
-        } catch (NoSuchProviderException ex) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
             Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
 
             throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
@@ -121,7 +133,7 @@ public class MessageDigestAlgorithm extends Algorithm {
      *
      * @return the actual {@link java.security.MessageDigest} algorithm object
      */
-    public java.security.MessageDigest getAlgorithm() {
+    public MessageDigest getAlgorithm() {
         return algorithm;
     }
 
@@ -134,7 +146,7 @@ public class MessageDigestAlgorithm extends Algorithm {
      * @return the result of the {@link java.security.MessageDigest#isEqual} method
      */
     public static boolean isEqual(byte[] digesta, byte[] digestb) {
-        return java.security.MessageDigest.isEqual(digesta, digestb);
+        return MessageDigest.isEqual(digesta, digestb);
     }
 
     /**
@@ -154,7 +166,7 @@ public class MessageDigestAlgorithm extends Algorithm {
      * @param input
      * @return the result of the {@link java.security.MessageDigest#digest(byte[])} method
      */
-    public byte[] digest(byte input[]) {
+    public byte[] digest(byte[] input) {
         return algorithm.digest(input);
     }
 
@@ -168,7 +180,7 @@ public class MessageDigestAlgorithm extends Algorithm {
      * @return the result of the {@link java.security.MessageDigest#digest(byte[], int, int)} method
      * @throws java.security.DigestException
      */
-    public int digest(byte buf[], int offset, int len) throws java.security.DigestException {
+    public int digest(byte[] buf, int offset, int len) throws java.security.DigestException {
         return algorithm.digest(buf, offset, len);
     }
 
@@ -239,16 +251,16 @@ public class MessageDigestAlgorithm extends Algorithm {
      * @param offset
      * @param len
      */
-    public void update(byte buf[], int offset, int len) {
+    public void update(byte[] buf, int offset, int len) {
         algorithm.update(buf, offset, len);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseNamespace() {
         return Constants.SignatureSpecNS;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_DIGESTMETHOD;
     }

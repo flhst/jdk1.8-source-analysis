@@ -742,11 +742,11 @@ public final class BasisLibrary {
             // If node-boolean comparison -> convert node to boolean
             if (left instanceof Node || right instanceof Node) {
                 if (left instanceof Boolean) {
-                    right = new Boolean(booleanF(right));
+                    right = booleanF(right);
                     hasSimpleArgs = true;
                 }
                 if (right instanceof Boolean) {
-                    left = new Boolean(booleanF(left));
+                    left = booleanF(left);
                     hasSimpleArgs = true;
                 }
             }
@@ -1421,8 +1421,8 @@ public final class BasisLibrary {
      * This method should only be invoked if the name attribute is an AVT
      */
     public static void checkAttribQName(String name) {
-        final int firstOccur = name.indexOf(":");
-        final int lastOccur = name.lastIndexOf(":");
+        final int firstOccur = name.indexOf(':');
+        final int lastOccur = name.lastIndexOf(':');
         final String localName = name.substring(lastOccur + 1);
 
         if (firstOccur > 0) {

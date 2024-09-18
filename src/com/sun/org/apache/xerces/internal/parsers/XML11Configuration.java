@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2001-2005 The Apache Software Foundation.
@@ -25,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkXmlUtils;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XML11DTDScannerImpl;
@@ -52,7 +52,6 @@ import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -184,6 +183,22 @@ public class XML11Configuration extends ParserConfigurationSettings
     protected static final String EXTERNAL_PARAMETER_ENTITIES =
         Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_PARAMETER_ENTITIES_FEATURE;
 
+    /** Feature identifier: whether to ignore xsi:type attributes until a global element declaration is encountered */
+    protected static final String IGNORE_XSI_TYPE =
+        Constants.XERCES_FEATURE_PREFIX + Constants.IGNORE_XSI_TYPE_FEATURE;
+
+    /** Feature identifier: whether to ignore ID/IDREF errors */
+    protected static final String ID_IDREF_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.ID_IDREF_CHECKING_FEATURE;
+
+    /** Feature identifier: whether to ignore unparsed entity errors */
+    protected static final String UNPARSED_ENTITY_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.UNPARSED_ENTITY_CHECKING_FEATURE;
+
+    /** Feature identifier: whether to ignore identity constraint errors */
+    protected static final String IDENTITY_CONSTRAINT_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.IDC_CHECKING_FEATURE;
+
     // property identifiers
 
     /** Property identifier: xml string. */
@@ -260,6 +275,14 @@ public class XML11Configuration extends ParserConfigurationSettings
     /** Property identifier: JAXP schema source/ DOM schema-location. */
     protected static final String JAXP_SCHEMA_SOURCE =
         Constants.JAXP_PROPERTY_PREFIX + Constants.SCHEMA_SOURCE;
+
+    /** Property identifier: root type definition. */
+    protected static final String ROOT_TYPE_DEF =
+        Constants.XERCES_PROPERTY_PREFIX + Constants.ROOT_TYPE_DEFINITION_PROPERTY;
+
+    /** Property identifier: root element declaration. */
+    protected static final String ROOT_ELEMENT_DECL =
+        Constants.XERCES_PROPERTY_PREFIX + Constants.ROOT_ELEMENT_DECLARATION_PROPERTY;
 
     /** Property identifier: locale. */
     protected static final String LOCALE =
@@ -455,10 +478,6 @@ public class XML11Configuration extends ParserConfigurationSettings
         // Common components for XML 1.1. and XML 1.0
         fCommonComponents = new ArrayList<>();
 
-        // create table for features and properties
-        fFeatures = new HashMap<>();
-        fProperties = new HashMap<>();
-
         // add default recognized features
         final String[] recognizedFeatures =
             {
@@ -478,8 +497,9 @@ public class XML11Configuration extends ParserConfigurationSettings
                 EXTERNAL_GENERAL_ENTITIES,
                 EXTERNAL_PARAMETER_ENTITIES,
                 PARSER_SETTINGS,
-                XMLConstants.FEATURE_SECURE_PROCESSING
-                        };
+                XMLConstants.FEATURE_SECURE_PROCESSING,
+                JdkXmlUtils.OVERRIDE_PARSER
+        };
         addRecognizedFeatures(recognizedFeatures);
         // set state for default features
         fFeatures.put(VALIDATION, Boolean.FALSE);
@@ -494,49 +514,56 @@ public class XML11Configuration extends ParserConfigurationSettings
         fFeatures.put(GENERATE_SYNTHETIC_ANNOTATIONS, Boolean.FALSE);
         fFeatures.put(VALIDATE_ANNOTATIONS, Boolean.FALSE);
         fFeatures.put(HONOUR_ALL_SCHEMALOCATIONS, Boolean.FALSE);
+        fFeatures.put(IGNORE_XSI_TYPE, Boolean.FALSE);
+        fFeatures.put(ID_IDREF_CHECKING, Boolean.TRUE);
+        fFeatures.put(IDENTITY_CONSTRAINT_CHECKING, Boolean.TRUE);
+        fFeatures.put(UNPARSED_ENTITY_CHECKING, Boolean.TRUE);
         fFeatures.put(NAMESPACE_GROWTH, Boolean.FALSE);
         fFeatures.put(TOLERATE_DUPLICATES, Boolean.FALSE);
         fFeatures.put(USE_GRAMMAR_POOL_ONLY, Boolean.FALSE);
         fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
         fFeatures.put(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+        fFeatures.put(JdkXmlUtils.OVERRIDE_PARSER, JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties =
-            {
-                                SYMBOL_TABLE,
-                                ERROR_HANDLER,
-                                ENTITY_RESOLVER,
-                ERROR_REPORTER,
-                ENTITY_MANAGER,
-                DOCUMENT_SCANNER,
-                DTD_SCANNER,
-                DTD_PROCESSOR,
-                DTD_VALIDATOR,
-                                DATATYPE_VALIDATOR_FACTORY,
-                                VALIDATION_MANAGER,
-                                SCHEMA_VALIDATOR,
-                                XML_STRING,
-                XMLGRAMMAR_POOL,
-                JAXP_SCHEMA_SOURCE,
-                JAXP_SCHEMA_LANGUAGE,
-                // NOTE: These shouldn't really be here but since the XML Schema
-                //       validator is constructed dynamically, its recognized
-                //       properties might not have been set and it would cause a
-                //       not-recognized exception to be thrown. -Ac
-                SCHEMA_LOCATION,
-                SCHEMA_NONS_LOCATION,
-                LOCALE,
-                SCHEMA_DV_FACTORY,
-                SECURITY_MANAGER,
-                XML_SECURITY_PROPERTY_MANAGER
+        {
+            SYMBOL_TABLE,
+            ERROR_HANDLER,
+            ENTITY_RESOLVER,
+            ERROR_REPORTER,
+            ENTITY_MANAGER,
+            DOCUMENT_SCANNER,
+            DTD_SCANNER,
+            DTD_PROCESSOR,
+            DTD_VALIDATOR,
+            DATATYPE_VALIDATOR_FACTORY,
+            VALIDATION_MANAGER,
+            SCHEMA_VALIDATOR,
+            XML_STRING,
+            XMLGRAMMAR_POOL,
+            JAXP_SCHEMA_SOURCE,
+            JAXP_SCHEMA_LANGUAGE,
+            // NOTE: These shouldn't really be here but since the XML Schema
+            //       validator is constructed dynamically, its recognized
+            //       properties might not have been set and it would cause a
+            //       not-recognized exception to be thrown. -Ac
+            SCHEMA_LOCATION,
+            SCHEMA_NONS_LOCATION,
+            ROOT_TYPE_DEF,
+            ROOT_ELEMENT_DECL,
+            LOCALE,
+            SCHEMA_DV_FACTORY,
+            SECURITY_MANAGER,
+            XML_SECURITY_PROPERTY_MANAGER
         };
         addRecognizedProperties(recognizedProperties);
 
-                if (symbolTable == null) {
-                        symbolTable = new SymbolTable();
-                }
-                fSymbolTable = symbolTable;
-                fProperties.put(SYMBOL_TABLE, fSymbolTable);
+        if (symbolTable == null) {
+                symbolTable = new SymbolTable();
+        }
+        fSymbolTable = symbolTable;
+        fProperties.put(SYMBOL_TABLE, fSymbolTable);
 
         fGrammarPool = grammarPool;
         if (fGrammarPool != null) {
@@ -591,8 +618,7 @@ public class XML11Configuration extends ParserConfigurationSettings
             // REVISIT: What is the right thing to do? -Ac
         }
 
-                fConfigUpdated = false;
-
+        fConfigUpdated = false;
     } // <init>(SymbolTable,XMLGrammarPool)
 
     //

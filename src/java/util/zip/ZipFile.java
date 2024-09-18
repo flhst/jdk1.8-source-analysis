@@ -32,6 +32,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Enumeration;
@@ -211,6 +212,11 @@ class ZipFile implements ZipConstants, Closeable {
                                                Integer.toHexString(mode));
         }
         String name = file.getPath();
+        if (name.indexOf(0) != -1) {
+            throw new IOException(
+                new InvalidPathException(name, "Nul character not allowed"));
+        }
+        file = new File(name);
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkRead(name);

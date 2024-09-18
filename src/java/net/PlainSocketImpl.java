@@ -92,22 +92,12 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
     /**
      * Constructs an empty instance.
      */
-    PlainSocketImpl() {
+    PlainSocketImpl(boolean isServer) {
+        super(isServer);
         if (useDualStackImpl) {
-            impl = new DualStackPlainSocketImpl(exclusiveBind);
+            impl = new DualStackPlainSocketImpl(exclusiveBind, isServer);
         } else {
-            impl = new TwoStacksPlainSocketImpl(exclusiveBind);
-        }
-    }
-
-    /**
-     * Constructs an instance with the given file descriptor.
-     */
-    PlainSocketImpl(FileDescriptor fd) {
-        if (useDualStackImpl) {
-            impl = new DualStackPlainSocketImpl(fd, exclusiveBind);
-        } else {
-            impl = new TwoStacksPlainSocketImpl(fd, exclusiveBind);
+            impl = new TwoStacksPlainSocketImpl(exclusiveBind, isServer);
         }
     }
 
