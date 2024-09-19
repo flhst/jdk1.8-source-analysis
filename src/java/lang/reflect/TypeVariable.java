@@ -48,6 +48,7 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
+// TypeVariable 表示类型变量类型，如参数化类型中的 E、K 等类型变量，表示泛指任何类。
 public interface TypeVariable<D extends GenericDeclaration> extends Type, AnnotatedElement {
     /**
      * Returns an array of {@code Type} objects representing the
@@ -68,6 +69,10 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * @return an array of {@code Type}s representing the upper
      *     bound(s) of this type variable
     */
+    // 返回一个 Type对象的数组，表示此类型变量的上限。若无显示定义（extends），默认为Object。
+    // 类型变量的上限可能不止一个，因为可以用&符号限定多个（这其中有且只能有一个为类或抽象类，
+    // 且必须放在extends后的第一个，即若有多个上边界，则第一个&后必为接口）
+    // public class Test<K extends Integer & Map, V> {}。
     Type[] getBounds();
 
     /**

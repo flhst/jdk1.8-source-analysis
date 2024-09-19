@@ -31,6 +31,7 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
+// WildcardType 代表通配符类型，或泛型表达式类型，比如?、? super T、? extends T，他并不是 Java 类型中的一种。
 public interface WildcardType extends Type {
     /**
      * Returns an array of {@code Type} objects representing the  upper

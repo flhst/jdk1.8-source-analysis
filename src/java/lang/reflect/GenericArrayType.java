@@ -30,6 +30,7 @@ package java.lang.reflect;
  * type is either a parameterized type or a type variable.
  * @since 1.5
  */
+// GenericArrayType 表示泛型数组类型，比如 T[]。注意，这不是我们说的一般数组，而是表示一种【元素类型是参数化类型或者类型变量】的数组类型。
 public interface GenericArrayType extends Type {
     /**
      * Returns a {@code Type} object representing the component type
@@ -48,5 +49,6 @@ public interface GenericArrayType extends Type {
      *     underlying array type's component type refers to a
      *     parameterized type that cannot be instantiated for any reason
      */
+    // 获取泛型数组中元素的类型
     Type getGenericComponentType();
 }

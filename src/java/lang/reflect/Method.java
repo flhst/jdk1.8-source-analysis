@@ -207,6 +207,7 @@ public final class Method extends Executable {
      * @throws GenericSignatureFormatError {@inheritDoc}
      * @since 1.5
      */
+    //返回泛型声明的 TypeVariable 数组
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public TypeVariable<Method>[] getTypeParameters() {
