@@ -974,9 +974,11 @@ public final class String
      * @see  #equalsIgnoreCase(String)
      */
     public boolean equals(Object anObject) {
+        // 首先判断传入对象与调用方法的对象是否是同一个对象
         if (this == anObject) {
             return true;
         }
+        // 判断传入对象是否为String类型或其派生类（子类），如果不是，则直接返回false，是则先比较长度后比较内容
         if (anObject instanceof String) {
             String anotherString = (String)anObject;
             int n = value.length;

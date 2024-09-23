@@ -34,6 +34,17 @@ package java.lang;
  * @see     java.lang.Class
  * @since   JDK1.0
  */
+// 所有对象的顶级父类
+// 大部分方法都是native方法，用此关键字修饰的方法是Java中的本地方法，一般是用C/C++语言来实现。
+// 为什么重写equals就一定要重写hashCode方法呢？
+// 1、在 Object 类中，equals方法将判断两个对象是否具有相同的引用，在大多数情况来说，equals 的判断是没有什么意义的！所以需要重写equals
+// 2、如果只重写equals方法，不重写hashCode方法，就有可能导致a.equals(b)这个表达式成立，
+//    但是hashCode却不同。会造成一个完全相同的对象会存储在hash表的不同位置(Map的put、Set的add)。
+// 3、默认情况下，Set 进行去重操作时，会先判断两个对象的 hashCode 是否相同，
+//    此时因为没有重写 hashCode 方法，所以会直接执行 Object 中的 hashCode 方法，
+//    而 Object 中的 hashCode 方法对比的是两个不同引用地址的对象，
+//    所以结果是 false，那么 equals 方法就不用执行了，直接返回的结果就是 false,
+//    两个对象不是相等的，于是就在 Set 集合中插入了两个相同的对象。
 public class Object {
 
     private static native void registerNatives();
@@ -60,6 +71,7 @@ public class Object {
      *         class of this object.
      * @jls 15.8.2 Class Literals
      */
+    // 返回此object的运行时类，常用于反射机制
     public final native Class<?> getClass();
 
     /**
@@ -97,6 +109,8 @@ public class Object {
      * @see     java.lang.Object#equals(java.lang.Object)
      * @see     java.lang.System#identityHashCode
      */
+    // 返回对象的哈希码，即一个整数值，用于在哈希表等数据结构中快速定位对象。
+    // 如果两个对象相等（即equals返回true），那么它们的hashCode值也必须相等。
     public native int hashCode();
 
     /**
@@ -144,6 +158,20 @@ public class Object {
      *          argument; {@code false} otherwise.
      * @see     #hashCode()
      * @see     java.util.HashMap
+     *
+     *
+     * 指示其它对象是否与此对象相同
+     * 1. == 方法与 equals 方法比较
+     *    - `==` 是一个运算符，可以用于基本类型和引用类型的比较。
+     *      - 对于基本类型，`==` 用于判断两个值是否相等。
+     *      - 对于引用类型，`==` 用于判断两个引用是否指向同一个对象（即地址是否相等）。
+     *    - `equals` 是 `Object` 类中的方法，默认情况下也用于判断两个对象的地址是否相等。
+     *      - 在实际应用中，通常会在子类中重写 `equals` 方法，以便根据对象的内容来判断是否相等。
+     * 2. 查看源代码
+     * @see java.lang.Object#equals(Object)
+     * @see java.lang.String#equals(Object)
+     * @see java.lang.Integer#equals(Object)
+     *
      */
     public boolean equals(Object obj) {
         return (this == obj);
@@ -232,6 +260,7 @@ public class Object {
      *
      * @return  a string representation of the object.
      */
+    // 返回对象的字符串表示形式，默认实现返回的是对象的全类名(包名加类名)和对象的哈希码(十六进制表示)，格式：全类名@哈希码
     public String toString() {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
     }

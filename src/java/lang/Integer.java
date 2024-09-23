@@ -49,6 +49,14 @@ import java.lang.annotation.Native;
  * @author  Joseph D. Darcy
  * @since JDK1.0
  */
+ //  Integer a = 6;
+ //  Integer b = 6;
+ //  a = b; true
+ //         这是因为 Java 中的 Integer缓存机制：
+ //          - 在Java中，Integer类会对在-128到127范围内的整数值进行缓存。
+ //          - Java的Integer缓存机制仅适用于通过自动装箱或使用Integer.valueOf(int)方法创建的Integer对象。
+ //          - new Integer()： 每次都会创建新的对象，即使值在 -128 到 127 范围内也不会使用缓存的对象。
+ //          - 在这种情况下，Java会返回缓存的对象实例。
 public final class Integer extends Number implements Comparable<Integer> {
     /**
      * A constant holding the minimum value an {@code int} can
@@ -837,6 +845,19 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @serial
      */
+    // fianl 使用 final 关键字可以声明一个不可变的变量。一旦给 final 变量赋值后，就不能再改变它的值。
+    // Integer类是不可变的，这意味着一旦创建了Integer对象，就无法修改其值。
+    //  - Integer num = 10;
+    //  - 这不是修改原来的对象，而是让num指向一个新的Integer对象
+    //  - num = 20;
+    //    方法一：使用反射
+    //     - Integer num = 10;
+    //     - Field value = Integer.class.getDeclaredField("value");
+    //     - value.setAccessible(true);
+    //     - value.set(num, 20);
+    //    方法二：使用AtomicInteger
+    //     - AtomicInteger atomicInteger = new AtomicInteger(10);
+    //     - atomicInteger.set(20);
     private final int value;
 
     /**

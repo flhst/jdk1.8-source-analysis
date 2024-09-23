@@ -116,6 +116,19 @@ import sun.reflect.misc.ReflectUtil;
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   JDK1.0
  */
+// Class 在 Java 中是一个特殊的类，它提供了对类的元数据的访问，并且是反射机制的基础。
+// Class类包含类的名称、父类、实现的接口、注解、构造函数、字段、方法、内部类、数组、注解类型等。
+// 每一个 Java 类型，无论是类（class）（包括外部类、成员（成员内部类，静态内部类），局部内部类，匿名内部类）、接口（interface）、枚举（enum）、注解、基本数据类型、数组类型、void，在运行时都有一个对应的 Class 对象来表示该类型。
+// 类的Class 对象的获取方式：
+//    - 方式一：调用运行时类的属性 .class属性，通过类的 .class 属性可以直接获取到该类的 Class 对象。 （推荐）
+//      - Class<String> classOne = String.class;
+//    - 方式二：通过运行时类的对象，调用getClass()
+//      - Class<? extends String> classTwo = new String().getClass();
+//    - 方式三：通过Class的静态方法 Class.forName(String className) (全路径)
+//      - Class<?> classThree = Class.forName("java.lang.String");
+//    - 方式四：通过类加载器加载全路径 UserInfo.class.getClassLoader().loadClass(String name);
+//      - ClassLoader classLoader = ClassTest.class.getClassLoader();
+//      - Class<?> classFour = classLoader.loadClass("java.lang.String");
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
                               Type,

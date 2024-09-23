@@ -62,6 +62,7 @@ public interface ParameterizedType extends Type {
      *     be instantiated for any reason
      * @since 1.5
      */
+    // 简单来说就是获得<>里的类型参数的类型，可能有多个类型参数，例如Map<K, V>，也可能没有类型参数
     Type[] getActualTypeArguments();
 
     /**
@@ -72,6 +73,7 @@ public interface ParameterizedType extends Type {
      *     that declared this type
      * @since 1.5
      */
+    // 返回声明此 Type 的类或接口，简单来说就是返回<>前面那个类型，例如Map<K ,V>返回的是Map
     Type getRawType();
 
     /**

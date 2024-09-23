@@ -30,6 +30,9 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
+// 可以声明类型变量的实体的父接口，也就是说，只有实现了该接口才能在对应的实体上声明(定义)类型变量(K, V)
+// 这些实体目前只有三个：Class（类）、Construstor（构造器）、Method（方法），
+// GenericDeclaration的直接实现子类没有Field类，所以属性上面不能定义类型变量。
 public interface GenericDeclaration extends AnnotatedElement {
     /**
      * Returns an array of {@code TypeVariable} objects that
@@ -45,5 +48,6 @@ public interface GenericDeclaration extends AnnotatedElement {
      *     the format specified in
      *     <cite>The Java&trade; Virtual Machine Specification</cite>
      */
+    // 返回实体上声明（定义）的所有的类型变量。
     public TypeVariable<?>[] getTypeParameters();
 }

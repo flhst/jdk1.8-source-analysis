@@ -234,6 +234,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * The default initial capacity - MUST be a power of two.
      */
+    // 默认初始值，值必须是2的幂值 16
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
 
     /**
@@ -241,11 +242,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
      */
+    // 最大值 必须是2的幂值且小于2^30
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
      * The load factor used when none specified in constructor.
      */
+    // 默认加载因子，0.75，当map里的元素数量超过容量的0.75倍时，进行扩容
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
     /**
@@ -256,6 +259,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * tree removal about conversion back to plain bins upon
      * shrinkage.
      */
+    // 下面的三个参数是用来树化的参数
+    // 树化的阈值，如果哈希值相同的元素超过8个（桶中的元素超过8个），则进行树化，否则进行链表化
     static final int TREEIFY_THRESHOLD = 8;
 
     /**
@@ -263,6 +268,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
      */
+    // 树的节点小于6个，则转为链表
     static final int UNTREEIFY_THRESHOLD = 6;
 
     /**
@@ -271,12 +277,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * Should be at least 4 * TREEIFY_THRESHOLD to avoid conflicts
      * between resizing and treeification thresholds.
      */
+    // 最小树化容量，如果容量个数小于64，即使单个桶中的元素个数操过8个了，也不进行树化，会进行扩容
     static final int MIN_TREEIFY_CAPACITY = 64;
 
     /**
      * Basic hash bin node, used for most entries.  (See below for
      * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
      */
+    // HashMap 的节点，存储元素的容器
     static class Node<K,V> implements Map.Entry<K,V> {
         final int hash;
         final K key;
@@ -335,6 +343,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * to incorporate impact of the highest bits that would otherwise
      * never be used in index calculations because of table bounds.
      */
+    // 通过对象的hashCode 计算出一个哈希值，通过位运算，将高16位与低16位进行异或，减少哈希冲突
     static final int hash(Object key) {
         int h;
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
@@ -344,6 +353,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * Returns x's Class if it is of the form "class C implements
      * Comparable<C>", else null.
      */
+
     static Class<?> comparableClassFor(Object x) {
         if (x instanceof Comparable) {
             Class<?> c; Type[] ts, as; Type t; ParameterizedType p;

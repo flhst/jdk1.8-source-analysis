@@ -59,6 +59,9 @@ import sun.reflect.annotation.TypeAnnotationParser;
  * @author Kenneth Russell
  * @author Nakul Saraiya
  */
+// Field 表示类或接口中的一个字段，无论是静态字段还是实例字段。
+// 通过 Field 对象，我们可以获得字段的名称、类型、修饰符等信息，
+// 并且可以读取或修改字段的值，即使它是私有的。
 public final
 class Field extends AccessibleObject implements Member {
 
