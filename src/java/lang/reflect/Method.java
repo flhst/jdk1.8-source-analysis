@@ -58,6 +58,8 @@ import java.nio.ByteBuffer;
  * @author Kenneth Russell
  * @author Nakul Saraiya
  */
+// 单个类或接口中的单个方法，通过Method对象，可以获取方法的信息，如方法名称，参数类型，返回类型，访问修饰符等，也可以在运行时调用方法。
+// Method 类没有公共构造函数，Method对象通常通过Class对象的以下方法获得
 public final class Method extends Executable {
     private Class<?>            clazz;
     private int                 slot;
@@ -189,6 +191,7 @@ public final class Method extends Executable {
      * Returns the name of the method represented by this {@code Method}
      * object, as a {@code String}.
      */
+    // 返回方法的名称
     @Override
     public String getName() {
         return name;
@@ -197,6 +200,7 @@ public final class Method extends Executable {
     /**
      * {@inheritDoc}
      */
+    //
     @Override
     public int getModifiers() {
         return modifiers;
@@ -223,6 +227,7 @@ public final class Method extends Executable {
      *
      * @return the return type for the method this object represents
      */
+    // 返回一个Class对象，该对象表示此Method对象所表示的方法的返回类型
     public Class<?> getReturnType() {
         return returnType;
     }
@@ -260,6 +265,7 @@ public final class Method extends Executable {
     /**
      * {@inheritDoc}
      */
+    // 返回一个Class对象数组，表示方法的参数类型
     @Override
     public Class<?>[] getParameterTypes() {
         return parameterTypes.clone();
