@@ -286,6 +286,11 @@ public interface Collection<E> extends Iterable<E> {
      * @throws IllegalStateException if the element cannot be added at this
      *         time due to insertion restrictions
      */
+    // 调用add方法后，要么元素被添加成功，要么抛出异常（不允许重复除外）
+    // 如果不包含该元素，则添加并返回true
+    // 如果集合不允许重复且已包含该元素，则返回false（特殊情况）
+    // 集合可以限制添加元素类型或值，如拒绝null元素
+    // 添加失败需抛出异常而非返回false，以保持集合不变性
     boolean add(E e);
 
     /**
@@ -308,6 +313,13 @@ public interface Collection<E> extends Iterable<E> {
      * @throws UnsupportedOperationException if the <tt>remove</tt> operation
      *         is not supported by this collection
      */
+    // 从集合中移除指定元素的第一个匹配项（如果存在）
+    // @return 移除成功返回true,否则返回false
+    // @throws ClassCastException – 如果指定元素的类型与此集合不兼容（可选）
+    // @throws NullPointerException – 如果指定的元素为 null 并且此集合不允许 null 元素（可选）
+    // @throws UnsupportedOperationException – 如果此集合不支持 Remove 操作
+    // 可选的意义：允许在实现类中选择是否抛出异常，这些异常是由具体实现的集合决定是否抛出的
+    // 某些集合可能允许类型不兼容的元素或者null值，因此不会抛出异常，如：HashSet允许null值，而TreeSet不允许null值
     boolean remove(Object o);
 
 
@@ -357,6 +369,9 @@ public interface Collection<E> extends Iterable<E> {
      *         this time due to insertion restrictions
      * @see #add(Object)
      */
+    // 将指定集合中的元素添加到当前集合中
+    // @return 添加成功 true
+    // @return 如果调用addAll方法后集合没有发生改变 false
     boolean addAll(Collection<? extends E> c);
 
     /**
@@ -382,6 +397,9 @@ public interface Collection<E> extends Iterable<E> {
      * @see #remove(Object)
      * @see #contains(Object)
      */
+    // 从当前集合中移除指定集合中的元素
+    // @return 返回值表示当前集合是否因此改变。
+    // @throws 不支持此操作、类型不匹配、存在空元素
     boolean removeAll(Collection<?> c);
 
     /**
