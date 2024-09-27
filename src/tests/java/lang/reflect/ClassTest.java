@@ -1,11 +1,10 @@
-package tests.java.lang;
+package tests.java.lang.reflect;
 
 import org.junit.Test;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.sql.SQLOutput;
 
 import static org.junit.Assert.assertTrue;
 

@@ -151,6 +151,7 @@ public interface Collection<E> extends Iterable<E> {
      *
      * @return the number of elements in this collection
      */
+    // 返回此集合的元素数量
     int size();
 
     /**
@@ -204,6 +205,7 @@ public interface Collection<E> extends Iterable<E> {
      *
      * @return an array containing all of the elements in this collection
      */
+    // 返回一个包含了本类集中所有元素的数组
     Object[] toArray();
 
     /**
@@ -343,6 +345,7 @@ public interface Collection<E> extends Iterable<E> {
      *         or if the specified collection is null.
      * @see    #contains(Object)
      */
+    // 如果此集合包含指定集合中的所有元素，则返回 true 。
     boolean containsAll(Collection<?> c);
 
     /**
@@ -459,6 +462,8 @@ public interface Collection<E> extends Iterable<E> {
      * @see #remove(Object)
      * @see #contains(Object)
      */
+    // 仅保留此集合中包含在指定集合中的元素（可选操作）。
+    // 换句话说，从此集合中删除未包含在指定集合中的所有元素。
     boolean retainAll(Collection<?> c);
 
     /**
@@ -468,6 +473,7 @@ public interface Collection<E> extends Iterable<E> {
      * @throws UnsupportedOperationException if the <tt>clear</tt> operation
      *         is not supported by this collection
      */
+    // 清除本类集中所有元素，调用完成该方法后本类集将为空。
     void clear();
 
 

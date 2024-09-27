@@ -37,6 +37,9 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+// 函数式接口，用于支持函数式编程风格
+// 主要包含R apply(T t)方法，用于对输入参数执行某种操作并返回结果。
+// 应用场景：当有一个输入参数，需要对其进行转换或处理得到一个输出结果时使用。
 @FunctionalInterface
 public interface Function<T, R> {
 

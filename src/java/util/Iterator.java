@@ -51,6 +51,11 @@ import java.util.function.Consumer;
  * @see Iterable
  * @since 1.2
  */
+// iterator接口,也是集合大家庭中的一员。
+// 和其他的Map和Collection接口不同，
+// iterator 主要是为了方便遍历集合中的所有元素，
+// 用于迭代访问集合中的元素，相当于定义了遍历元素的规范，
+// 而另外的Map和Collection接口主要是定义了存储元素的规范。
 public interface Iterator<E> {
     /**
      * Returns {@code true} if the iteration has more elements.
@@ -89,6 +94,13 @@ public interface Iterator<E> {
      *         been called after the last call to the {@code next}
      *         method
      */
+    // 该方法允许我们在迭代过程中安全的删除元素。
+    // 因为直接在集合上使用 remove 方法（如 ArrayList.remove(int index)）
+    // 在迭代过程中可能会导致 ConcurrentModificationException。
+    // 当你在迭代过程中调用Iterator.remove()方法时，它会在内部标记当前元素为已删除，
+    // 而不是立即从集合中移除它。这样做的目的是确保在迭代过程中不会立即影响集合的大小，
+    // 从而防止迭代器失效。只有当迭代结束后，集合才会真正删除这些标记为已经删除的元素。
+    // 如果在迭代过程中集合被其他方式修改（除了通过迭代器）
     default void remove() {
         throw new UnsupportedOperationException("remove");
     }
@@ -110,6 +122,7 @@ public interface Iterator<E> {
      * @throws NullPointerException if the specified action is null
      * @since 1.8
      */
+    // 对剩下的所有元素进行处理，action则为处理的动作，意为要怎么处理
     default void forEachRemaining(Consumer<? super E> action) {
         Objects.requireNonNull(action);
         while (hasNext())

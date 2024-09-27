@@ -1,4 +1,4 @@
-package tests.java.lang;
+package tests.java.lang.reflect;
 
 import org.junit.Test;
 

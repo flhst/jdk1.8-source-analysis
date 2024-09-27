@@ -126,6 +126,16 @@ import java.io.Serializable;
  * @see Set
  * @since 1.2
  */
+// java 自带了各种Map类。这些Map类可归为三种类型：
+//  1、通用Map，用于在应用程序中管理映射，通常在java.util程序包中实现
+//     HashMap、Hashtable、Properties、LinkedHashMap、IdentityHashMap、TreeMap、WeakHashMap、ConcurrentHashMap
+//  2、专用Map，通常我们不必亲自创建此类Map，而是通过某些其他类对其进行访问
+//     java.util.jar.Attributes、
+//     javax.print.attribute.standard.PrinterStateReasons、
+//     java.security.Provider、java.awt.RenderingHints、
+//     javax.swing.UIDefaults
+// 3、一个用于帮助我们实现自己的Map类的抽象类
+//     AbstractMap
 public interface Map<K,V> {
     // Query Operations
 
@@ -136,6 +146,8 @@ public interface Map<K,V> {
      *
      * @return the number of key-value mappings in this map
      */
+    // 返回此映射中键值映射的数量。
+    // 如果映射包含超过 Integer.MAX_VALUE 元素，则返回 Integer.MAX_VALUE。
     int size();
 
     /**
@@ -143,6 +155,7 @@ public interface Map<K,V> {
      *
      * @return <tt>true</tt> if this map contains no key-value mappings
      */
+    // 判断Map是否为空
     boolean isEmpty();
 
     /**
@@ -162,6 +175,7 @@ public interface Map<K,V> {
      *         does not permit null keys
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
+    // 如果此映射包含指定键的映射，则返回 true。
     boolean containsKey(Object key);
 
     /**
@@ -182,6 +196,7 @@ public interface Map<K,V> {
      *         map does not permit null values
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
+    // 是否存在一个键或多个键映射到指定的值
     boolean containsValue(Object value);
 
     /**
@@ -209,6 +224,9 @@ public interface Map<K,V> {
      *         does not permit null keys
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
+    // 从映射中返回指定键值对应的值，如果映射中不存在此键，则返回 null
+    // 如果允许null值，返回null可能表示无映射或显示映射为null
+    // 可以通过containsKey方法来区分
     V get(Object key);
 
     // Modification Operations
@@ -237,6 +255,10 @@ public interface Map<K,V> {
      * @throws IllegalArgumentException if some property of the specified key
      *         or value prevents it from being stored in this map
      */
+    // 将指定值与此映射中的指定键关联（可选操作）。
+    // 如果映射以前包含键的映射，则旧值将替换为指定值。
+    // @return 旧值，如果此映射中不存在此键，则返回 null。
+    // @return 如果允许null值，也可能表示显示映射为null。
     V put(K key, V value);
 
     /**
@@ -269,6 +291,9 @@ public interface Map<K,V> {
      *         map does not permit null keys
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
+    // 如果存在键，则从此 map 中删除键的映射（可选操作）。
+    // @return 旧值，如果此映射中不存在此键，则返回 null。
+    // @return 如果允许null值，也可能表示显示映射为null。
     V remove(Object key);
 
 
@@ -293,6 +318,9 @@ public interface Map<K,V> {
      * @throws IllegalArgumentException if some property of a key or value in
      *         the specified map prevents it from being stored in this map
      */
+    // 将指定映射中的所有映射复制到此映射（可选操作）。
+    // 此调用的效果相当于针对指定映射中从键k到值v 的每个映射在此映射上调用一次put(k, v)的效果。
+    // 如果在操作进行过程中修改了指定的映射，则该操作的行为是未定义的。
     void putAll(Map<? extends K, ? extends V> m);
 
     /**
@@ -302,6 +330,7 @@ public interface Map<K,V> {
      * @throws UnsupportedOperationException if the <tt>clear</tt> operation
      *         is not supported by this map
      */
+    // 从此映射中删除所有映射（可选操作）。
     void clear();
 
 
@@ -322,6 +351,12 @@ public interface Map<K,V> {
      *
      * @return a set view of the keys contained in this map
      */
+    // 返回此映射中包含的键的Set视图。
+    // 该集合支持元素删除，即通过Iterator.remove 、 Set.remove 、 removeAll 、 keepAll和clear操作从映射中删除相应的映射。
+    // 它不支持add或addAll操作
+    //  1、集合与映射同步变化
+    //  2、支持元素移除操作，但是不支持添加操作
+    //  3、在遍历过程中修改映射可能导致未定义的行为
     Set<K> keySet();
 
     /**
@@ -339,6 +374,11 @@ public interface Map<K,V> {
      *
      * @return a collection view of the values contained in this map
      */
+    // 返回一个表示此映射中值的Collection视图
+    // Map中的值可以是重复的，所以返回的是一个Collection集合，而不是Set。
+    //  1、集合与映射同步变化
+    //  2、支持元素移除操作，但是不支持添加操作
+    //  3、在遍历过程中修改映射可能导致未定义的行为
     Collection<V> values();
 
     /**
@@ -357,6 +397,8 @@ public interface Map<K,V> {
      *
      * @return a set view of the mappings contained in this map
      */
+    // 返回Map中所有键值对的集合。
+    // 每个Map.Entry对象表示一个键值对，可以通过getKey()和getValue()方法分别获取键值对。
     Set<Map.Entry<K, V>> entrySet();
 
     /**
@@ -372,6 +414,7 @@ public interface Map<K,V> {
      * @see Map#entrySet()
      * @since 1.2
      */
+    // 内部接口，用于封装Map集合中的一组键值(key和value)
     interface Entry<K,V> {
         /**
          * Returns the key corresponding to this entry.
@@ -381,6 +424,9 @@ public interface Map<K,V> {
          *         required to, throw this exception if the entry has been
          *         removed from the backing map.
          */
+        // 该函数返回当前条目对应的键（Key）。
+        // 返回类型为 K，表示键的类型。
+        // 如果条目已被移除，实现类可以选择性抛出 IllegalStateException 异常
         K getKey();
 
         /**
@@ -393,6 +439,7 @@ public interface Map<K,V> {
          *         required to, throw this exception if the entry has been
          *         removed from the backing map.
          */
+        // 当前Entry的value值。
         V getValue();
 
         /**
@@ -415,6 +462,8 @@ public interface Map<K,V> {
          *         required to, throw this exception if the entry has been
          *         removed from the backing map.
          */
+        // 将Entry中的value值设置为指定的值，并将旧值返回
+        // 如果条目已经被删除，则行为未定义
         V setValue(V value);
 
         /**
@@ -435,6 +484,10 @@ public interface Map<K,V> {
          * @return <tt>true</tt> if the specified object is equal to this map
          *         entry
          */
+        // 比较指定对象与此条目是否相等。
+        // 如果给定对象也是映射条目并且两个条目表示相同的映射，则返回true 。
+        // (e1.getKey() == null ? e2.getKey() == null : e1.getKey().equals(e2.getKey()))
+        // && (e1.getValue() == null ? e2.getValue() == null : e1.getValue().equals(e2.getValue()))
         boolean equals(Object o);
 
         /**
@@ -453,6 +506,11 @@ public interface Map<K,V> {
          * @see Object#equals(Object)
          * @see #equals(Object)
          */
+        // 返回此映射条目的哈希码值。
+        // (e.getKey() == null ? 0 : e.getKey().hashCode())
+        // ^ (e.getValue() == null ? 0 : e.getValue().hashCode())
+        // 确保了 e1.equals(e2) =>>> e1.hashCode()==e2.hashCode()
+        // 正如Object.hashCode的一般契约所要求的。
         int hashCode();
 
         /**
@@ -542,6 +600,8 @@ public interface Map<K,V> {
      * @param o object to be compared for equality with this map
      * @return <tt>true</tt> if the specified object is equal to this map
      */
+    // 比较指定对象与此映射是否相等。如果给定对象也是一个映射并且两个映射表示相同的映射，则返回true 。
+    // m1.entrySet().equals(m2.entrySet())
     boolean equals(Object o);
 
     /**
@@ -583,6 +643,7 @@ public interface Map<K,V> {
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
+    // 如果此映射包含键的映射，则返回该键所映射的值；否则返回指定的默认值。
     default V getOrDefault(Object key, V defaultValue) {
         V v;
         return (((v = get(key)) != null) || containsKey(key))
@@ -670,6 +731,7 @@ public interface Map<K,V> {
      * removed during iteration
      * @since 1.8
      */
+    // 用于将映射中的所有键对应的值替换为给定的BiFunction计算后得到的新值。
     default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         Objects.requireNonNull(function);
         for (Map.Entry<K, V> entry : entrySet()) {
@@ -738,6 +800,7 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
+    // 如果指定的键尚未与值关联（或映射到null ），则将其与给定值关联并返回null ，否则返回当前值。
     default V putIfAbsent(K key, V value) {
         V v = get(key);
         if (v == null) {
@@ -781,6 +844,8 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
+    // 仅当指定键关联的值与给定值相等时，移除映射表中的该项。
+    // @return 该值已经被删除 true（内容改变），否则返回false
     default boolean remove(Object key, Object value) {
         Object curValue = get(key);
         if (!Objects.equals(curValue, value) ||
@@ -833,6 +898,8 @@ public interface Map<K,V> {
      *         or value prevents it from being stored in this map
      * @since 1.8
      */
+    // 仅当当前映射到指定值时才替换指定键的条目。
+    // @return 该值已经被删除 true（内容改变），否则返回false
     default boolean replace(K key, V oldValue, V newValue) {
         Object curValue = get(key);
         if (!Objects.equals(curValue, oldValue) ||
@@ -881,6 +948,9 @@ public interface Map<K,V> {
      *         or value prevents it from being stored in this map
      * @since 1.8
      */
+    // 仅当指定键当前映射到某个值时才替换该条目
+    // 与指定键关联的前一个值；如果该键没有映射，则返回null 。
+    // （如果实现支持 null 值，则null返回还可以指示映射先前将null与键关联。）
     default V replace(K key, V value) {
         V curValue;
         if (((curValue = get(key)) != null) || containsKey(key)) {
@@ -948,6 +1018,9 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
+    // 如果指定键未关联值或者关联值为null，则使用给定函数计算新值并存入映射中
+    // 若计算结果为null，不记录映射
+    // @return 与指定键关联的当前（现有或计算的）值
     default V computeIfAbsent(K key,
             Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction);
@@ -1009,6 +1082,8 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
+    // 如果指定键的值存在且非空，则尝试在给定键及其当前映射值的情况下计算新映射。
+    // @return 与指定键关联的新值，如果没有则为 null
     default V computeIfPresent(K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
@@ -1085,6 +1160,8 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
+    // 尝试计算指定键及其当前映射值的映射
+    // @return 与指定键关联的新值
     default V compute(K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
@@ -1166,6 +1243,11 @@ public interface Map<K,V> {
      *         null
      * @since 1.8
      */
+    // 如果指定的键尚未与值关联或与 null 关联，则将其与给定的非 null 值关联。
+    // 当map中不存在指定的key时，便将传入的value设置为key的值，
+    // 相当于map.put(key, value)；当key存在值时，
+    // 执行一个方法该方法接收key的旧值和传入的value，
+    // 执行自定义的方法返回最终结果设置为key的值。
     default V merge(K key, V value,
             BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);

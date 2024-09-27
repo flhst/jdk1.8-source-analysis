@@ -42,12 +42,17 @@ import java.util.function.Consumer;
  * @since 1.5
  * @jls 14.14.2 The enhanced for statement
  */
+// 该接口定义了使对象能够成为增强for循环目标的基本方法。允许使用迭代方式遍历集合。
+// Iterable是可以为不同的集合提供遍历的最佳方式。
+// Iterable 接口定义了如何生成 Iterator 对象。
+// Iterator 负责遍历集合中的元素。
 public interface Iterable<T> {
     /**
      * Returns an iterator over elements of type {@code T}.
      *
      * @return an Iterator.
      */
+    // 获取迭代器对象
     Iterator<T> iterator();
 
     /**
