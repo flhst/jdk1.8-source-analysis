@@ -3,6 +3,7 @@ package tests.java.util;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -34,6 +35,30 @@ public class HashMapTest {
         map.computeIfAbsent(2, k -> "two");
         assertThat(map.get(2)).isEqualTo("two");
         System.out.println(map.computeIfAbsent(1, k -> "three"));
+    }
+
+    // ±®¥ÌConcurrentModificationException
+    @Test
+    public void testKeySet() {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("a", 1);
+        map.put("b", 2);
+        map.put("c", 3);
+        Iterator<String> iterator = map.keySet().iterator();
+        while (iterator.hasNext()) {
+            String next = iterator.next();
+            System.out.println(next);
+            map.put("d", 4);
+        }
+    }
+
+    @Test
+    public void testToString() {
+        Map<Object, String> map = new HashMap<>();
+        map.put("name", "Alice");
+        map.put("age", "25");
+        map.put(map, "This is the map itself");
+        System.out.println(map);
     }
 
 }

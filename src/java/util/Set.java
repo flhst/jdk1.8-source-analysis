@@ -81,7 +81,7 @@ package java.util;
  * @see Collections#EMPTY_SET
  * @since 1.2
  */
-
+// 继承自Collection接口，用于存储不重复元素，不保证顺序，且不包含重复元素
 public interface Set<E> extends Collection<E> {
     // Query Operations
 

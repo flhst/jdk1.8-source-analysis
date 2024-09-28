@@ -65,6 +65,15 @@ import java.util.Map.Entry;
  * @since 1.2
  */
 
+// 此类提供了Map接口的骨架实现，以尽量减少实现此接口所需的工作量。
+// 为了实现一个不可修改的地图，程序员只需要扩展这个类并为entrySet方法提供一个实现，
+//      该方法返回地图映射的设置视图。 通常，返回的集合又将在AbstractSet顶部实现 。
+//      这个集合不应该支持add或remove方法，而且它的迭代器不应该支持remove方法。
+// 要实现可修改的映射，程序员必须另外覆盖此类的put方法（否则将抛出UnsupportedOperationException ），
+//      由entrySet().iterator()返回的迭代器必须另外实现其remove方法。
+// 程序员通常应该提供一个空隙（无参数）构造器，按照在Map接口规范的建议。
+// 该类中每个非抽象方法的文档详细描述了其实现。
+//      如果实施的地图承认更有效的实施，则可以覆盖这些方法中的每一个。
 public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
@@ -91,6 +100,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @implSpec
      * This implementation returns <tt>size() == 0</tt>.
      */
+    //
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -108,6 +118,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @throws ClassCastException   {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
+    // 如果此映射将一个或多个键映射到指定值，则返回true 。
+    // 更正式地说，当且仅当此映射包含至少一个到值v 的映射且满足
+    // (value==null ? v==null : value.equals(v))时，才返回true 。
+    // 对于大多数Map接口的实现来说，此操作可能需要与地图大小成线性关系的时间。
     public boolean containsValue(Object value) {
         Iterator<Entry<K,V>> i = entrySet().iterator();
         if (value==null) {
@@ -205,6 +219,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @throws NullPointerException          {@inheritDoc}
      * @throws IllegalArgumentException      {@inheritDoc}
      */
+    // 将指定的值与该映射中的指定键相关联（可选操作）
     public V put(K key, V value) {
         throw new UnsupportedOperationException();
     }
@@ -324,6 +339,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * }
      *}</pre>
      */
+    // 成员变量，keySet保存map中所有键的Set，values保存map中所有值的集合
+    // transient表示该变量不参与序列化，volatile表示并发环境下变量的修改能够保证线程可见性
+    // 需要注意的是volatile只能保证可见性，不能保证原子性，需要保证操作是原子性，
+    // 才能保证使用volatile关键字的程序在并发时能够正确执行
     transient Set<K>        keySet;
     transient Collection<V> values;
 
@@ -343,6 +362,12 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * is performed, so there is a slight chance that multiple calls to this
      * method will not all return the same set.
      */
+    // 返回此映射中包含的键的Set视图。该集合由map支持，因此对map的更改会反映在集合中，
+    // 反之亦然。如果在对集合进行迭代时修改映射（除非通过迭代器自己的删除操作），
+    // 则迭代的结果是不确定的(例如迭代的时候调用put()，报错ConcurrentModificationException)。该集合支持元素删除，
+    // 即通过Iterator.remove 、 Set.remove 、 removeAll 、 keepAll
+    // 和clear操作从映射中删除相应的映射。
+    // 它不支持add或addAll操作。
     public Set<K> keySet() {
         Set<K> ks = keySet;
         if (ks == null) {
@@ -569,6 +594,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      *
      * @return a shallow copy of this map
      */
+    // 返回此AbstractMap实例的浅表副本：键和值本身不会被克隆。
     protected Object clone() throws CloneNotSupportedException {
         AbstractMap<?,?> result = (AbstractMap<?,?>)super.clone();
         result.keySet = null;

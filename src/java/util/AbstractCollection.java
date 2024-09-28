@@ -57,7 +57,11 @@ package java.util;
  * @see Collection
  * @since 1.2
  */
-
+// 此类提供了Collection接口的骨架实现，以最大限度地减少实现此接口所需的工作量。
+// 要实现不可修改的集合，程序员只需扩展此类并提供迭代器和大小方法的实现即可。
+//      （迭代器方法返回的迭代器必须实现hasNext和next 。）
+// 要实现可修改的集合，程序员必须另外重写此类的add方法（否则会抛出UnsupportedOperationException ），
+//      并且迭代器方法返回的迭代器必须另外实现其remove方法。
 public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically

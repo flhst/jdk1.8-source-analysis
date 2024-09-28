@@ -54,7 +54,10 @@ package java.util;
  * @see Set
  * @since 1.2
  */
-
+// 此类提供Set接口的骨架实现，以最大限度地减少实现此接口所需的工作量。
+// 通过扩展此类来实现 Set 的过程与通过扩展 AbstractCollection 来实现
+// Collection 的过程相同，只是此类子类中的所有方法和构造函数都必须遵守Set接口施加的附加约束
+// （例如， add 方法不得允许将对象的多个实例添加到集合中）。
 public abstract class AbstractSet<E> extends AbstractCollection<E> implements Set<E> {
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
