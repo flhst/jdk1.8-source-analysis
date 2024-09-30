@@ -82,6 +82,9 @@ package java.util;
  * @since 1.2
  */
 // 继承自Collection接口，用于存储不重复元素，不保证顺序，且不包含重复元素
+// 与Collection接口中的方法基本一致，并没有对Collection接口进行功能上的扩充，
+//      只是比Collection接口更加严格。
+// 元素无序但是唯一
 public interface Set<E> extends Collection<E> {
     // Query Operations
 
@@ -92,6 +95,7 @@ public interface Set<E> extends Collection<E> {
      *
      * @return the number of elements in this set (its cardinality)
      */
+    // 返回集合元素数量
     int size();
 
     /**
@@ -116,6 +120,7 @@ public interface Set<E> extends Collection<E> {
      *         set does not permit null elements
      * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
+    // 判断当前集合中是否包含元素o
     boolean contains(Object o);
 
     /**
@@ -143,6 +148,7 @@ public interface Set<E> extends Collection<E> {
      *
      * @return an array containing all the elements in this set
      */
+    // 以数组形式返回当前Set元素
     Object[] toArray();
 
     /**
@@ -187,6 +193,7 @@ public interface Set<E> extends Collection<E> {
      *         set
      * @throws NullPointerException if the specified array is null
      */
+    // 将当前Set中的元素存入数组a后返回，需要将Set中的元素转换为T类型
     <T> T[] toArray(T[] a);
 
 
@@ -246,6 +253,7 @@ public interface Set<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>remove</tt> operation
      *         is not supported by this set
      */
+    // 移除指定的元素
     boolean remove(Object o);
 
 
@@ -270,6 +278,7 @@ public interface Set<E> extends Collection<E> {
      *         or if the specified collection is null
      * @see    #contains(Object)
      */
+    // 判读指定容器中的元素是否都包含在当前集合中
     boolean containsAll(Collection<?> c);
 
     /**
@@ -294,6 +303,7 @@ public interface Set<E> extends Collection<E> {
      *         specified collection prevents it from being added to this set
      * @see #add(Object)
      */
+    // 将指定集合中的元素添加到当前Set中
     boolean addAll(Collection<? extends E> c);
 
     /**
@@ -317,6 +327,7 @@ public interface Set<E> extends Collection<E> {
      *         or if the specified collection is null
      * @see #remove(Object)
      */
+    // (不匹配则移除)移除当前集合中所有与给定容器中的元素不匹配的元素
     boolean retainAll(Collection<?> c);
 
     /**
@@ -340,6 +351,7 @@ public interface Set<E> extends Collection<E> {
      * @see #remove(Object)
      * @see #contains(Object)
      */
+    // (匹配则移除)移除当前集合中所有与给定容器中的元素不匹配的元素
     boolean removeAll(Collection<?> c);
 
     /**
@@ -349,6 +361,7 @@ public interface Set<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>clear</tt> method
      *         is not supported by this set
      */
+    // 清空当前集合中所有元素
     void clear();
 
 

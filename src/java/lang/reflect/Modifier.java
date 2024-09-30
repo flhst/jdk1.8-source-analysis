@@ -43,6 +43,7 @@ import sun.reflect.ReflectionFactory;
  * @author Nakul Saraiya
  * @author Kenneth Russell
  */
+// 类/接口/构造器/方法/字段上的修饰符
 public class Modifier {
 
     /*
