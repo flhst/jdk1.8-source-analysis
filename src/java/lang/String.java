@@ -109,7 +109,7 @@ import java.util.regex.PatternSyntaxException;
  */
 
 public final class String
-    implements java.io.Serializable, Comparable<String>, CharSequence {
+        implements java.io.Serializable, Comparable<String>, CharSequence {
     /** The value is used for character storage. */
     private final char value[];
 
@@ -127,7 +127,7 @@ public final class String
      * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
      */
     private static final ObjectStreamField[] serialPersistentFields =
-        new ObjectStreamField[0];
+            new ObjectStreamField[0];
 
     /**
      * Initializes a newly created {@code String} object so that it represents
@@ -601,11 +601,11 @@ public final class String
     }
 
     /*
-    * Package private constructor which shares value array for speed.
-    * this constructor is always expected to be called with share==true.
-    * a separate constructor is needed because we already have a public
-    * String(char[]) constructor that makes a copy of the given char[].
-    */
+     * Package private constructor which shares value array for speed.
+     * this constructor is always expected to be called with share==true.
+     * a separate constructor is needed because we already have a public
+     * String(char[]) constructor that makes a copy of the given char[].
+     */
     String(char[] value, boolean share) {
         // assert share : "unshared not supported";
         this.value = value;
@@ -974,11 +974,11 @@ public final class String
      * @see  #equalsIgnoreCase(String)
      */
     public boolean equals(Object anObject) {
-        // Ê×ÏÈÅĞ¶Ï´«Èë¶ÔÏóÓëµ÷ÓÃ·½·¨µÄ¶ÔÏóÊÇ·ñÊÇÍ¬Ò»¸ö¶ÔÏó
+        // é¦–å…ˆåˆ¤æ–­ä¼ å…¥å¯¹è±¡ä¸è°ƒç”¨æ–¹æ³•çš„å¯¹è±¡æ˜¯å¦æ˜¯åŒä¸€ä¸ªå¯¹è±¡
         if (this == anObject) {
             return true;
         }
-        // ÅĞ¶Ï´«Èë¶ÔÏóÊÇ·ñÎªStringÀàĞÍ»òÆäÅÉÉúÀà£¨×ÓÀà£©£¬Èç¹û²»ÊÇ£¬ÔòÖ±½Ó·µ»Øfalse£¬ÊÇÔòÏÈ±È½Ï³¤¶Èºó±È½ÏÄÚÈİ
+        // åˆ¤æ–­ä¼ å…¥å¯¹è±¡æ˜¯å¦ä¸ºStringç±»å‹æˆ–å…¶æ´¾ç”Ÿç±»ï¼ˆå­ç±»ï¼‰ï¼Œå¦‚æœä¸æ˜¯ï¼Œåˆ™ç›´æ¥è¿”å›falseï¼Œæ˜¯åˆ™å…ˆæ¯”è¾ƒé•¿åº¦åæ¯”è¾ƒå†…å®¹
         if (anObject instanceof String) {
             String anotherString = (String)anObject;
             int n = value.length;
@@ -1052,7 +1052,7 @@ public final class String
         if (cs instanceof AbstractStringBuilder) {
             if (cs instanceof StringBuffer) {
                 synchronized(cs) {
-                   return nonSyncContentEquals((AbstractStringBuilder)cs);
+                    return nonSyncContentEquals((AbstractStringBuilder)cs);
                 }
             } else {
                 return nonSyncContentEquals((AbstractStringBuilder)cs);
@@ -1184,7 +1184,7 @@ public final class String
      * @since   1.2
      */
     public static final Comparator<String> CASE_INSENSITIVE_ORDER
-                                         = new CaseInsensitiveComparator();
+            = new CaseInsensitiveComparator();
     private static class CaseInsensitiveComparator
             implements Comparator<String>, java.io.Serializable {
         // use serialVersionUID from JDK 1.2.2 for interoperability
@@ -1274,7 +1274,7 @@ public final class String
      *          {@code false} otherwise.
      */
     public boolean regionMatches(int toffset, String other, int ooffset,
-            int len) {
+                                 int len) {
         char ta[] = value;
         int to = toffset;
         char pa[] = other.value;
@@ -1344,7 +1344,7 @@ public final class String
      *          argument.
      */
     public boolean regionMatches(boolean ignoreCase, int toffset,
-            String other, int ooffset, int len) {
+                                 String other, int ooffset, int len) {
         char ta[] = value;
         int to = toffset;
         char pa[] = other.value;
@@ -1733,10 +1733,10 @@ public final class String
      * @param   fromIndex    the index to begin searching from.
      */
     static int indexOf(char[] source, int sourceOffset, int sourceCount,
-            String target, int fromIndex) {
+                       String target, int fromIndex) {
         return indexOf(source, sourceOffset, sourceCount,
-                       target.value, 0, target.value.length,
-                       fromIndex);
+                target.value, 0, target.value.length,
+                fromIndex);
     }
 
     /**
@@ -1753,8 +1753,8 @@ public final class String
      * @param   fromIndex    the index to begin searching from.
      */
     static int indexOf(char[] source, int sourceOffset, int sourceCount,
-            char[] target, int targetOffset, int targetCount,
-            int fromIndex) {
+                       char[] target, int targetOffset, int targetCount,
+                       int fromIndex) {
         if (fromIndex >= sourceCount) {
             return (targetCount == 0 ? sourceCount : -1);
         }
@@ -1842,10 +1842,10 @@ public final class String
      * @param   fromIndex    the index to begin searching from.
      */
     static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
-            String target, int fromIndex) {
+                           String target, int fromIndex) {
         return lastIndexOf(source, sourceOffset, sourceCount,
-                       target.value, 0, target.value.length,
-                       fromIndex);
+                target.value, 0, target.value.length,
+                fromIndex);
     }
 
     /**
@@ -1862,8 +1862,8 @@ public final class String
      * @param   fromIndex    the index to begin searching from.
      */
     static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
-            char[] target, int targetOffset, int targetCount,
-            int fromIndex) {
+                           char[] target, int targetOffset, int targetCount,
+                           int fromIndex) {
         /*
          * Check arguments; return immediately where possible. For
          * consistency, don't check for null str.
@@ -1885,7 +1885,7 @@ public final class String
         int min = sourceOffset + targetCount - 1;
         int i = min + fromIndex;
 
-    startSearchForLastChar:
+        startSearchForLastChar:
         while (true) {
             while (i >= min && source[i] != strLastChar) {
                 i--;
@@ -2337,14 +2337,14 @@ public final class String
          */
         char ch = 0;
         if (((regex.value.length == 1 &&
-             ".$|()[{^?*+\\".indexOf(ch = regex.charAt(0)) == -1) ||
-             (regex.length() == 2 &&
-              regex.charAt(0) == '\\' &&
-              (((ch = regex.charAt(1))-'0')|('9'-ch)) < 0 &&
-              ((ch-'a')|('z'-ch)) < 0 &&
-              ((ch-'A')|('Z'-ch)) < 0)) &&
-            (ch < Character.MIN_HIGH_SURROGATE ||
-             ch > Character.MAX_LOW_SURROGATE))
+                ".$|()[{^?*+\\".indexOf(ch = regex.charAt(0)) == -1) ||
+                (regex.length() == 2 &&
+                        regex.charAt(0) == '\\' &&
+                        (((ch = regex.charAt(1))-'0')|('9'-ch)) < 0 &&
+                        ((ch-'a')|('z'-ch)) < 0 &&
+                        ((ch-'A')|('Z'-ch)) < 0)) &&
+                (ch < Character.MIN_HIGH_SURROGATE ||
+                        ch > Character.MAX_LOW_SURROGATE))
         {
             int off = 0;
             int next = 0;
@@ -2498,7 +2498,7 @@ public final class String
      * @since 1.8
      */
     public static String join(CharSequence delimiter,
-            Iterable<? extends CharSequence> elements) {
+                              Iterable<? extends CharSequence> elements) {
         Objects.requireNonNull(delimiter);
         Objects.requireNonNull(elements);
         StringJoiner joiner = new StringJoiner(delimiter);
@@ -2591,7 +2591,7 @@ public final class String
 
         char[] result = new char[len];
         int resultOffset = 0;  /* result may grow, so i+resultOffset
-                                * is the write location in result */
+         * is the write location in result */
 
         /* Just copy the first few lowerCase characters. */
         System.arraycopy(value, 0, result, 0, firstUpper);
@@ -2613,8 +2613,8 @@ public final class String
                 srcCount = 1;
             }
             if (localeDependent ||
-                srcChar == '\u03A3' || // GREEK CAPITAL LETTER SIGMA
-                srcChar == '\u0130') { // LATIN CAPITAL LETTER I WITH DOT ABOVE
+                    srcChar == '\u03A3' || // GREEK CAPITAL LETTER SIGMA
+                    srcChar == '\u0130') { // LATIN CAPITAL LETTER I WITH DOT ABOVE
                 lowerChar = ConditionalSpecialCasing.toLowerCaseEx(this, i, locale);
             } else {
                 lowerChar = Character.toLowerCase(srcChar);
@@ -2767,7 +2767,7 @@ public final class String
         for (int i = firstLower; i < len; i += srcCount) {
             srcChar = (int)value[i];
             if ((char)srcChar >= Character.MIN_HIGH_SURROGATE &&
-                (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
+                    (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
                 srcChar = codePointAt(i);
                 srcCount = Character.charCount(srcChar);
             } else {

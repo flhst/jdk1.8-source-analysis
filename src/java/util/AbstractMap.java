@@ -65,15 +65,15 @@ import java.util.Map.Entry;
  * @since 1.2
  */
 
-// ´ËÀàÌá¹©ÁËMap½Ó¿ÚµÄ¹Ç¼ÜÊµÏÖ£¬ÒÔ¾¡Á¿¼õÉÙÊµÏÖ´Ë½Ó¿ÚËùĞèµÄ¹¤×÷Á¿¡£
-// ÎªÁËÊµÏÖÒ»¸ö²»¿ÉĞŞ¸ÄµÄµØÍ¼£¬³ÌĞòÔ±Ö»ĞèÒªÀ©Õ¹Õâ¸öÀà²¢ÎªentrySet·½·¨Ìá¹©Ò»¸öÊµÏÖ£¬
-//      ¸Ã·½·¨·µ»ØµØÍ¼Ó³ÉäµÄÉèÖÃÊÓÍ¼¡£ Í¨³££¬·µ»ØµÄ¼¯ºÏÓÖ½«ÔÚAbstractSet¶¥²¿ÊµÏÖ ¡£
-//      Õâ¸ö¼¯ºÏ²»Ó¦¸ÃÖ§³Öadd»òremove·½·¨£¬¶øÇÒËüµÄµü´úÆ÷²»Ó¦¸ÃÖ§³Öremove·½·¨¡£
-// ÒªÊµÏÖ¿ÉĞŞ¸ÄµÄÓ³Éä£¬³ÌĞòÔ±±ØĞëÁíÍâ¸²¸Ç´ËÀàµÄput·½·¨£¨·ñÔò½«Å×³öUnsupportedOperationException £©£¬
-//      ÓÉentrySet().iterator()·µ»ØµÄµü´úÆ÷±ØĞëÁíÍâÊµÏÖÆäremove·½·¨¡£
-// ³ÌĞòÔ±Í¨³£Ó¦¸ÃÌá¹©Ò»¸ö¿ÕÏ¶£¨ÎŞ²ÎÊı£©¹¹ÔìÆ÷£¬°´ÕÕÔÚMap½Ó¿Ú¹æ·¶µÄ½¨Òé¡£
-// ¸ÃÀàÖĞÃ¿¸ö·Ç³éÏó·½·¨µÄÎÄµµÏêÏ¸ÃèÊöÁËÆäÊµÏÖ¡£
-//      Èç¹ûÊµÊ©µÄµØÍ¼³ĞÈÏ¸üÓĞĞ§µÄÊµÊ©£¬Ôò¿ÉÒÔ¸²¸ÇÕâĞ©·½·¨ÖĞµÄÃ¿Ò»¸ö¡£
+// æ­¤ç±»æä¾›äº†Mapæ¥å£çš„éª¨æ¶å®ç°ï¼Œä»¥å°½é‡å‡å°‘å®ç°æ­¤æ¥å£æ‰€éœ€çš„å·¥ä½œé‡ã€‚
+// ä¸ºäº†å®ç°ä¸€ä¸ªä¸å¯ä¿®æ”¹çš„åœ°å›¾ï¼Œç¨‹åºå‘˜åªéœ€è¦æ‰©å±•è¿™ä¸ªç±»å¹¶ä¸ºentrySetæ–¹æ³•æä¾›ä¸€ä¸ªå®ç°ï¼Œ
+//      è¯¥æ–¹æ³•è¿”å›åœ°å›¾æ˜ å°„çš„è®¾ç½®è§†å›¾ã€‚ é€šå¸¸ï¼Œè¿”å›çš„é›†åˆåˆå°†åœ¨AbstractSeté¡¶éƒ¨å®ç° ã€‚
+//      è¿™ä¸ªé›†åˆä¸åº”è¯¥æ”¯æŒaddæˆ–removeæ–¹æ³•ï¼Œè€Œä¸”å®ƒçš„è¿­ä»£å™¨ä¸åº”è¯¥æ”¯æŒremoveæ–¹æ³•ã€‚
+// è¦å®ç°å¯ä¿®æ”¹çš„æ˜ å°„ï¼Œç¨‹åºå‘˜å¿…é¡»å¦å¤–è¦†ç›–æ­¤ç±»çš„putæ–¹æ³•ï¼ˆå¦åˆ™å°†æŠ›å‡ºUnsupportedOperationException ï¼‰ï¼Œ
+//      ç”±entrySet().iterator()è¿”å›çš„è¿­ä»£å™¨å¿…é¡»å¦å¤–å®ç°å…¶removeæ–¹æ³•ã€‚
+// ç¨‹åºå‘˜é€šå¸¸åº”è¯¥æä¾›ä¸€ä¸ªç©ºéš™ï¼ˆæ— å‚æ•°ï¼‰æ„é€ å™¨ï¼ŒæŒ‰ç…§åœ¨Mapæ¥å£è§„èŒƒçš„å»ºè®®ã€‚
+// è¯¥ç±»ä¸­æ¯ä¸ªéæŠ½è±¡æ–¹æ³•çš„æ–‡æ¡£è¯¦ç»†æè¿°äº†å…¶å®ç°ã€‚
+//      å¦‚æœå®æ–½çš„åœ°å›¾æ‰¿è®¤æ›´æœ‰æ•ˆçš„å®æ–½ï¼Œåˆ™å¯ä»¥è¦†ç›–è¿™äº›æ–¹æ³•ä¸­çš„æ¯ä¸€ä¸ªã€‚
 public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
@@ -118,10 +118,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @throws ClassCastException   {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    // Èç¹û´ËÓ³Éä½«Ò»¸ö»ò¶à¸ö¼üÓ³Éäµ½Ö¸¶¨Öµ£¬Ôò·µ»Øtrue ¡£
-    // ¸üÕıÊ½µØËµ£¬µ±ÇÒ½öµ±´ËÓ³Éä°üº¬ÖÁÉÙÒ»¸öµ½Öµv µÄÓ³ÉäÇÒÂú×ã
-    // (value==null ? v==null : value.equals(v))Ê±£¬²Å·µ»Øtrue ¡£
-    // ¶ÔÓÚ´ó¶àÊıMap½Ó¿ÚµÄÊµÏÖÀ´Ëµ£¬´Ë²Ù×÷¿ÉÄÜĞèÒªÓëµØÍ¼´óĞ¡³ÉÏßĞÔ¹ØÏµµÄÊ±¼ä¡£
+    // å¦‚æœæ­¤æ˜ å°„å°†ä¸€ä¸ªæˆ–å¤šä¸ªé”®æ˜ å°„åˆ°æŒ‡å®šå€¼ï¼Œåˆ™è¿”å›true ã€‚
+    // æ›´æ­£å¼åœ°è¯´ï¼Œå½“ä¸”ä»…å½“æ­¤æ˜ å°„åŒ…å«è‡³å°‘ä¸€ä¸ªåˆ°å€¼v çš„æ˜ å°„ä¸”æ»¡è¶³
+    // (value==null ? v==null : value.equals(v))æ—¶ï¼Œæ‰è¿”å›true ã€‚
+    // å¯¹äºå¤§å¤šæ•°Mapæ¥å£çš„å®ç°æ¥è¯´ï¼Œæ­¤æ“ä½œå¯èƒ½éœ€è¦ä¸åœ°å›¾å¤§å°æˆçº¿æ€§å…³ç³»çš„æ—¶é—´ã€‚
     public boolean containsValue(Object value) {
         Iterator<Entry<K,V>> i = entrySet().iterator();
         if (value==null) {
@@ -219,7 +219,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @throws NullPointerException          {@inheritDoc}
      * @throws IllegalArgumentException      {@inheritDoc}
      */
-    // ½«Ö¸¶¨µÄÖµÓë¸ÃÓ³ÉäÖĞµÄÖ¸¶¨¼üÏà¹ØÁª£¨¿ÉÑ¡²Ù×÷£©
+    // å°†æŒ‡å®šçš„å€¼ä¸è¯¥æ˜ å°„ä¸­çš„æŒ‡å®šé”®ç›¸å…³è”ï¼ˆå¯é€‰æ“ä½œï¼‰
     public V put(K key, V value) {
         throw new UnsupportedOperationException();
     }
@@ -339,10 +339,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * }
      *}</pre>
      */
-    // ³ÉÔ±±äÁ¿£¬keySet±£´æmapÖĞËùÓĞ¼üµÄSet£¬values±£´æmapÖĞËùÓĞÖµµÄ¼¯ºÏ
-    // transient±íÊ¾¸Ã±äÁ¿²»²ÎÓëĞòÁĞ»¯£¬volatile±íÊ¾²¢·¢»·¾³ÏÂ±äÁ¿µÄĞŞ¸ÄÄÜ¹»±£Ö¤Ïß³Ì¿É¼ûĞÔ
-    // ĞèÒª×¢ÒâµÄÊÇvolatileÖ»ÄÜ±£Ö¤¿É¼ûĞÔ£¬²»ÄÜ±£Ö¤Ô­×ÓĞÔ£¬ĞèÒª±£Ö¤²Ù×÷ÊÇÔ­×ÓĞÔ£¬
-    // ²ÅÄÜ±£Ö¤Ê¹ÓÃvolatile¹Ø¼ü×ÖµÄ³ÌĞòÔÚ²¢·¢Ê±ÄÜ¹»ÕıÈ·Ö´ĞĞ
+    // æˆå‘˜å˜é‡ï¼ŒkeySetä¿å­˜mapä¸­æ‰€æœ‰é”®çš„Setï¼Œvaluesä¿å­˜mapä¸­æ‰€æœ‰å€¼çš„é›†åˆ
+    // transientè¡¨ç¤ºè¯¥å˜é‡ä¸å‚ä¸åºåˆ—åŒ–ï¼Œvolatileè¡¨ç¤ºå¹¶å‘ç¯å¢ƒä¸‹å˜é‡çš„ä¿®æ”¹èƒ½å¤Ÿä¿è¯çº¿ç¨‹å¯è§æ€§
+    // éœ€è¦æ³¨æ„çš„æ˜¯volatileåªèƒ½ä¿è¯å¯è§æ€§ï¼Œä¸èƒ½ä¿è¯åŸå­æ€§ï¼Œéœ€è¦ä¿è¯æ“ä½œæ˜¯åŸå­æ€§ï¼Œ
+    // æ‰èƒ½ä¿è¯ä½¿ç”¨volatileå…³é”®å­—çš„ç¨‹åºåœ¨å¹¶å‘æ—¶èƒ½å¤Ÿæ­£ç¡®æ‰§è¡Œ
     transient Set<K>        keySet;
     transient Collection<V> values;
 
@@ -362,12 +362,12 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * is performed, so there is a slight chance that multiple calls to this
      * method will not all return the same set.
      */
-    // ·µ»Ø´ËÓ³ÉäÖĞ°üº¬µÄ¼üµÄSetÊÓÍ¼¡£¸Ã¼¯ºÏÓÉmapÖ§³Ö£¬Òò´Ë¶ÔmapµÄ¸ü¸Ä»á·´Ó³ÔÚ¼¯ºÏÖĞ£¬
-    // ·´Ö®ÒàÈ»¡£Èç¹ûÔÚ¶Ô¼¯ºÏ½øĞĞµü´úÊ±ĞŞ¸ÄÓ³Éä£¨³ı·ÇÍ¨¹ıµü´úÆ÷×Ô¼ºµÄÉ¾³ı²Ù×÷£©£¬
-    // Ôòµü´úµÄ½á¹ûÊÇ²»È·¶¨µÄ(ÀıÈçµü´úµÄÊ±ºòµ÷ÓÃput()£¬±¨´íConcurrentModificationException)¡£¸Ã¼¯ºÏÖ§³ÖÔªËØÉ¾³ı£¬
-    // ¼´Í¨¹ıIterator.remove ¡¢ Set.remove ¡¢ removeAll ¡¢ keepAll
-    // ºÍclear²Ù×÷´ÓÓ³ÉäÖĞÉ¾³ıÏàÓ¦µÄÓ³Éä¡£
-    // Ëü²»Ö§³Öadd»òaddAll²Ù×÷¡£
+    // è¿”å›æ­¤æ˜ å°„ä¸­åŒ…å«çš„é”®çš„Setè§†å›¾ã€‚è¯¥é›†åˆç”±mapæ”¯æŒï¼Œå› æ­¤å¯¹mapçš„æ›´æ”¹ä¼šåæ˜ åœ¨é›†åˆä¸­ï¼Œ
+    // åä¹‹äº¦ç„¶ã€‚å¦‚æœåœ¨å¯¹é›†åˆè¿›è¡Œè¿­ä»£æ—¶ä¿®æ”¹æ˜ å°„ï¼ˆé™¤éé€šè¿‡è¿­ä»£å™¨è‡ªå·±çš„åˆ é™¤æ“ä½œï¼‰ï¼Œ
+    // åˆ™è¿­ä»£çš„ç»“æœæ˜¯ä¸ç¡®å®šçš„(ä¾‹å¦‚è¿­ä»£çš„æ—¶å€™è°ƒç”¨put()ï¼ŒæŠ¥é”™ConcurrentModificationException)ã€‚è¯¥é›†åˆæ”¯æŒå…ƒç´ åˆ é™¤ï¼Œ
+    // å³é€šè¿‡Iterator.remove ã€ Set.remove ã€ removeAll ã€ keepAll
+    // å’Œclearæ“ä½œä»æ˜ å°„ä¸­åˆ é™¤ç›¸åº”çš„æ˜ å°„ã€‚
+    // å®ƒä¸æ”¯æŒaddæˆ–addAllæ“ä½œã€‚
     public Set<K> keySet() {
         Set<K> ks = keySet;
         if (ks == null) {
@@ -594,7 +594,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      *
      * @return a shallow copy of this map
      */
-    // ·µ»Ø´ËAbstractMapÊµÀıµÄÇ³±í¸±±¾£º¼üºÍÖµ±¾Éí²»»á±»¿ËÂ¡¡£
+    // è¿”å›æ­¤AbstractMapå®ä¾‹çš„æµ…è¡¨å‰¯æœ¬ï¼šé”®å’Œå€¼æœ¬èº«ä¸ä¼šè¢«å…‹éš†ã€‚
     protected Object clone() throws CloneNotSupportedException {
         AbstractMap<?,?> result = (AbstractMap<?,?>)super.clone();
         result.keySet = null;
@@ -631,7 +631,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @since 1.6
      */
     public static class SimpleEntry<K,V>
-        implements Entry<K,V>, java.io.Serializable
+            implements Entry<K,V>, java.io.Serializable
     {
         private static final long serialVersionUID = -8499721149061103585L;
 
@@ -735,7 +735,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          */
         public int hashCode() {
             return (key   == null ? 0 :   key.hashCode()) ^
-                   (value == null ? 0 : value.hashCode());
+                    (value == null ? 0 : value.hashCode());
         }
 
         /**
@@ -761,7 +761,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @since 1.6
      */
     public static class SimpleImmutableEntry<K,V>
-        implements Entry<K,V>, java.io.Serializable
+            implements Entry<K,V>, java.io.Serializable
     {
         private static final long serialVersionUID = 7138329143949025153L;
 
@@ -866,7 +866,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          */
         public int hashCode() {
             return (key   == null ? 0 :   key.hashCode()) ^
-                   (value == null ? 0 : value.hashCode());
+                    (value == null ? 0 : value.hashCode());
         }
 
         /**

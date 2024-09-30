@@ -35,15 +35,15 @@ package java.lang.reflect;
  *
  * https://www.cnblogs.com/baiqiantao/p/7460580.html
  */
-// Type ÊÇ Java ±à³ÌÓïÑÔÖĞËùÓĞÀàĞÍµÄ¹«¹²¸¸½Ó¿Ú¡£
-// Ëü²¢²»ÊÇÎÒÃÇÆ½³£¹¤×÷ÖĞ¾­³£Ê¹ÓÃµÄ int¡¢String¡¢List¡¢MapµÈÊı¾İÀàĞÍ£¬¶øÊÇ´ÓJavaÓïÑÔ½Ç¶ÈÀ´Ëµ£¬¶Ô»ù±¾ÀàĞÍ¡¢ÒıÓÃÀàĞÍÏòÉÏµÄ³éÏó
-// TypeÌåÏµÖĞµÄÀàĞÍ°üÀ¨:
-//    - Ô­Ê¼ÀàĞÍ(Class) ²»½ö½ö°üº¬ÎÒÃÇÆ½³£ËùÖ¸µÄÀà£¬»¹°üÀ¨Ã¶¾Ù¡¢Êı×é¡¢×¢½âµÈ
-//    - ²ÎÊı»¯ÀàĞÍ(ParameterizedType) ´øÓĞÀàĞÍ²ÎÊıµÄÀàĞÍ£¬¼´³£ËµµÄ·ºĞÍ£¬ÀıÈç List<T>¡¢Map<Integer, String>¡¢List<? extends Number>, ÊµÏÖÀà sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
-//    - ·ºĞÍÊı×éÀàĞÍ(GenericArrayType) ÀıÈçT[] ÊµÏÖÀà sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl
-//    - ÀàĞÍ±äÁ¿(TypeVariable) ¼´²ÎÊı»¯ÀàĞÍ ParameterizedType ÖĞµÄ E¡¢K µÈÀàĞÍ±äÁ¿£¬±íÊ¾·ºÖ¸ÈÎºÎÀà, ÊµÏÖÀà sun.reflect.generics.reflectiveObjects.TypeVariableImpl
-//    - »ù±¾ÀàĞÍ(Class) °üÀ¨ Built-in ÄÚÖÃÀàĞÍ£¬ÀıÈç int.class¡¢char.class¡¢void.class, Ò²°üÀ¨ Wrappers ÄÚÖÃÀàĞÍ°ü×°ÀàĞÍ£¬ÀıÈç Integer.class¡¢Boolean.class¡¢Void.class
-// Type ½Ó¿ÚµÄÁíÒ»¸ö×Ó½Ó¿Ú WildcardType ´ú±íÍ¨Åä·û±í´ïÊ½ÀàĞÍ£¬»ò·ºĞÍ±í´ïÊ½ÀàĞÍ£¬±ÈÈç?¡¢? super T¡¢? extends T£¬Ëû²¢²»ÊÇ Java ÀàĞÍÖĞµÄÒ»ÖÖ¡£
+// Type æ˜¯ Java ç¼–ç¨‹è¯­è¨€ä¸­æ‰€æœ‰ç±»å‹çš„å…¬å…±çˆ¶æ¥å£ã€‚
+// å®ƒå¹¶ä¸æ˜¯æˆ‘ä»¬å¹³å¸¸å·¥ä½œä¸­ç»å¸¸ä½¿ç”¨çš„ intã€Stringã€Listã€Mapç­‰æ•°æ®ç±»å‹ï¼Œè€Œæ˜¯ä»Javaè¯­è¨€è§’åº¦æ¥è¯´ï¼Œå¯¹åŸºæœ¬ç±»å‹ã€å¼•ç”¨ç±»å‹å‘ä¸Šçš„æŠ½è±¡
+// Typeä½“ç³»ä¸­çš„ç±»å‹åŒ…æ‹¬:
+//    - åŸå§‹ç±»å‹(Class) ä¸ä»…ä»…åŒ…å«æˆ‘ä»¬å¹³å¸¸æ‰€æŒ‡çš„ç±»ï¼Œè¿˜åŒ…æ‹¬æšä¸¾ã€æ•°ç»„ã€æ³¨è§£ç­‰
+//    - å‚æ•°åŒ–ç±»å‹(ParameterizedType) å¸¦æœ‰ç±»å‹å‚æ•°çš„ç±»å‹ï¼Œå³å¸¸è¯´çš„æ³›å‹ï¼Œä¾‹å¦‚ List<T>ã€Map<Integer, String>ã€List<? extends Number>, å®ç°ç±» sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
+//    - æ³›å‹æ•°ç»„ç±»å‹(GenericArrayType) ä¾‹å¦‚T[] å®ç°ç±» sun.reflect.generics.reflectiveObjects.GenericArrayTypeImpl
+//    - ç±»å‹å˜é‡(TypeVariable) å³å‚æ•°åŒ–ç±»å‹ ParameterizedType ä¸­çš„ Eã€K ç­‰ç±»å‹å˜é‡ï¼Œè¡¨ç¤ºæ³›æŒ‡ä»»ä½•ç±», å®ç°ç±» sun.reflect.generics.reflectiveObjects.TypeVariableImpl
+//    - åŸºæœ¬ç±»å‹(Class) åŒ…æ‹¬ Built-in å†…ç½®ç±»å‹ï¼Œä¾‹å¦‚ int.classã€char.classã€void.class, ä¹ŸåŒ…æ‹¬ Wrappers å†…ç½®ç±»å‹åŒ…è£…ç±»å‹ï¼Œä¾‹å¦‚ Integer.classã€Boolean.classã€Void.class
+// Type æ¥å£çš„å¦ä¸€ä¸ªå­æ¥å£ WildcardType ä»£è¡¨é€šé…ç¬¦è¡¨è¾¾å¼ç±»å‹ï¼Œæˆ–æ³›å‹è¡¨è¾¾å¼ç±»å‹ï¼Œæ¯”å¦‚?ã€? super Tã€? extends Tï¼Œä»–å¹¶ä¸æ˜¯ Java ç±»å‹ä¸­çš„ä¸€ç§ã€‚
 public interface Type {
     /**
      * Returns a string describing this type, including information
@@ -54,7 +54,7 @@ public interface Type {
      * @return a string describing this type
      * @since 1.8
      */
-    // ·µ»ØÃèÊö´ËÀàĞÍµÄ×Ö·û´®£¬°üÀ¨ÓĞ¹ØÈÎºÎÀàĞÍ²ÎÊıµÄĞÅÏ¢¡£
+    // è¿”å›æè¿°æ­¤ç±»å‹çš„å­—ç¬¦ä¸²ï¼ŒåŒ…æ‹¬æœ‰å…³ä»»ä½•ç±»å‹å‚æ•°çš„ä¿¡æ¯ã€‚
     default String getTypeName() {
         return toString();
     }

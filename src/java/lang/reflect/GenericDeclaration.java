@@ -30,9 +30,9 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
-// ¿ÉÒÔÉùÃ÷ÀàĞÍ±äÁ¿µÄÊµÌåµÄ¸¸½Ó¿Ú£¬Ò²¾ÍÊÇËµ£¬Ö»ÓĞÊµÏÖÁË¸Ã½Ó¿Ú²ÅÄÜÔÚ¶ÔÓ¦µÄÊµÌåÉÏÉùÃ÷(¶¨Òå)ÀàĞÍ±äÁ¿(K, V)
-// ÕâĞ©ÊµÌåÄ¿Ç°Ö»ÓĞÈı¸ö£ºClass£¨Àà£©¡¢Construstor£¨¹¹ÔìÆ÷£©¡¢Method£¨·½·¨£©£¬
-// GenericDeclarationµÄÖ±½ÓÊµÏÖ×ÓÀàÃ»ÓĞFieldÀà£¬ËùÒÔÊôĞÔÉÏÃæ²»ÄÜ¶¨ÒåÀàĞÍ±äÁ¿¡£
+// å¯ä»¥å£°æ˜ç±»å‹å˜é‡çš„å®ä½“çš„çˆ¶æ¥å£ï¼Œä¹Ÿå°±æ˜¯è¯´ï¼Œåªæœ‰å®ç°äº†è¯¥æ¥å£æ‰èƒ½åœ¨å¯¹åº”çš„å®ä½“ä¸Šå£°æ˜(å®šä¹‰)ç±»å‹å˜é‡(K, V)
+// è¿™äº›å®ä½“ç›®å‰åªæœ‰ä¸‰ä¸ªï¼šClassï¼ˆç±»ï¼‰ã€Construstorï¼ˆæ„é€ å™¨ï¼‰ã€Methodï¼ˆæ–¹æ³•ï¼‰ï¼Œ
+// GenericDeclarationçš„ç›´æ¥å®ç°å­ç±»æ²¡æœ‰Fieldç±»ï¼Œæ‰€ä»¥å±æ€§ä¸Šé¢ä¸èƒ½å®šä¹‰ç±»å‹å˜é‡ã€‚
 public interface GenericDeclaration extends AnnotatedElement {
     /**
      * Returns an array of {@code TypeVariable} objects that
@@ -48,6 +48,6 @@ public interface GenericDeclaration extends AnnotatedElement {
      *     the format specified in
      *     <cite>The Java&trade; Virtual Machine Specification</cite>
      */
-    // ·µ»ØÊµÌåÉÏÉùÃ÷£¨¶¨Òå£©µÄËùÓĞµÄÀàĞÍ±äÁ¿¡£
+    // è¿”å›å®ä½“ä¸Šå£°æ˜ï¼ˆå®šä¹‰ï¼‰çš„æ‰€æœ‰çš„ç±»å‹å˜é‡ã€‚
     public TypeVariable<?>[] getTypeParameters();
 }

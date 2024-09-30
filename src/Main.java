@@ -2,6 +2,6 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("Hello World!");
-        System.out.println("JDK1.8Ô´Âë·ÖÎö --Î¢ĞÅ¹Ø×¢£ºJava¼¼Êõ¸É»õ@·½×ÓÁú ³öÆ·!");
+        System.out.println("JDK1.8æºç åˆ†æ --å¾®ä¿¡å…³æ³¨ï¼šJavaæŠ€æœ¯å¹²è´§@æ–¹å­é¾™ å‡ºå“!");
     }
 }

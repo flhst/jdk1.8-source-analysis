@@ -24,14 +24,14 @@ public class TypeTest {
 
 
     private void showType() throws NoSuchMethodException {
-        // ×¢Òâ int.class ºÍ Integer.class ÊÇ²»Ò»ÑùµÄ(Ã»ÓĞËùÎ½µÄ×Ô¶¯×°Ïä¡¢×Ô¶¯²ğÏä»úÖÆ)£¬²»ÄÜ»¥ÓÃ
+        // æ³¨æ„ int.class å’Œ Integer.class æ˜¯ä¸ä¸€æ ·çš„(æ²¡æœ‰æ‰€è°“çš„è‡ªåŠ¨è£…ç®±ã€è‡ªåŠ¨æ‹†ç®±æœºåˆ¶)ï¼Œä¸èƒ½äº’ç”¨
         Class<?> clazz = List.class;
         Method method = TypeTest.class.getMethod("testType", int.class, Boolean.class, clazz, clazz, clazz, clazz, clazz, Map.class);
-        Type[] genericParameterTypes = method.getGenericParameterTypes(); //°´ÕÕ·½·¨²ÎÊıÉùÃ÷Ë³Ğò·µ»Ø²ÎÊıµÄ Type Êı×é
+        Type[] genericParameterTypes = method.getGenericParameterTypes(); //æŒ‰ç…§æ–¹æ³•å‚æ•°å£°æ˜é¡ºåºè¿”å›å‚æ•°çš„ Type æ•°ç»„
         for (Type type : genericParameterTypes) {
             if (type instanceof ParameterizedType) {
                 ParameterizedType parameterizedType = (ParameterizedType) type;
-                Type[] types = parameterizedType.getActualTypeArguments(); //·µ»Ø±íÊ¾´ËÀàĞÍ¡¾Êµ¼ÊÀàĞÍ²ÎÊı¡¿µÄ Type Êı×é
+                Type[] types = parameterizedType.getActualTypeArguments(); //è¿”å›è¡¨ç¤ºæ­¤ç±»å‹ã€å®é™…ç±»å‹å‚æ•°ã€‘çš„ Type æ•°ç»„
                 for (int i = 0; i < types.length; i++) {
                     System.out.println(i + getTypeInfo(types[i]));
                 }
@@ -49,7 +49,7 @@ public class TypeTest {
         for (Class<?> clazzType : interfaces) {
             typeInterface.append(clazzType.getSimpleName()).append(",");
         }
-        return "¡¾" + typeName + "¡¿    ¡¾" + clazz.getSimpleName() + "¡¿    ¡¾" + typeInterface + "¡¿";
+        return "ã€" + typeName + "ã€‘    ã€" + clazz.getSimpleName() + "ã€‘    ã€" + typeInterface + "ã€‘";
     }
 
     public <T> void testType(int i, Boolean b, List<String> a1, List<ArrayList<String>> a2, List<T> a3, //
@@ -79,13 +79,13 @@ public class TypeTest {
     @Test
     public void testTypeVariable() throws NoSuchMethodException {
         Method method = TypeTest.class.getMethod("testType");
-        TypeVariable<?>[] typeVariables = method.getTypeParameters(); //·µ»Ø·ºĞÍÉùÃ÷µÄ TypeVariable Êı×é
+        TypeVariable<?>[] typeVariables = method.getTypeParameters(); //è¿”å›æ³›å‹å£°æ˜çš„ TypeVariable æ•°ç»„
 
         for (int i = 0; i < typeVariables.length; i++) {
             TypeVariable<?> typeVariable = typeVariables[i];
             Type[] bounds = typeVariable.getBounds();
-            GenericDeclaration genericDeclaration = typeVariable.getGenericDeclaration(); //¡¾public void Test.test()¡¿
-            boolean isSameObj = genericDeclaration.getTypeParameters()[i] == typeVariable; // true£¬ÊÇÍ¬Ò»¸ö¶ÔÏó
+            GenericDeclaration genericDeclaration = typeVariable.getGenericDeclaration(); //ã€public void Test.test()ã€‘
+            boolean isSameObj = genericDeclaration.getTypeParameters()[i] == typeVariable; // trueï¼Œæ˜¯åŒä¸€ä¸ªå¯¹è±¡
 
             System.out.println(getTypeInfo(typeVariable));
             for (Type type : bounds) {
@@ -100,7 +100,7 @@ public class TypeTest {
     @Test
     public void testGenericArrayType() throws NoSuchMethodException {
         Method method = TypeTest.class.getMethod("testType", Object[].class, String[].class, List.class);
-        Type[] types = method.getGenericParameterTypes(); //°´ÕÕ·½·¨²ÎÊıÉùÃ÷Ë³Ğò·µ»Ø²ÎÊıµÄ Type Êı×é
+        Type[] types = method.getGenericParameterTypes(); //æŒ‰ç…§æ–¹æ³•å‚æ•°å£°æ˜é¡ºåºè¿”å›å‚æ•°çš„ Type æ•°ç»„
         for (Type type : types) {
             System.out.println(getTypeInfo(type));
             if (type instanceof GenericArrayType) {
@@ -110,7 +110,7 @@ public class TypeTest {
         }
     }
 
-    // Ö»ÓĞµÚÒ»¸ö²ÎÊıÊÇ¡¾·ºĞÍÊı×é¡¿ÀàĞÍ
+    // åªæœ‰ç¬¬ä¸€ä¸ªå‚æ•°æ˜¯ã€æ³›å‹æ•°ç»„ã€‘ç±»å‹
     public <T> void testType(T[] a1, String[] a2, List<T> a3) {
     }
 
@@ -118,13 +118,13 @@ public class TypeTest {
     @Test
     public void testWildcardType() throws NoSuchMethodException {
         Method method = TypeTest.class.getMethod("testType", List.class, List.class, List.class, List.class);
-        Type[] types = method.getGenericParameterTypes(); //°´ÕÕ·½·¨²ÎÊıÉùÃ÷Ë³Ğò·µ»Ø²ÎÊıµÄ Type Êı×é
+        Type[] types = method.getGenericParameterTypes(); //æŒ‰ç…§æ–¹æ³•å‚æ•°å£°æ˜é¡ºåºè¿”å›å‚æ•°çš„ Type æ•°ç»„
         for (Type type : types) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
-            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments(); //·µ»Ø±íÊ¾´ËÀàĞÍ¡¾Êµ¼ÊÀàĞÍ²ÎÊı¡¿µÄ Type Êı×é
+            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments(); //è¿”å›è¡¨ç¤ºæ­¤ç±»å‹ã€å®é™…ç±»å‹å‚æ•°ã€‘çš„ Type æ•°ç»„
             if (actualTypeArguments[0] instanceof WildcardType) {
                 WildcardType wildcardType = (WildcardType) actualTypeArguments[0];
-                System.out.println("ÊÇÍ¨Åä·ûÀàĞÍ" + getTypeInfo(wildcardType));
+                System.out.println("æ˜¯é€šé…ç¬¦ç±»å‹" + getTypeInfo(wildcardType));
                 for (Type upperType : wildcardType.getUpperBounds()) {
                     System.out.println("  upperType" + getTypeInfo(upperType));
                 }
@@ -132,7 +132,7 @@ public class TypeTest {
                     System.out.println("  lowerType" + getTypeInfo(lowerType));
                 }
             } else {
-                System.out.println("·ÇÍ¨Åä·ûÀàĞÍ" + getTypeInfo(actualTypeArguments[0]));
+                System.out.println("éé€šé…ç¬¦ç±»å‹" + getTypeInfo(actualTypeArguments[0]));
             }
         }
     }

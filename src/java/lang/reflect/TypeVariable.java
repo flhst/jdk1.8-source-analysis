@@ -48,7 +48,7 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
-// TypeVariable ±íÊ¾ÀàĞÍ±äÁ¿ÀàĞÍ£¬Èç²ÎÊı»¯ÀàĞÍÖĞµÄ E¡¢K µÈÀàĞÍ±äÁ¿£¬±íÊ¾·ºÖ¸ÈÎºÎÀà¡£
+// TypeVariable è¡¨ç¤ºç±»å‹å˜é‡ç±»å‹ï¼Œå¦‚å‚æ•°åŒ–ç±»å‹ä¸­çš„ Eã€K ç­‰ç±»å‹å˜é‡ï¼Œè¡¨ç¤ºæ³›æŒ‡ä»»ä½•ç±»ã€‚
 public interface TypeVariable<D extends GenericDeclaration> extends Type, AnnotatedElement {
     /**
      * Returns an array of {@code Type} objects representing the
@@ -68,11 +68,11 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      *     for any reason
      * @return an array of {@code Type}s representing the upper
      *     bound(s) of this type variable
-    */
-    // ·µ»ØÒ»¸ö Type¶ÔÏóµÄÊı×é£¬±íÊ¾´ËÀàĞÍ±äÁ¿µÄÉÏÏŞ¡£ÈôÎŞÏÔÊ¾¶¨Òå£¨extends£©£¬Ä¬ÈÏÎªObject¡£
-    // ÀàĞÍ±äÁ¿µÄÉÏÏŞ¿ÉÄÜ²»Ö¹Ò»¸ö£¬ÒòÎª¿ÉÒÔÓÃ&·ûºÅÏŞ¶¨¶à¸ö£¨ÕâÆäÖĞÓĞÇÒÖ»ÄÜÓĞÒ»¸öÎªÀà»ò³éÏóÀà£¬
-    // ÇÒ±ØĞë·ÅÔÚextendsºóµÄµÚÒ»¸ö£¬¼´ÈôÓĞ¶à¸öÉÏ±ß½ç£¬ÔòµÚÒ»¸ö&ºó±ØÎª½Ó¿Ú£©
-    // public class Test<K extends Integer & Map, V> {}¡£
+     */
+    // è¿”å›ä¸€ä¸ª Typeå¯¹è±¡çš„æ•°ç»„ï¼Œè¡¨ç¤ºæ­¤ç±»å‹å˜é‡çš„ä¸Šé™ã€‚è‹¥æ— æ˜¾ç¤ºå®šä¹‰ï¼ˆextendsï¼‰ï¼Œé»˜è®¤ä¸ºObjectã€‚
+    // ç±»å‹å˜é‡çš„ä¸Šé™å¯èƒ½ä¸æ­¢ä¸€ä¸ªï¼Œå› ä¸ºå¯ä»¥ç”¨&ç¬¦å·é™å®šå¤šä¸ªï¼ˆè¿™å…¶ä¸­æœ‰ä¸”åªèƒ½æœ‰ä¸€ä¸ªä¸ºç±»æˆ–æŠ½è±¡ç±»ï¼Œ
+    // ä¸”å¿…é¡»æ”¾åœ¨extendsåçš„ç¬¬ä¸€ä¸ªï¼Œå³è‹¥æœ‰å¤šä¸ªä¸Šè¾¹ç•Œï¼Œåˆ™ç¬¬ä¸€ä¸ª&åå¿…ä¸ºæ¥å£ï¼‰
+    // public class Test<K extends Integer & Map, V> {}ã€‚
     Type[] getBounds();
 
     /**
@@ -103,5 +103,5 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * @return an array of objects representing the upper bounds of the type variable
      * @since 1.8
      */
-     AnnotatedType[] getAnnotatedBounds();
+    AnnotatedType[] getAnnotatedBounds();
 }

@@ -57,11 +57,11 @@ package java.util;
  * @see Collection
  * @since 1.2
  */
-// ´ËÀàÌá¹©ÁËCollection½Ó¿ÚµÄ¹Ç¼ÜÊµÏÖ£¬ÒÔ×î´óÏŞ¶ÈµØ¼õÉÙÊµÏÖ´Ë½Ó¿ÚËùĞèµÄ¹¤×÷Á¿¡£
-// ÒªÊµÏÖ²»¿ÉĞŞ¸ÄµÄ¼¯ºÏ£¬³ÌĞòÔ±Ö»ĞèÀ©Õ¹´ËÀà²¢Ìá¹©µü´úÆ÷ºÍ´óĞ¡·½·¨µÄÊµÏÖ¼´¿É¡£
-//      £¨µü´úÆ÷·½·¨·µ»ØµÄµü´úÆ÷±ØĞëÊµÏÖhasNextºÍnext ¡££©
-// ÒªÊµÏÖ¿ÉĞŞ¸ÄµÄ¼¯ºÏ£¬³ÌĞòÔ±±ØĞëÁíÍâÖØĞ´´ËÀàµÄadd·½·¨£¨·ñÔò»áÅ×³öUnsupportedOperationException £©£¬
-//      ²¢ÇÒµü´úÆ÷·½·¨·µ»ØµÄµü´úÆ÷±ØĞëÁíÍâÊµÏÖÆäremove·½·¨¡£
+// æ­¤ç±»æä¾›äº†Collectionæ¥å£çš„éª¨æ¶å®ç°ï¼Œä»¥æœ€å¤§é™åº¦åœ°å‡å°‘å®ç°æ­¤æ¥å£æ‰€éœ€çš„å·¥ä½œé‡ã€‚
+// è¦å®ç°ä¸å¯ä¿®æ”¹çš„é›†åˆï¼Œç¨‹åºå‘˜åªéœ€æ‰©å±•æ­¤ç±»å¹¶æä¾›è¿­ä»£å™¨å’Œå¤§å°æ–¹æ³•çš„å®ç°å³å¯ã€‚
+//      ï¼ˆè¿­ä»£å™¨æ–¹æ³•è¿”å›çš„è¿­ä»£å™¨å¿…é¡»å®ç°hasNextå’Œnext ã€‚ï¼‰
+// è¦å®ç°å¯ä¿®æ”¹çš„é›†åˆï¼Œç¨‹åºå‘˜å¿…é¡»å¦å¤–é‡å†™æ­¤ç±»çš„addæ–¹æ³•ï¼ˆå¦åˆ™ä¼šæŠ›å‡ºUnsupportedOperationException ï¼‰ï¼Œ
+//      å¹¶ä¸”è¿­ä»£å™¨æ–¹æ³•è¿”å›çš„è¿­ä»£å™¨å¿…é¡»å¦å¤–å®ç°å…¶removeæ–¹æ³•ã€‚
 public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
@@ -179,8 +179,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
         // Estimate size of array; be prepared to see more or fewer elements
         int size = size();
         T[] r = a.length >= size ? a :
-                  (T[])java.lang.reflect.Array
-                  .newInstance(a.getClass().getComponentType(), size);
+                (T[])java.lang.reflect.Array
+                        .newInstance(a.getClass().getComponentType(), size);
         Iterator<E> it = iterator();
 
         for (int i = 0; i < r.length; i++) {
@@ -242,10 +242,10 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) // overflow
             throw new OutOfMemoryError
-                ("Required array size too large");
+                    ("Required array size too large");
         return (minCapacity > MAX_ARRAY_SIZE) ?
-            Integer.MAX_VALUE :
-            MAX_ARRAY_SIZE;
+                Integer.MAX_VALUE :
+                MAX_ARRAY_SIZE;
     }
 
     // Modification Operations

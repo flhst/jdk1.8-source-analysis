@@ -31,7 +31,7 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
-// WildcardType ´ú±íÍ¨Åä·ûÀàĞÍ£¬»ò·ºĞÍ±í´ïÊ½ÀàĞÍ£¬±ÈÈç?¡¢? super T¡¢? extends T£¬Ëû²¢²»ÊÇ Java ÀàĞÍÖĞµÄÒ»ÖÖ¡£
+// WildcardType ä»£è¡¨é€šé…ç¬¦ç±»å‹ï¼Œæˆ–æ³›å‹è¡¨è¾¾å¼ç±»å‹ï¼Œæ¯”å¦‚?ã€? super Tã€? extends Tï¼Œä»–å¹¶ä¸æ˜¯ Java ç±»å‹ä¸­çš„ä¸€ç§ã€‚
 public interface WildcardType extends Type {
     /**
      * Returns an array of {@code Type} objects representing the  upper

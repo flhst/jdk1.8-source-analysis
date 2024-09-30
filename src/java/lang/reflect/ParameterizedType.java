@@ -62,7 +62,7 @@ public interface ParameterizedType extends Type {
      *     be instantiated for any reason
      * @since 1.5
      */
-    // ¼òµ¥À´Ëµ¾ÍÊÇ»ñµÃ<>ÀïµÄÀàĞÍ²ÎÊıµÄÀàĞÍ£¬¿ÉÄÜÓĞ¶à¸öÀàĞÍ²ÎÊı£¬ÀıÈçMap<K, V>£¬Ò²¿ÉÄÜÃ»ÓĞÀàĞÍ²ÎÊı
+    // ç®€å•æ¥è¯´å°±æ˜¯è·å¾—<>é‡Œçš„ç±»å‹å‚æ•°çš„ç±»å‹ï¼Œå¯èƒ½æœ‰å¤šä¸ªç±»å‹å‚æ•°ï¼Œä¾‹å¦‚Map<K, V>ï¼Œä¹Ÿå¯èƒ½æ²¡æœ‰ç±»å‹å‚æ•°
     Type[] getActualTypeArguments();
 
     /**
@@ -73,7 +73,7 @@ public interface ParameterizedType extends Type {
      *     that declared this type
      * @since 1.5
      */
-    // ·µ»ØÉùÃ÷´Ë Type µÄÀà»ò½Ó¿Ú£¬¼òµ¥À´Ëµ¾ÍÊÇ·µ»Ø<>Ç°ÃæÄÇ¸öÀàĞÍ£¬ÀıÈçMap<K ,V>·µ»ØµÄÊÇMap
+    // è¿”å›å£°æ˜æ­¤ Type çš„ç±»æˆ–æ¥å£ï¼Œç®€å•æ¥è¯´å°±æ˜¯è¿”å›<>å‰é¢é‚£ä¸ªç±»å‹ï¼Œä¾‹å¦‚Map<K ,V>è¿”å›çš„æ˜¯Map
     Type getRawType();
 
     /**

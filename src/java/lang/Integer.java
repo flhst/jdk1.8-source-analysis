@@ -49,14 +49,14 @@ import java.lang.annotation.Native;
  * @author  Joseph D. Darcy
  * @since JDK1.0
  */
- //  Integer a = 6;
- //  Integer b = 6;
- //  a = b; true
- //         ÕâÊÇÒòÎª Java ÖĞµÄ Integer»º´æ»úÖÆ£º
- //          - ÔÚJavaÖĞ£¬IntegerÀà»á¶ÔÔÚ-128µ½127·¶Î§ÄÚµÄÕûÊıÖµ½øĞĞ»º´æ¡£
- //          - JavaµÄInteger»º´æ»úÖÆ½öÊÊÓÃÓÚÍ¨¹ı×Ô¶¯×°Ïä»òÊ¹ÓÃInteger.valueOf(int)·½·¨´´½¨µÄInteger¶ÔÏó¡£
- //          - new Integer()£º Ã¿´Î¶¼»á´´½¨ĞÂµÄ¶ÔÏó£¬¼´Ê¹ÖµÔÚ -128 µ½ 127 ·¶Î§ÄÚÒ²²»»áÊ¹ÓÃ»º´æµÄ¶ÔÏó¡£
- //          - ÔÚÕâÖÖÇé¿öÏÂ£¬Java»á·µ»Ø»º´æµÄ¶ÔÏóÊµÀı¡£
+//  Integer a = 6;
+//  Integer b = 6;
+//  a = b; true
+//         è¿™æ˜¯å› ä¸º Java ä¸­çš„ Integerç¼“å­˜æœºåˆ¶ï¼š
+//          - åœ¨Javaä¸­ï¼ŒIntegerç±»ä¼šå¯¹åœ¨-128åˆ°127èŒƒå›´å†…çš„æ•´æ•°å€¼è¿›è¡Œç¼“å­˜ã€‚
+//          - Javaçš„Integerç¼“å­˜æœºåˆ¶ä»…é€‚ç”¨äºé€šè¿‡è‡ªåŠ¨è£…ç®±æˆ–ä½¿ç”¨Integer.valueOf(int)æ–¹æ³•åˆ›å»ºçš„Integerå¯¹è±¡ã€‚
+//          - new Integer()ï¼š æ¯æ¬¡éƒ½ä¼šåˆ›å»ºæ–°çš„å¯¹è±¡ï¼Œå³ä½¿å€¼åœ¨ -128 åˆ° 127 èŒƒå›´å†…ä¹Ÿä¸ä¼šä½¿ç”¨ç¼“å­˜çš„å¯¹è±¡ã€‚
+//          - åœ¨è¿™ç§æƒ…å†µä¸‹ï¼ŒJavaä¼šè¿”å›ç¼“å­˜çš„å¯¹è±¡å®ä¾‹ã€‚
 public final class Integer extends Number implements Comparable<Integer> {
     /**
      * A constant holding the minimum value an {@code int} can
@@ -83,12 +83,12 @@ public final class Integer extends Number implements Comparable<Integer> {
      * All possible chars for representing a number as a String
      */
     final static char[] digits = {
-        '0' , '1' , '2' , '3' , '4' , '5' ,
-        '6' , '7' , '8' , '9' , 'a' , 'b' ,
-        'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
-        'i' , 'j' , 'k' , 'l' , 'm' , 'n' ,
-        'o' , 'p' , 'q' , 'r' , 's' , 't' ,
-        'u' , 'v' , 'w' , 'x' , 'y' , 'z'
+            '0' , '1' , '2' , '3' , '4' , '5' ,
+            '6' , '7' , '8' , '9' , 'a' , 'b' ,
+            'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
+            'i' , 'j' , 'k' , 'l' , 'm' , 'n' ,
+            'o' , 'p' , 'q' , 'r' , 's' , 't' ,
+            'u' , 'v' , 'w' , 'x' , 'y' , 'z'
     };
 
     /**
@@ -335,7 +335,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @param len the number of characters to write
      * @return the lowest character  location used
      */
-     static int formatUnsignedInt(int val, int shift, char[] buf, int offset, int len) {
+    static int formatUnsignedInt(int val, int shift, char[] buf, int offset, int len) {
         int charPos = len;
         int radix = 1 << shift;
         int mask = radix - 1;
@@ -348,49 +348,49 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     final static char [] DigitTens = {
-        '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-        '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-        '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
-        '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
-        '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
-        '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
-        '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
-        '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
-        '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
-        '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-        } ;
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
+            '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
+            '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
+            '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
+            '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
+            '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
+            '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
+            '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
+            '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
+    } ;
 
     final static char [] DigitOnes = {
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        } ;
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    } ;
 
-        // I use the "invariant division by multiplication" trick to
-        // accelerate Integer.toString.  In particular we want to
-        // avoid division by 10.
-        //
-        // The "trick" has roughly the same performance characteristics
-        // as the "classic" Integer.toString code on a non-JIT VM.
-        // The trick avoids .rem and .div calls but has a longer code
-        // path and is thus dominated by dispatch overhead.  In the
-        // JIT case the dispatch overhead doesn't exist and the
-        // "trick" is considerably faster than the classic code.
-        //
-        // TODO-FIXME: convert (x * 52429) into the equiv shift-add
-        // sequence.
-        //
-        // RE:  Division by Invariant Integers using Multiplication
-        //      T Gralund, P Montgomery
-        //      ACM PLDI 1994
-        //
+    // I use the "invariant division by multiplication" trick to
+    // accelerate Integer.toString.  In particular we want to
+    // avoid division by 10.
+    //
+    // The "trick" has roughly the same performance characteristics
+    // as the "classic" Integer.toString code on a non-JIT VM.
+    // The trick avoids .rem and .div calls but has a longer code
+    // path and is thus dominated by dispatch overhead.  In the
+    // JIT case the dispatch overhead doesn't exist and the
+    // "trick" is considerably faster than the classic code.
+    //
+    // TODO-FIXME: convert (x * 52429) into the equiv shift-add
+    // sequence.
+    //
+    // RE:  Division by Invariant Integers using Multiplication
+    //      T Gralund, P Montgomery
+    //      ACM PLDI 1994
+    //
 
     /**
      * Returns a {@code String} object representing the
@@ -451,7 +451,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         // Generate two digits per iteration
         while (i >= 65536) {
             q = i / 100;
-        // really: r = i - (q * 100);
+            // really: r = i - (q * 100);
             r = i - ((q << 6) + (q << 5) + (q << 2));
             i = q;
             buf [--charPos] = DigitOnes[r];
@@ -473,7 +473,7 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     final static int [] sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999,
-                                      99999999, 999999999, Integer.MAX_VALUE };
+            99999999, 999999999, Integer.MAX_VALUE };
 
     // Requires positive x
     static int stringSize(int x) {
@@ -538,7 +538,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *             does not contain a parsable {@code int}.
      */
     public static int parseInt(String s, int radix)
-                throws NumberFormatException
+            throws NumberFormatException
     {
         /*
          * WARNING: This method may be invoked early during VM initialization
@@ -552,12 +552,12 @@ public final class Integer extends Number implements Comparable<Integer> {
 
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix +
-                                            " less than Character.MIN_RADIX");
+                    " less than Character.MIN_RADIX");
         }
 
         if (radix > Character.MAX_RADIX) {
             throw new NumberFormatException("radix " + radix +
-                                            " greater than Character.MAX_RADIX");
+                    " greater than Character.MAX_RADIX");
         }
 
         int result = 0;
@@ -667,7 +667,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @since 1.8
      */
     public static int parseUnsignedInt(String s, int radix)
-                throws NumberFormatException {
+            throws NumberFormatException {
         if (s == null)  {
             throw new NumberFormatException("null");
         }
@@ -677,11 +677,11 @@ public final class Integer extends Number implements Comparable<Integer> {
             char firstChar = s.charAt(0);
             if (firstChar == '-') {
                 throw new
-                    NumberFormatException(String.format("Illegal leading minus sign " +
-                                                       "on unsigned string %s.", s));
+                        NumberFormatException(String.format("Illegal leading minus sign " +
+                        "on unsigned string %s.", s));
             } else {
                 if (len <= 5 || // Integer.MAX_VALUE in Character.MAX_RADIX is 6 digits
-                    (radix == 10 && len <= 9) ) { // Integer.MAX_VALUE in base 10 is 10 digits
+                        (radix == 10 && len <= 9) ) { // Integer.MAX_VALUE in base 10 is 10 digits
                     return parseInt(s, radix);
                 } else {
                     long ell = Long.parseLong(s, radix);
@@ -689,8 +689,8 @@ public final class Integer extends Number implements Comparable<Integer> {
                         return (int) ell;
                     } else {
                         throw new
-                            NumberFormatException(String.format("String value %s exceeds " +
-                                                                "range of unsigned int.", s));
+                                NumberFormatException(String.format("String value %s exceeds " +
+                                "range of unsigned int.", s));
                     }
                 }
             }
@@ -794,7 +794,7 @@ public final class Integer extends Number implements Comparable<Integer> {
             // high value may be configured by property
             int h = 127;
             String integerCacheHighPropValue =
-                sun.misc.VM.getSavedProperty("java.lang.Integer.IntegerCache.high");
+                    sun.misc.VM.getSavedProperty("java.lang.Integer.IntegerCache.high");
             if (integerCacheHighPropValue != null) {
                 try {
                     int i = parseInt(integerCacheHighPropValue);
@@ -845,17 +845,17 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @serial
      */
-    // fianl Ê¹ÓÃ final ¹Ø¼ü×Ö¿ÉÒÔÉùÃ÷Ò»¸ö²»¿É±äµÄ±äÁ¿¡£Ò»µ©¸ø final ±äÁ¿¸³Öµºó£¬¾Í²»ÄÜÔÙ¸Ä±äËüµÄÖµ¡£
-    // IntegerÀàÊÇ²»¿É±äµÄ£¬ÕâÒâÎ¶×ÅÒ»µ©´´½¨ÁËInteger¶ÔÏó£¬¾ÍÎŞ·¨ĞŞ¸ÄÆäÖµ¡£
+    // fianl ä½¿ç”¨ final å…³é”®å­—å¯ä»¥å£°æ˜ä¸€ä¸ªä¸å¯å˜çš„å˜é‡ã€‚ä¸€æ—¦ç»™ final å˜é‡èµ‹å€¼åï¼Œå°±ä¸èƒ½å†æ”¹å˜å®ƒçš„å€¼ã€‚
+    // Integerç±»æ˜¯ä¸å¯å˜çš„ï¼Œè¿™æ„å‘³ç€ä¸€æ—¦åˆ›å»ºäº†Integerå¯¹è±¡ï¼Œå°±æ— æ³•ä¿®æ”¹å…¶å€¼ã€‚
     //  - Integer num = 10;
-    //  - Õâ²»ÊÇĞŞ¸ÄÔ­À´µÄ¶ÔÏó£¬¶øÊÇÈÃnumÖ¸ÏòÒ»¸öĞÂµÄInteger¶ÔÏó
+    //  - è¿™ä¸æ˜¯ä¿®æ”¹åŸæ¥çš„å¯¹è±¡ï¼Œè€Œæ˜¯è®©numæŒ‡å‘ä¸€ä¸ªæ–°çš„Integerå¯¹è±¡
     //  - num = 20;
-    //    ·½·¨Ò»£ºÊ¹ÓÃ·´Éä
+    //    æ–¹æ³•ä¸€ï¼šä½¿ç”¨åå°„
     //     - Integer num = 10;
     //     - Field value = Integer.class.getDeclaredField("value");
     //     - value.setAccessible(true);
     //     - value.set(num, 20);
-    //    ·½·¨¶ş£ºÊ¹ÓÃAtomicInteger
+    //    æ–¹æ³•äºŒï¼šä½¿ç”¨AtomicInteger
     //     - AtomicInteger atomicInteger = new AtomicInteger(10);
     //     - atomicInteger.set(20);
     private final int value;
@@ -1214,7 +1214,7 @@ public final class Integer extends Number implements Comparable<Integer> {
             // handles this case, and causes any genuine format error to be
             // rethrown.
             String constant = negative ? ("-" + nm.substring(index))
-                                       : nm.substring(index);
+                    : nm.substring(index);
             result = Integer.valueOf(constant, radix);
         }
         return result;
@@ -1536,7 +1536,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         i = (i & 0x33333333) << 2 | (i >>> 2) & 0x33333333;
         i = (i & 0x0f0f0f0f) << 4 | (i >>> 4) & 0x0f0f0f0f;
         i = (i << 24) | ((i & 0xff00) << 8) |
-            ((i >>> 8) & 0xff00) | (i >>> 24);
+                ((i >>> 8) & 0xff00) | (i >>> 24);
         return i;
     }
 
@@ -1565,9 +1565,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     public static int reverseBytes(int i) {
         return ((i >>> 24)           ) |
-               ((i >>   8) &   0xFF00) |
-               ((i <<   8) & 0xFF0000) |
-               ((i << 24));
+                ((i >>   8) &   0xFF00) |
+                ((i <<   8) & 0xFF0000) |
+                ((i << 24));
     }
 
     /**

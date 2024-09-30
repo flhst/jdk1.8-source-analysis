@@ -126,15 +126,15 @@ import java.io.Serializable;
  * @see Set
  * @since 1.2
  */
-// java ×Ô´øÁË¸÷ÖÖMapÀà¡£ÕâĞ©MapÀà¿É¹éÎªÈıÖÖÀàĞÍ£º
-//  1¡¢Í¨ÓÃMap£¬ÓÃÓÚÔÚÓ¦ÓÃ³ÌĞòÖĞ¹ÜÀíÓ³Éä£¬Í¨³£ÔÚjava.util³ÌĞò°üÖĞÊµÏÖ
-//     HashMap¡¢Hashtable¡¢Properties¡¢LinkedHashMap¡¢IdentityHashMap¡¢TreeMap¡¢WeakHashMap¡¢ConcurrentHashMap
-//  2¡¢×¨ÓÃMap£¬Í¨³£ÎÒÃÇ²»±ØÇ××Ô´´½¨´ËÀàMap£¬¶øÊÇÍ¨¹ıÄ³Ğ©ÆäËûÀà¶ÔÆä½øĞĞ·ÃÎÊ
-//     java.util.jar.Attributes¡¢
-//     javax.print.attribute.standard.PrinterStateReasons¡¢
-//     java.security.Provider¡¢java.awt.RenderingHints¡¢
+// java è‡ªå¸¦äº†å„ç§Mapç±»ã€‚è¿™äº›Mapç±»å¯å½’ä¸ºä¸‰ç§ç±»å‹ï¼š
+//  1ã€é€šç”¨Mapï¼Œç”¨äºåœ¨åº”ç”¨ç¨‹åºä¸­ç®¡ç†æ˜ å°„ï¼Œé€šå¸¸åœ¨java.utilç¨‹åºåŒ…ä¸­å®ç°
+//     HashMapã€Hashtableã€Propertiesã€LinkedHashMapã€IdentityHashMapã€TreeMapã€WeakHashMapã€ConcurrentHashMap
+//  2ã€ä¸“ç”¨Mapï¼Œé€šå¸¸æˆ‘ä»¬ä¸å¿…äº²è‡ªåˆ›å»ºæ­¤ç±»Mapï¼Œè€Œæ˜¯é€šè¿‡æŸäº›å…¶ä»–ç±»å¯¹å…¶è¿›è¡Œè®¿é—®
+//     java.util.jar.Attributesã€
+//     javax.print.attribute.standard.PrinterStateReasonsã€
+//     java.security.Providerã€java.awt.RenderingHintsã€
 //     javax.swing.UIDefaults
-// 3¡¢Ò»¸öÓÃÓÚ°ïÖúÎÒÃÇÊµÏÖ×Ô¼ºµÄMapÀàµÄ³éÏóÀà
+// 3ã€ä¸€ä¸ªç”¨äºå¸®åŠ©æˆ‘ä»¬å®ç°è‡ªå·±çš„Mapç±»çš„æŠ½è±¡ç±»
 //     AbstractMap
 public interface Map<K,V> {
     // Query Operations
@@ -146,8 +146,8 @@ public interface Map<K,V> {
      *
      * @return the number of key-value mappings in this map
      */
-    // ·µ»Ø´ËÓ³ÉäÖĞ¼üÖµÓ³ÉäµÄÊıÁ¿¡£
-    // Èç¹ûÓ³Éä°üº¬³¬¹ı Integer.MAX_VALUE ÔªËØ£¬Ôò·µ»Ø Integer.MAX_VALUE¡£
+    // è¿”å›æ­¤æ˜ å°„ä¸­é”®å€¼æ˜ å°„çš„æ•°é‡ã€‚
+    // å¦‚æœæ˜ å°„åŒ…å«è¶…è¿‡ Integer.MAX_VALUE å…ƒç´ ï¼Œåˆ™è¿”å› Integer.MAX_VALUEã€‚
     int size();
 
     /**
@@ -155,7 +155,7 @@ public interface Map<K,V> {
      *
      * @return <tt>true</tt> if this map contains no key-value mappings
      */
-    // ÅĞ¶ÏMapÊÇ·ñÎª¿Õ
+    // åˆ¤æ–­Mapæ˜¯å¦ä¸ºç©º
     boolean isEmpty();
 
     /**
@@ -175,7 +175,7 @@ public interface Map<K,V> {
      *         does not permit null keys
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
-    // Èç¹û´ËÓ³Éä°üº¬Ö¸¶¨¼üµÄÓ³Éä£¬Ôò·µ»Ø true¡£
+    // å¦‚æœæ­¤æ˜ å°„åŒ…å«æŒ‡å®šé”®çš„æ˜ å°„ï¼Œåˆ™è¿”å› trueã€‚
     boolean containsKey(Object key);
 
     /**
@@ -196,7 +196,7 @@ public interface Map<K,V> {
      *         map does not permit null values
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
-    // ÊÇ·ñ´æÔÚÒ»¸ö¼ü»ò¶à¸ö¼üÓ³Éäµ½Ö¸¶¨µÄÖµ
+    // æ˜¯å¦å­˜åœ¨ä¸€ä¸ªé”®æˆ–å¤šä¸ªé”®æ˜ å°„åˆ°æŒ‡å®šçš„å€¼
     boolean containsValue(Object value);
 
     /**
@@ -224,9 +224,9 @@ public interface Map<K,V> {
      *         does not permit null keys
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
-    // ´ÓÓ³ÉäÖĞ·µ»ØÖ¸¶¨¼üÖµ¶ÔÓ¦µÄÖµ£¬Èç¹ûÓ³ÉäÖĞ²»´æÔÚ´Ë¼ü£¬Ôò·µ»Ø null
-    // Èç¹ûÔÊĞínullÖµ£¬·µ»Ønull¿ÉÄÜ±íÊ¾ÎŞÓ³Éä»òÏÔÊ¾Ó³ÉäÎªnull
-    // ¿ÉÒÔÍ¨¹ıcontainsKey·½·¨À´Çø·Ö
+    // ä»æ˜ å°„ä¸­è¿”å›æŒ‡å®šé”®å€¼å¯¹åº”çš„å€¼ï¼Œå¦‚æœæ˜ å°„ä¸­ä¸å­˜åœ¨æ­¤é”®ï¼Œåˆ™è¿”å› null
+    // å¦‚æœå…è®¸nullå€¼ï¼Œè¿”å›nullå¯èƒ½è¡¨ç¤ºæ— æ˜ å°„æˆ–æ˜¾ç¤ºæ˜ å°„ä¸ºnull
+    // å¯ä»¥é€šè¿‡containsKeyæ–¹æ³•æ¥åŒºåˆ†
     V get(Object key);
 
     // Modification Operations
@@ -255,10 +255,10 @@ public interface Map<K,V> {
      * @throws IllegalArgumentException if some property of the specified key
      *         or value prevents it from being stored in this map
      */
-    // ½«Ö¸¶¨ÖµÓë´ËÓ³ÉäÖĞµÄÖ¸¶¨¼ü¹ØÁª£¨¿ÉÑ¡²Ù×÷£©¡£
-    // Èç¹ûÓ³ÉäÒÔÇ°°üº¬¼üµÄÓ³Éä£¬Ôò¾ÉÖµ½«Ìæ»»ÎªÖ¸¶¨Öµ¡£
-    // @return ¾ÉÖµ£¬Èç¹û´ËÓ³ÉäÖĞ²»´æÔÚ´Ë¼ü£¬Ôò·µ»Ø null¡£
-    // @return Èç¹ûÔÊĞínullÖµ£¬Ò²¿ÉÄÜ±íÊ¾ÏÔÊ¾Ó³ÉäÎªnull¡£
+    // å°†æŒ‡å®šå€¼ä¸æ­¤æ˜ å°„ä¸­çš„æŒ‡å®šé”®å…³è”ï¼ˆå¯é€‰æ“ä½œï¼‰ã€‚
+    // å¦‚æœæ˜ å°„ä»¥å‰åŒ…å«é”®çš„æ˜ å°„ï¼Œåˆ™æ—§å€¼å°†æ›¿æ¢ä¸ºæŒ‡å®šå€¼ã€‚
+    // @return æ—§å€¼ï¼Œå¦‚æœæ­¤æ˜ å°„ä¸­ä¸å­˜åœ¨æ­¤é”®ï¼Œåˆ™è¿”å› nullã€‚
+    // @return å¦‚æœå…è®¸nullå€¼ï¼Œä¹Ÿå¯èƒ½è¡¨ç¤ºæ˜¾ç¤ºæ˜ å°„ä¸ºnullã€‚
     V put(K key, V value);
 
     /**
@@ -291,9 +291,9 @@ public interface Map<K,V> {
      *         map does not permit null keys
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
-    // Èç¹û´æÔÚ¼ü£¬Ôò´Ó´Ë map ÖĞÉ¾³ı¼üµÄÓ³Éä£¨¿ÉÑ¡²Ù×÷£©¡£
-    // @return ¾ÉÖµ£¬Èç¹û´ËÓ³ÉäÖĞ²»´æÔÚ´Ë¼ü£¬Ôò·µ»Ø null¡£
-    // @return Èç¹ûÔÊĞínullÖµ£¬Ò²¿ÉÄÜ±íÊ¾ÏÔÊ¾Ó³ÉäÎªnull¡£
+    // å¦‚æœå­˜åœ¨é”®ï¼Œåˆ™ä»æ­¤ map ä¸­åˆ é™¤é”®çš„æ˜ å°„ï¼ˆå¯é€‰æ“ä½œï¼‰ã€‚
+    // @return æ—§å€¼ï¼Œå¦‚æœæ­¤æ˜ å°„ä¸­ä¸å­˜åœ¨æ­¤é”®ï¼Œåˆ™è¿”å› nullã€‚
+    // @return å¦‚æœå…è®¸nullå€¼ï¼Œä¹Ÿå¯èƒ½è¡¨ç¤ºæ˜¾ç¤ºæ˜ å°„ä¸ºnullã€‚
     V remove(Object key);
 
 
@@ -318,9 +318,9 @@ public interface Map<K,V> {
      * @throws IllegalArgumentException if some property of a key or value in
      *         the specified map prevents it from being stored in this map
      */
-    // ½«Ö¸¶¨Ó³ÉäÖĞµÄËùÓĞÓ³Éä¸´ÖÆµ½´ËÓ³Éä£¨¿ÉÑ¡²Ù×÷£©¡£
-    // ´Ëµ÷ÓÃµÄĞ§¹ûÏàµ±ÓÚÕë¶ÔÖ¸¶¨Ó³ÉäÖĞ´Ó¼ükµ½Öµv µÄÃ¿¸öÓ³ÉäÔÚ´ËÓ³ÉäÉÏµ÷ÓÃÒ»´Îput(k, v)µÄĞ§¹û¡£
-    // Èç¹ûÔÚ²Ù×÷½øĞĞ¹ı³ÌÖĞĞŞ¸ÄÁËÖ¸¶¨µÄÓ³Éä£¬Ôò¸Ã²Ù×÷µÄĞĞÎªÊÇÎ´¶¨ÒåµÄ¡£
+    // å°†æŒ‡å®šæ˜ å°„ä¸­çš„æ‰€æœ‰æ˜ å°„å¤åˆ¶åˆ°æ­¤æ˜ å°„ï¼ˆå¯é€‰æ“ä½œï¼‰ã€‚
+    // æ­¤è°ƒç”¨çš„æ•ˆæœç›¸å½“äºé’ˆå¯¹æŒ‡å®šæ˜ å°„ä¸­ä»é”®kåˆ°å€¼v çš„æ¯ä¸ªæ˜ å°„åœ¨æ­¤æ˜ å°„ä¸Šè°ƒç”¨ä¸€æ¬¡put(k, v)çš„æ•ˆæœã€‚
+    // å¦‚æœåœ¨æ“ä½œè¿›è¡Œè¿‡ç¨‹ä¸­ä¿®æ”¹äº†æŒ‡å®šçš„æ˜ å°„ï¼Œåˆ™è¯¥æ“ä½œçš„è¡Œä¸ºæ˜¯æœªå®šä¹‰çš„ã€‚
     void putAll(Map<? extends K, ? extends V> m);
 
     /**
@@ -330,7 +330,7 @@ public interface Map<K,V> {
      * @throws UnsupportedOperationException if the <tt>clear</tt> operation
      *         is not supported by this map
      */
-    // ´Ó´ËÓ³ÉäÖĞÉ¾³ıËùÓĞÓ³Éä£¨¿ÉÑ¡²Ù×÷£©¡£
+    // ä»æ­¤æ˜ å°„ä¸­åˆ é™¤æ‰€æœ‰æ˜ å°„ï¼ˆå¯é€‰æ“ä½œï¼‰ã€‚
     void clear();
 
 
@@ -351,12 +351,12 @@ public interface Map<K,V> {
      *
      * @return a set view of the keys contained in this map
      */
-    // ·µ»Ø´ËÓ³ÉäÖĞ°üº¬µÄ¼üµÄSetÊÓÍ¼¡£
-    // ¸Ã¼¯ºÏÖ§³ÖÔªËØÉ¾³ı£¬¼´Í¨¹ıIterator.remove ¡¢ Set.remove ¡¢ removeAll ¡¢ keepAllºÍclear²Ù×÷´ÓÓ³ÉäÖĞÉ¾³ıÏàÓ¦µÄÓ³Éä¡£
-    // Ëü²»Ö§³Öadd»òaddAll²Ù×÷
-    //  1¡¢¼¯ºÏÓëÓ³ÉäÍ¬²½±ä»¯
-    //  2¡¢Ö§³ÖÔªËØÒÆ³ı²Ù×÷£¬µ«ÊÇ²»Ö§³ÖÌí¼Ó²Ù×÷
-    //  3¡¢ÔÚ±éÀú¹ı³ÌÖĞĞŞ¸ÄÓ³Éä¿ÉÄÜµ¼ÖÂÎ´¶¨ÒåµÄĞĞÎª
+    // è¿”å›æ­¤æ˜ å°„ä¸­åŒ…å«çš„é”®çš„Setè§†å›¾ã€‚
+    // è¯¥é›†åˆæ”¯æŒå…ƒç´ åˆ é™¤ï¼Œå³é€šè¿‡Iterator.remove ã€ Set.remove ã€ removeAll ã€ keepAllå’Œclearæ“ä½œä»æ˜ å°„ä¸­åˆ é™¤ç›¸åº”çš„æ˜ å°„ã€‚
+    // å®ƒä¸æ”¯æŒaddæˆ–addAllæ“ä½œ
+    //  1ã€é›†åˆä¸æ˜ å°„åŒæ­¥å˜åŒ–
+    //  2ã€æ”¯æŒå…ƒç´ ç§»é™¤æ“ä½œï¼Œä½†æ˜¯ä¸æ”¯æŒæ·»åŠ æ“ä½œ
+    //  3ã€åœ¨éå†è¿‡ç¨‹ä¸­ä¿®æ”¹æ˜ å°„å¯èƒ½å¯¼è‡´æœªå®šä¹‰çš„è¡Œä¸º
     Set<K> keySet();
 
     /**
@@ -374,11 +374,11 @@ public interface Map<K,V> {
      *
      * @return a collection view of the values contained in this map
      */
-    // ·µ»ØÒ»¸ö±íÊ¾´ËÓ³ÉäÖĞÖµµÄCollectionÊÓÍ¼
-    // MapÖĞµÄÖµ¿ÉÒÔÊÇÖØ¸´µÄ£¬ËùÒÔ·µ»ØµÄÊÇÒ»¸öCollection¼¯ºÏ£¬¶ø²»ÊÇSet¡£
-    //  1¡¢¼¯ºÏÓëÓ³ÉäÍ¬²½±ä»¯
-    //  2¡¢Ö§³ÖÔªËØÒÆ³ı²Ù×÷£¬µ«ÊÇ²»Ö§³ÖÌí¼Ó²Ù×÷
-    //  3¡¢ÔÚ±éÀú¹ı³ÌÖĞĞŞ¸ÄÓ³Éä¿ÉÄÜµ¼ÖÂÎ´¶¨ÒåµÄĞĞÎª
+    // è¿”å›ä¸€ä¸ªè¡¨ç¤ºæ­¤æ˜ å°„ä¸­å€¼çš„Collectionè§†å›¾
+    // Mapä¸­çš„å€¼å¯ä»¥æ˜¯é‡å¤çš„ï¼Œæ‰€ä»¥è¿”å›çš„æ˜¯ä¸€ä¸ªCollectioné›†åˆï¼Œè€Œä¸æ˜¯Setã€‚
+    //  1ã€é›†åˆä¸æ˜ å°„åŒæ­¥å˜åŒ–
+    //  2ã€æ”¯æŒå…ƒç´ ç§»é™¤æ“ä½œï¼Œä½†æ˜¯ä¸æ”¯æŒæ·»åŠ æ“ä½œ
+    //  3ã€åœ¨éå†è¿‡ç¨‹ä¸­ä¿®æ”¹æ˜ å°„å¯èƒ½å¯¼è‡´æœªå®šä¹‰çš„è¡Œä¸º
     Collection<V> values();
 
     /**
@@ -397,8 +397,8 @@ public interface Map<K,V> {
      *
      * @return a set view of the mappings contained in this map
      */
-    // ·µ»ØMapÖĞËùÓĞ¼üÖµ¶ÔµÄ¼¯ºÏ¡£
-    // Ã¿¸öMap.Entry¶ÔÏó±íÊ¾Ò»¸ö¼üÖµ¶Ô£¬¿ÉÒÔÍ¨¹ıgetKey()ºÍgetValue()·½·¨·Ö±ğ»ñÈ¡¼üÖµ¶Ô¡£
+    // è¿”å›Mapä¸­æ‰€æœ‰é”®å€¼å¯¹çš„é›†åˆã€‚
+    // æ¯ä¸ªMap.Entryå¯¹è±¡è¡¨ç¤ºä¸€ä¸ªé”®å€¼å¯¹ï¼Œå¯ä»¥é€šè¿‡getKey()å’ŒgetValue()æ–¹æ³•åˆ†åˆ«è·å–é”®å€¼å¯¹ã€‚
     Set<Map.Entry<K, V>> entrySet();
 
     /**
@@ -414,7 +414,7 @@ public interface Map<K,V> {
      * @see Map#entrySet()
      * @since 1.2
      */
-    // ÄÚ²¿½Ó¿Ú£¬ÓÃÓÚ·â×°Map¼¯ºÏÖĞµÄÒ»×é¼üÖµ(keyºÍvalue)
+    // å†…éƒ¨æ¥å£ï¼Œç”¨äºå°è£…Mapé›†åˆä¸­çš„ä¸€ç»„é”®å€¼(keyå’Œvalue)
     interface Entry<K,V> {
         /**
          * Returns the key corresponding to this entry.
@@ -424,9 +424,9 @@ public interface Map<K,V> {
          *         required to, throw this exception if the entry has been
          *         removed from the backing map.
          */
-        // ¸Ãº¯Êı·µ»Øµ±Ç°ÌõÄ¿¶ÔÓ¦µÄ¼ü£¨Key£©¡£
-        // ·µ»ØÀàĞÍÎª K£¬±íÊ¾¼üµÄÀàĞÍ¡£
-        // Èç¹ûÌõÄ¿ÒÑ±»ÒÆ³ı£¬ÊµÏÖÀà¿ÉÒÔÑ¡ÔñĞÔÅ×³ö IllegalStateException Òì³£
+        // è¯¥å‡½æ•°è¿”å›å½“å‰æ¡ç›®å¯¹åº”çš„é”®ï¼ˆKeyï¼‰ã€‚
+        // è¿”å›ç±»å‹ä¸º Kï¼Œè¡¨ç¤ºé”®çš„ç±»å‹ã€‚
+        // å¦‚æœæ¡ç›®å·²è¢«ç§»é™¤ï¼Œå®ç°ç±»å¯ä»¥é€‰æ‹©æ€§æŠ›å‡º IllegalStateException å¼‚å¸¸
         K getKey();
 
         /**
@@ -439,7 +439,7 @@ public interface Map<K,V> {
          *         required to, throw this exception if the entry has been
          *         removed from the backing map.
          */
-        // µ±Ç°EntryµÄvalueÖµ¡£
+        // å½“å‰Entryçš„valueå€¼ã€‚
         V getValue();
 
         /**
@@ -462,8 +462,8 @@ public interface Map<K,V> {
          *         required to, throw this exception if the entry has been
          *         removed from the backing map.
          */
-        // ½«EntryÖĞµÄvalueÖµÉèÖÃÎªÖ¸¶¨µÄÖµ£¬²¢½«¾ÉÖµ·µ»Ø
-        // Èç¹ûÌõÄ¿ÒÑ¾­±»É¾³ı£¬ÔòĞĞÎªÎ´¶¨Òå
+        // å°†Entryä¸­çš„valueå€¼è®¾ç½®ä¸ºæŒ‡å®šçš„å€¼ï¼Œå¹¶å°†æ—§å€¼è¿”å›
+        // å¦‚æœæ¡ç›®å·²ç»è¢«åˆ é™¤ï¼Œåˆ™è¡Œä¸ºæœªå®šä¹‰
         V setValue(V value);
 
         /**
@@ -484,8 +484,8 @@ public interface Map<K,V> {
          * @return <tt>true</tt> if the specified object is equal to this map
          *         entry
          */
-        // ±È½ÏÖ¸¶¨¶ÔÏóÓë´ËÌõÄ¿ÊÇ·ñÏàµÈ¡£
-        // Èç¹û¸ø¶¨¶ÔÏóÒ²ÊÇÓ³ÉäÌõÄ¿²¢ÇÒÁ½¸öÌõÄ¿±íÊ¾ÏàÍ¬µÄÓ³Éä£¬Ôò·µ»Øtrue ¡£
+        // æ¯”è¾ƒæŒ‡å®šå¯¹è±¡ä¸æ­¤æ¡ç›®æ˜¯å¦ç›¸ç­‰ã€‚
+        // å¦‚æœç»™å®šå¯¹è±¡ä¹Ÿæ˜¯æ˜ å°„æ¡ç›®å¹¶ä¸”ä¸¤ä¸ªæ¡ç›®è¡¨ç¤ºç›¸åŒçš„æ˜ å°„ï¼Œåˆ™è¿”å›true ã€‚
         // (e1.getKey() == null ? e2.getKey() == null : e1.getKey().equals(e2.getKey()))
         // && (e1.getValue() == null ? e2.getValue() == null : e1.getValue().equals(e2.getValue()))
         boolean equals(Object o);
@@ -506,11 +506,11 @@ public interface Map<K,V> {
          * @see Object#equals(Object)
          * @see #equals(Object)
          */
-        // ·µ»Ø´ËÓ³ÉäÌõÄ¿µÄ¹şÏ£ÂëÖµ¡£
+        // è¿”å›æ­¤æ˜ å°„æ¡ç›®çš„å“ˆå¸Œç å€¼ã€‚
         // (e.getKey() == null ? 0 : e.getKey().hashCode())
         // ^ (e.getValue() == null ? 0 : e.getValue().hashCode())
-        // È·±£ÁË e1.equals(e2) =>>> e1.hashCode()==e2.hashCode()
-        // ÕıÈçObject.hashCodeµÄÒ»°ãÆõÔ¼ËùÒªÇóµÄ¡£
+        // ç¡®ä¿äº† e1.equals(e2) =>>> e1.hashCode()==e2.hashCode()
+        // æ­£å¦‚Object.hashCodeçš„ä¸€èˆ¬å¥‘çº¦æ‰€è¦æ±‚çš„ã€‚
         int hashCode();
 
         /**
@@ -527,7 +527,7 @@ public interface Map<K,V> {
          */
         public static <K extends Comparable<? super K>, V> Comparator<Map.Entry<K,V>> comparingByKey() {
             return (Comparator<Map.Entry<K, V>> & Serializable)
-                (c1, c2) -> c1.getKey().compareTo(c2.getKey());
+                    (c1, c2) -> c1.getKey().compareTo(c2.getKey());
         }
 
         /**
@@ -544,7 +544,7 @@ public interface Map<K,V> {
          */
         public static <K, V extends Comparable<? super V>> Comparator<Map.Entry<K,V>> comparingByValue() {
             return (Comparator<Map.Entry<K, V>> & Serializable)
-                (c1, c2) -> c1.getValue().compareTo(c2.getValue());
+                    (c1, c2) -> c1.getValue().compareTo(c2.getValue());
         }
 
         /**
@@ -563,7 +563,7 @@ public interface Map<K,V> {
         public static <K, V> Comparator<Map.Entry<K, V>> comparingByKey(Comparator<? super K> cmp) {
             Objects.requireNonNull(cmp);
             return (Comparator<Map.Entry<K, V>> & Serializable)
-                (c1, c2) -> cmp.compare(c1.getKey(), c2.getKey());
+                    (c1, c2) -> cmp.compare(c1.getKey(), c2.getKey());
         }
 
         /**
@@ -582,7 +582,7 @@ public interface Map<K,V> {
         public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(Comparator<? super V> cmp) {
             Objects.requireNonNull(cmp);
             return (Comparator<Map.Entry<K, V>> & Serializable)
-                (c1, c2) -> cmp.compare(c1.getValue(), c2.getValue());
+                    (c1, c2) -> cmp.compare(c1.getValue(), c2.getValue());
         }
     }
 
@@ -600,7 +600,7 @@ public interface Map<K,V> {
      * @param o object to be compared for equality with this map
      * @return <tt>true</tt> if the specified object is equal to this map
      */
-    // ±È½ÏÖ¸¶¨¶ÔÏóÓë´ËÓ³ÉäÊÇ·ñÏàµÈ¡£Èç¹û¸ø¶¨¶ÔÏóÒ²ÊÇÒ»¸öÓ³Éä²¢ÇÒÁ½¸öÓ³Éä±íÊ¾ÏàÍ¬µÄÓ³Éä£¬Ôò·µ»Øtrue ¡£
+    // æ¯”è¾ƒæŒ‡å®šå¯¹è±¡ä¸æ­¤æ˜ å°„æ˜¯å¦ç›¸ç­‰ã€‚å¦‚æœç»™å®šå¯¹è±¡ä¹Ÿæ˜¯ä¸€ä¸ªæ˜ å°„å¹¶ä¸”ä¸¤ä¸ªæ˜ å°„è¡¨ç¤ºç›¸åŒçš„æ˜ å°„ï¼Œåˆ™è¿”å›true ã€‚
     // m1.entrySet().equals(m2.entrySet())
     boolean equals(Object o);
 
@@ -643,12 +643,12 @@ public interface Map<K,V> {
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
-    // Èç¹û´ËÓ³Éä°üº¬¼üµÄÓ³Éä£¬Ôò·µ»Ø¸Ã¼üËùÓ³ÉäµÄÖµ£»·ñÔò·µ»ØÖ¸¶¨µÄÄ¬ÈÏÖµ¡£
+    // å¦‚æœæ­¤æ˜ å°„åŒ…å«é”®çš„æ˜ å°„ï¼Œåˆ™è¿”å›è¯¥é”®æ‰€æ˜ å°„çš„å€¼ï¼›å¦åˆ™è¿”å›æŒ‡å®šçš„é»˜è®¤å€¼ã€‚
     default V getOrDefault(Object key, V defaultValue) {
         V v;
         return (((v = get(key)) != null) || containsKey(key))
-            ? v
-            : defaultValue;
+                ? v
+                : defaultValue;
     }
 
     /**
@@ -731,7 +731,7 @@ public interface Map<K,V> {
      * removed during iteration
      * @since 1.8
      */
-    // ÓÃÓÚ½«Ó³ÉäÖĞµÄËùÓĞ¼ü¶ÔÓ¦µÄÖµÌæ»»Îª¸ø¶¨µÄBiFunction¼ÆËãºóµÃµ½µÄĞÂÖµ¡£
+    // ç”¨äºå°†æ˜ å°„ä¸­çš„æ‰€æœ‰é”®å¯¹åº”çš„å€¼æ›¿æ¢ä¸ºç»™å®šçš„BiFunctionè®¡ç®—åå¾—åˆ°çš„æ–°å€¼ã€‚
     default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         Objects.requireNonNull(function);
         for (Map.Entry<K, V> entry : entrySet()) {
@@ -800,7 +800,7 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
-    // Èç¹ûÖ¸¶¨µÄ¼üÉĞÎ´ÓëÖµ¹ØÁª£¨»òÓ³Éäµ½null £©£¬Ôò½«ÆäÓë¸ø¶¨Öµ¹ØÁª²¢·µ»Ønull £¬·ñÔò·µ»Øµ±Ç°Öµ¡£
+    // å¦‚æœæŒ‡å®šçš„é”®å°šæœªä¸å€¼å…³è”ï¼ˆæˆ–æ˜ å°„åˆ°null ï¼‰ï¼Œåˆ™å°†å…¶ä¸ç»™å®šå€¼å…³è”å¹¶è¿”å›null ï¼Œå¦åˆ™è¿”å›å½“å‰å€¼ã€‚
     default V putIfAbsent(K key, V value) {
         V v = get(key);
         if (v == null) {
@@ -844,12 +844,12 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
-    // ½öµ±Ö¸¶¨¼ü¹ØÁªµÄÖµÓë¸ø¶¨ÖµÏàµÈÊ±£¬ÒÆ³ıÓ³Éä±íÖĞµÄ¸ÃÏî¡£
-    // @return ¸ÃÖµÒÑ¾­±»É¾³ı true£¨ÄÚÈİ¸Ä±ä£©£¬·ñÔò·µ»Øfalse
+    // ä»…å½“æŒ‡å®šé”®å…³è”çš„å€¼ä¸ç»™å®šå€¼ç›¸ç­‰æ—¶ï¼Œç§»é™¤æ˜ å°„è¡¨ä¸­çš„è¯¥é¡¹ã€‚
+    // @return è¯¥å€¼å·²ç»è¢«åˆ é™¤ trueï¼ˆå†…å®¹æ”¹å˜ï¼‰ï¼Œå¦åˆ™è¿”å›false
     default boolean remove(Object key, Object value) {
         Object curValue = get(key);
         if (!Objects.equals(curValue, value) ||
-            (curValue == null && !containsKey(key))) {
+                (curValue == null && !containsKey(key))) {
             return false;
         }
         remove(key);
@@ -898,12 +898,12 @@ public interface Map<K,V> {
      *         or value prevents it from being stored in this map
      * @since 1.8
      */
-    // ½öµ±µ±Ç°Ó³Éäµ½Ö¸¶¨ÖµÊ±²ÅÌæ»»Ö¸¶¨¼üµÄÌõÄ¿¡£
-    // @return ¸ÃÖµÒÑ¾­±»É¾³ı true£¨ÄÚÈİ¸Ä±ä£©£¬·ñÔò·µ»Øfalse
+    // ä»…å½“å½“å‰æ˜ å°„åˆ°æŒ‡å®šå€¼æ—¶æ‰æ›¿æ¢æŒ‡å®šé”®çš„æ¡ç›®ã€‚
+    // @return è¯¥å€¼å·²ç»è¢«åˆ é™¤ trueï¼ˆå†…å®¹æ”¹å˜ï¼‰ï¼Œå¦åˆ™è¿”å›false
     default boolean replace(K key, V oldValue, V newValue) {
         Object curValue = get(key);
         if (!Objects.equals(curValue, oldValue) ||
-            (curValue == null && !containsKey(key))) {
+                (curValue == null && !containsKey(key))) {
             return false;
         }
         put(key, newValue);
@@ -928,7 +928,7 @@ public interface Map<K,V> {
      * or atomicity properties of this method. Any implementation providing
      * atomicity guarantees must override this method and document its
      * concurrency properties.
-      *
+     *
      * @param key key with which the specified value is associated
      * @param value value to be associated with the specified key
      * @return the previous value associated with the specified key, or
@@ -948,9 +948,9 @@ public interface Map<K,V> {
      *         or value prevents it from being stored in this map
      * @since 1.8
      */
-    // ½öµ±Ö¸¶¨¼üµ±Ç°Ó³Éäµ½Ä³¸öÖµÊ±²ÅÌæ»»¸ÃÌõÄ¿
-    // ÓëÖ¸¶¨¼ü¹ØÁªµÄÇ°Ò»¸öÖµ£»Èç¹û¸Ã¼üÃ»ÓĞÓ³Éä£¬Ôò·µ»Ønull ¡£
-    // £¨Èç¹ûÊµÏÖÖ§³Ö null Öµ£¬Ôònull·µ»Ø»¹¿ÉÒÔÖ¸Ê¾Ó³ÉäÏÈÇ°½«nullÓë¼ü¹ØÁª¡££©
+    // ä»…å½“æŒ‡å®šé”®å½“å‰æ˜ å°„åˆ°æŸä¸ªå€¼æ—¶æ‰æ›¿æ¢è¯¥æ¡ç›®
+    // ä¸æŒ‡å®šé”®å…³è”çš„å‰ä¸€ä¸ªå€¼ï¼›å¦‚æœè¯¥é”®æ²¡æœ‰æ˜ å°„ï¼Œåˆ™è¿”å›null ã€‚
+    // ï¼ˆå¦‚æœå®ç°æ”¯æŒ null å€¼ï¼Œåˆ™nullè¿”å›è¿˜å¯ä»¥æŒ‡ç¤ºæ˜ å°„å…ˆå‰å°†nullä¸é”®å…³è”ã€‚ï¼‰
     default V replace(K key, V value) {
         V curValue;
         if (((curValue = get(key)) != null) || containsKey(key)) {
@@ -1018,11 +1018,11 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
-    // Èç¹ûÖ¸¶¨¼üÎ´¹ØÁªÖµ»òÕß¹ØÁªÖµÎªnull£¬ÔòÊ¹ÓÃ¸ø¶¨º¯Êı¼ÆËãĞÂÖµ²¢´æÈëÓ³ÉäÖĞ
-    // Èô¼ÆËã½á¹ûÎªnull£¬²»¼ÇÂ¼Ó³Éä
-    // @return ÓëÖ¸¶¨¼ü¹ØÁªµÄµ±Ç°£¨ÏÖÓĞ»ò¼ÆËãµÄ£©Öµ
+    // å¦‚æœæŒ‡å®šé”®æœªå…³è”å€¼æˆ–è€…å…³è”å€¼ä¸ºnullï¼Œåˆ™ä½¿ç”¨ç»™å®šå‡½æ•°è®¡ç®—æ–°å€¼å¹¶å­˜å…¥æ˜ å°„ä¸­
+    // è‹¥è®¡ç®—ç»“æœä¸ºnullï¼Œä¸è®°å½•æ˜ å°„
+    // @return ä¸æŒ‡å®šé”®å…³è”çš„å½“å‰ï¼ˆç°æœ‰æˆ–è®¡ç®—çš„ï¼‰å€¼
     default V computeIfAbsent(K key,
-            Function<? super K, ? extends V> mappingFunction) {
+                              Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction);
         V v;
         if ((v = get(key)) == null) {
@@ -1043,7 +1043,7 @@ public interface Map<K,V> {
      * <p>If the function returns {@code null}, the mapping is removed.  If the
      * function itself throws an (unchecked) exception, the exception is
      * rethrown, and the current mapping is left unchanged.
-    *
+     *
      * @implSpec
      * The default implementation is equivalent to performing the following
      * steps for this {@code map}, then returning the current value or
@@ -1082,10 +1082,10 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
-    // Èç¹ûÖ¸¶¨¼üµÄÖµ´æÔÚÇÒ·Ç¿Õ£¬Ôò³¢ÊÔÔÚ¸ø¶¨¼ü¼°Æäµ±Ç°Ó³ÉäÖµµÄÇé¿öÏÂ¼ÆËãĞÂÓ³Éä¡£
-    // @return ÓëÖ¸¶¨¼ü¹ØÁªµÄĞÂÖµ£¬Èç¹ûÃ»ÓĞÔòÎª null
+    // å¦‚æœæŒ‡å®šé”®çš„å€¼å­˜åœ¨ä¸”éç©ºï¼Œåˆ™å°è¯•åœ¨ç»™å®šé”®åŠå…¶å½“å‰æ˜ å°„å€¼çš„æƒ…å†µä¸‹è®¡ç®—æ–°æ˜ å°„ã€‚
+    // @return ä¸æŒ‡å®šé”®å…³è”çš„æ–°å€¼ï¼Œå¦‚æœæ²¡æœ‰åˆ™ä¸º null
     default V computeIfPresent(K key,
-            BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+                               BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
         V oldValue;
         if ((oldValue = get(key)) != null) {
@@ -1160,10 +1160,10 @@ public interface Map<K,V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
-    // ³¢ÊÔ¼ÆËãÖ¸¶¨¼ü¼°Æäµ±Ç°Ó³ÉäÖµµÄÓ³Éä
-    // @return ÓëÖ¸¶¨¼ü¹ØÁªµÄĞÂÖµ
+    // å°è¯•è®¡ç®—æŒ‡å®šé”®åŠå…¶å½“å‰æ˜ å°„å€¼çš„æ˜ å°„
+    // @return ä¸æŒ‡å®šé”®å…³è”çš„æ–°å€¼
     default V compute(K key,
-            BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
         V oldValue = get(key);
 
@@ -1243,18 +1243,18 @@ public interface Map<K,V> {
      *         null
      * @since 1.8
      */
-    // Èç¹ûÖ¸¶¨µÄ¼üÉĞÎ´ÓëÖµ¹ØÁª»òÓë null ¹ØÁª£¬Ôò½«ÆäÓë¸ø¶¨µÄ·Ç null Öµ¹ØÁª¡£
-    // µ±mapÖĞ²»´æÔÚÖ¸¶¨µÄkeyÊ±£¬±ã½«´«ÈëµÄvalueÉèÖÃÎªkeyµÄÖµ£¬
-    // Ïàµ±ÓÚmap.put(key, value)£»µ±key´æÔÚÖµÊ±£¬
-    // Ö´ĞĞÒ»¸ö·½·¨¸Ã·½·¨½ÓÊÕkeyµÄ¾ÉÖµºÍ´«ÈëµÄvalue£¬
-    // Ö´ĞĞ×Ô¶¨ÒåµÄ·½·¨·µ»Ø×îÖÕ½á¹ûÉèÖÃÎªkeyµÄÖµ¡£
+    // å¦‚æœæŒ‡å®šçš„é”®å°šæœªä¸å€¼å…³è”æˆ–ä¸ null å…³è”ï¼Œåˆ™å°†å…¶ä¸ç»™å®šçš„é null å€¼å…³è”ã€‚
+    // å½“mapä¸­ä¸å­˜åœ¨æŒ‡å®šçš„keyæ—¶ï¼Œä¾¿å°†ä¼ å…¥çš„valueè®¾ç½®ä¸ºkeyçš„å€¼ï¼Œ
+    // ç›¸å½“äºmap.put(key, value)ï¼›å½“keyå­˜åœ¨å€¼æ—¶ï¼Œ
+    // æ‰§è¡Œä¸€ä¸ªæ–¹æ³•è¯¥æ–¹æ³•æ¥æ”¶keyçš„æ—§å€¼å’Œä¼ å…¥çš„valueï¼Œ
+    // æ‰§è¡Œè‡ªå®šä¹‰çš„æ–¹æ³•è¿”å›æœ€ç»ˆç»“æœè®¾ç½®ä¸ºkeyçš„å€¼ã€‚
     default V merge(K key, V value,
-            BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+                    BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
         Objects.requireNonNull(value);
         V oldValue = get(key);
         V newValue = (oldValue == null) ? value :
-                   remappingFunction.apply(oldValue, value);
+                remappingFunction.apply(oldValue, value);
         if(newValue == null) {
             remove(key);
         } else {

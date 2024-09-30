@@ -43,7 +43,7 @@ import sun.reflect.ReflectionFactory;
  * @author Nakul Saraiya
  * @author Kenneth Russell
  */
-// ¿‡/Ω”ø⁄/ππ‘Ï∆˜/∑Ω∑®/◊÷∂Œ…œµƒ–ﬁ Œ∑˚
+// Á±ª/Êé•Âè£/ÊûÑÈÄ†Âô®/ÊñπÊ≥ï/Â≠óÊÆµ‰∏äÁöÑ‰øÆÈ•∞Á¨¶
 public class Modifier {
 
     /*
@@ -52,8 +52,8 @@ public class Modifier {
      */
     static {
         sun.reflect.ReflectionFactory factory =
-            AccessController.doPrivileged(
-                new ReflectionFactory.GetReflectionFactoryAction());
+                AccessController.doPrivileged(
+                        new ReflectionFactory.GetReflectionFactoryAction());
         factory.setLangReflectAccess(new java.lang.reflect.ReflectAccess());
     }
 
@@ -344,11 +344,11 @@ public class Modifier {
     static final int ENUM      = 0x00004000;
     static final int MANDATED  = 0x00008000;
     static boolean isSynthetic(int mod) {
-      return (mod & SYNTHETIC) != 0;
+        return (mod & SYNTHETIC) != 0;
     }
 
     static boolean isMandated(int mod) {
-      return (mod & MANDATED) != 0;
+        return (mod & MANDATED) != 0;
     }
 
     // Note on the FOO_MODIFIERS fields and fooModifiers() methods:
@@ -366,17 +366,17 @@ public class Modifier {
      * @jls 8.1.1 Class Modifiers
      */
     private static final int CLASS_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
-        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |
-        Modifier.STRICT;
+            Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+                    Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |
+                    Modifier.STRICT;
 
     /**
      * The Java source modifiers that can be applied to an interface.
      * @jls 9.1.1 Interface Modifiers
      */
     private static final int INTERFACE_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
-        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.STRICT;
+            Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+                    Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.STRICT;
 
 
     /**
@@ -384,38 +384,38 @@ public class Modifier {
      * @jls 8.8.3 Constructor Modifiers
      */
     private static final int CONSTRUCTOR_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
+            Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
 
     /**
      * The Java source modifiers that can be applied to a method.
      * @jls8.4.3  Method Modifiers
      */
     private static final int METHOD_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
-        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |
-        Modifier.SYNCHRONIZED   | Modifier.NATIVE       | Modifier.STRICT;
+            Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+                    Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |
+                    Modifier.SYNCHRONIZED   | Modifier.NATIVE       | Modifier.STRICT;
 
     /**
      * The Java source modifiers that can be applied to a field.
      * @jls 8.3.1  Field Modifiers
      */
     private static final int FIELD_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
-        Modifier.STATIC         | Modifier.FINAL        | Modifier.TRANSIENT |
-        Modifier.VOLATILE;
+            Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+                    Modifier.STATIC         | Modifier.FINAL        | Modifier.TRANSIENT |
+                    Modifier.VOLATILE;
 
     /**
      * The Java source modifiers that can be applied to a method or constructor parameter.
      * @jls 8.4.1 Formal Parameters
      */
     private static final int PARAMETER_MODIFIERS =
-        Modifier.FINAL;
+            Modifier.FINAL;
 
     /**
      *
      */
     static final int ACCESS_MODIFIERS =
-        Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
+            Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
 
     /**
      * Return an {@code int} value OR-ing together the source language

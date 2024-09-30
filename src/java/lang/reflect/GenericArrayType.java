@@ -30,7 +30,7 @@ package java.lang.reflect;
  * type is either a parameterized type or a type variable.
  * @since 1.5
  */
-// GenericArrayType ±íÊ¾·ºĞÍÊı×éÀàĞÍ£¬±ÈÈç T[]¡£×¢Òâ£¬Õâ²»ÊÇÎÒÃÇËµµÄÒ»°ãÊı×é£¬¶øÊÇ±íÊ¾Ò»ÖÖ¡¾ÔªËØÀàĞÍÊÇ²ÎÊı»¯ÀàĞÍ»òÕßÀàĞÍ±äÁ¿¡¿µÄÊı×éÀàĞÍ¡£
+// GenericArrayType è¡¨ç¤ºæ³›å‹æ•°ç»„ç±»å‹ï¼Œæ¯”å¦‚ T[]ã€‚æ³¨æ„ï¼Œè¿™ä¸æ˜¯æˆ‘ä»¬è¯´çš„ä¸€èˆ¬æ•°ç»„ï¼Œè€Œæ˜¯è¡¨ç¤ºä¸€ç§ã€å…ƒç´ ç±»å‹æ˜¯å‚æ•°åŒ–ç±»å‹æˆ–è€…ç±»å‹å˜é‡ã€‘çš„æ•°ç»„ç±»å‹ã€‚
 public interface GenericArrayType extends Type {
     /**
      * Returns a {@code Type} object representing the component type
@@ -49,6 +49,6 @@ public interface GenericArrayType extends Type {
      *     underlying array type's component type refers to a
      *     parameterized type that cannot be instantiated for any reason
      */
-    // »ñÈ¡·ºĞÍÊı×éÖĞÔªËØµÄÀàĞÍ
+    // è·å–æ³›å‹æ•°ç»„ä¸­å…ƒç´ çš„ç±»å‹
     Type getGenericComponentType();
 }

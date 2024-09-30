@@ -58,8 +58,8 @@ import java.nio.ByteBuffer;
  * @author Kenneth Russell
  * @author Nakul Saraiya
  */
-// µ¥¸öÀà»ò½Ó¿ÚÖĞµÄµ¥¸ö·½·¨£¬Í¨¹ıMethod¶ÔÏó£¬¿ÉÒÔ»ñÈ¡·½·¨µÄĞÅÏ¢£¬Èç·½·¨Ãû³Æ£¬²ÎÊıÀàĞÍ£¬·µ»ØÀàĞÍ£¬·ÃÎÊĞŞÊÎ·ûµÈ£¬Ò²¿ÉÒÔÔÚÔËĞĞÊ±µ÷ÓÃ·½·¨¡£
-// Method ÀàÃ»ÓĞ¹«¹²¹¹Ôìº¯Êı£¬Method¶ÔÏóÍ¨³£Í¨¹ıClass¶ÔÏóµÄÒÔÏÂ·½·¨»ñµÃ
+// å•ä¸ªç±»æˆ–æ¥å£ä¸­çš„å•ä¸ªæ–¹æ³•ï¼Œé€šè¿‡Methodå¯¹è±¡ï¼Œå¯ä»¥è·å–æ–¹æ³•çš„ä¿¡æ¯ï¼Œå¦‚æ–¹æ³•åç§°ï¼Œå‚æ•°ç±»å‹ï¼Œè¿”å›ç±»å‹ï¼Œè®¿é—®ä¿®é¥°ç¬¦ç­‰ï¼Œä¹Ÿå¯ä»¥åœ¨è¿è¡Œæ—¶è°ƒç”¨æ–¹æ³•ã€‚
+// Method ç±»æ²¡æœ‰å…¬å…±æ„é€ å‡½æ•°ï¼ŒMethodå¯¹è±¡é€šå¸¸é€šè¿‡Classå¯¹è±¡çš„ä»¥ä¸‹æ–¹æ³•è·å¾—
 public final class Method extends Executable {
     private Class<?>            clazz;
     private int                 slot;
@@ -102,7 +102,7 @@ public final class Method extends Executable {
         if (genericInfo == null) {
             // create and cache generic info repository
             genericInfo = MethodRepository.make(getGenericSignature(),
-                                                getFactory());
+                    getFactory());
         }
         return genericInfo; //return cached repository
     }
@@ -153,8 +153,8 @@ public final class Method extends Executable {
             throw new IllegalArgumentException("Can not copy a non-root Method");
 
         Method res = new Method(clazz, name, parameterTypes, returnType,
-                                exceptionTypes, modifiers, slot, signature,
-                                annotations, parameterAnnotations, annotationDefault);
+                exceptionTypes, modifiers, slot, signature,
+                annotations, parameterAnnotations, annotationDefault);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.methodAccessor = methodAccessor;
@@ -191,7 +191,7 @@ public final class Method extends Executable {
      * Returns the name of the method represented by this {@code Method}
      * object, as a {@code String}.
      */
-    // ·µ»Ø·½·¨µÄÃû³Æ
+    // è¿”å›æ–¹æ³•çš„åç§°
     @Override
     public String getName() {
         return name;
@@ -211,7 +211,7 @@ public final class Method extends Executable {
      * @throws GenericSignatureFormatError {@inheritDoc}
      * @since 1.5
      */
-    //·µ»Ø·ºĞÍÉùÃ÷µÄ TypeVariable Êı×é
+    //è¿”å›æ³›å‹å£°æ˜çš„ TypeVariable æ•°ç»„
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public TypeVariable<Method>[] getTypeParameters() {
@@ -227,7 +227,7 @@ public final class Method extends Executable {
      *
      * @return the return type for the method this object represents
      */
-    // ·µ»ØÒ»¸öClass¶ÔÏó£¬¸Ã¶ÔÏó±íÊ¾´ËMethod¶ÔÏóËù±íÊ¾µÄ·½·¨µÄ·µ»ØÀàĞÍ
+    // è¿”å›ä¸€ä¸ªClasså¯¹è±¡ï¼Œè¯¥å¯¹è±¡è¡¨ç¤ºæ­¤Methodå¯¹è±¡æ‰€è¡¨ç¤ºçš„æ–¹æ³•çš„è¿”å›ç±»å‹
     public Class<?> getReturnType() {
         return returnType;
     }
@@ -257,15 +257,15 @@ public final class Method extends Executable {
      * @since 1.5
      */
     public Type getGenericReturnType() {
-      if (getGenericSignature() != null) {
-        return getGenericInfo().getReturnType();
-      } else { return getReturnType();}
+        if (getGenericSignature() != null) {
+            return getGenericInfo().getReturnType();
+        } else { return getReturnType();}
     }
 
     /**
      * {@inheritDoc}
      */
-    // ·µ»ØÒ»¸öClass¶ÔÏóÊı×é£¬±íÊ¾·½·¨µÄ²ÎÊıÀàĞÍ
+    // è¿”å›ä¸€ä¸ªClasså¯¹è±¡æ•°ç»„ï¼Œè¡¨ç¤ºæ–¹æ³•çš„å‚æ•°ç±»å‹
     @Override
     public Class<?>[] getParameterTypes() {
         return parameterTypes.clone();
@@ -320,7 +320,7 @@ public final class Method extends Executable {
         if (obj != null && obj instanceof Method) {
             Method other = (Method)obj;
             if ((getDeclaringClass() == other.getDeclaringClass())
-                && (getName() == other.getName())) {
+                    && (getName() == other.getName())) {
                 if (!returnType.equals(other.getReturnType()))
                     return false;
                 return equalParamTypes(parameterTypes, other.parameterTypes);
@@ -366,9 +366,9 @@ public final class Method extends Executable {
      */
     public String toString() {
         return sharedToString(Modifier.methodModifiers(),
-                              isDefault(),
-                              parameterTypes,
-                              exceptionTypes);
+                isDefault(),
+                parameterTypes,
+                exceptionTypes);
     }
 
     @Override
@@ -489,8 +489,8 @@ public final class Method extends Executable {
      */
     @CallerSensitive
     public Object invoke(Object obj, Object... args)
-        throws IllegalAccessException, IllegalArgumentException,
-           InvocationTargetException
+            throws IllegalAccessException, IllegalArgumentException,
+            InvocationTargetException
     {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
@@ -609,12 +609,12 @@ public final class Method extends Executable {
         if  (annotationDefault == null)
             return null;
         Class<?> memberType = AnnotationType.invocationHandlerReturnType(
-            getReturnType());
+                getReturnType());
         Object result = AnnotationParser.parseMemberValue(
-            memberType, ByteBuffer.wrap(annotationDefault),
-            sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-            getDeclaringClass());
+                memberType, ByteBuffer.wrap(annotationDefault),
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                        getConstantPool(getDeclaringClass()),
+                getDeclaringClass());
         if (result instanceof sun.reflect.annotation.ExceptionProxy)
             throw new AnnotationFormatError("Invalid default: " + this);
         return result;

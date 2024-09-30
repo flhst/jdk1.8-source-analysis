@@ -17,13 +17,13 @@ public class ClassTest {
 
     @Test
     public void testGetClassInstance() throws ClassNotFoundException {
-        // Í¨¹ıÀàµÄ.class ÊôĞÔ»ñÈ¡class¶ÔÏó
+        // é€šè¿‡ç±»çš„.class å±æ€§è·å–classå¯¹è±¡
         Class<?> classOne = String.class;
-        // Í¨¹ıÔËĞĞÊ±ÀàµÄ¶ÔÏó£¬µ÷ÓÃgetClass()
+        // é€šè¿‡è¿è¡Œæ—¶ç±»çš„å¯¹è±¡ï¼Œè°ƒç”¨getClass()
         Class<?> classTwo = new String().getClass();
-        // Í¨¹ıClassµÄ¾²Ì¬·½·¨ Class.forName(String className) (È«Â·¾¶)
+        // é€šè¿‡Classçš„é™æ€æ–¹æ³• Class.forName(String className) (å…¨è·¯å¾„)
         Class<?> classThree = Class.forName("java.lang.String");
-        // Í¨¹ıÀà¼ÓÔØÆ÷¼ÓÔØÈ«Â·¾¶
+        // é€šè¿‡ç±»åŠ è½½å™¨åŠ è½½å…¨è·¯å¾„
         ClassLoader classLoader = ClassTest.class.getClassLoader();
         Class<?> classFour = classLoader.loadClass("java.lang.String");
         assertTrue(classOne == classTwo);

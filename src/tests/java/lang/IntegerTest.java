@@ -19,22 +19,22 @@ import static org.junit.Assert.assertTrue;
 public class IntegerTest {
 
     /**
-     * Integer ÊÇ²»¿É±äµÄ£¬²»ÄÜĞŞ¸ÄÆäÖµ
+     * Integer æ˜¯ä¸å¯å˜çš„ï¼Œä¸èƒ½ä¿®æ”¹å…¶å€¼
      * @see java.lang.Integer#value
      */
     @Test
     public void testIntegerFinalValueImmutability() {
         Integer num = 10;
-        // Õâ²»ÊÇĞŞ¸ÄÔ­À´µÄ¶ÔÏó£¬¶øÊÇÈÃnumÖ¸ÏòÒ»¸öĞÂµÄInteger¶ÔÏó
+        // è¿™ä¸æ˜¯ä¿®æ”¹åŸæ¥çš„å¯¹è±¡ï¼Œè€Œæ˜¯è®©numæŒ‡å‘ä¸€ä¸ªæ–°çš„Integerå¯¹è±¡
         num = 20;
         assertTrue(20 == num);
     }
 
     /**
-     * Í¨¹ı·´ÉäĞŞ¸ÄIntegerµÄÖµ
+     * é€šè¿‡åå°„ä¿®æ”¹Integerçš„å€¼
      * @see java.lang.Integer#value
-     * @throws NoSuchFieldException ¸ÃÀàÃ»ÓĞÖ¸¶¨Ãû³ÆµÄ×Ö¶Î¡£
-     * @throws IllegalAccessException µ±Ç°ÕıÔÚÖ´ĞĞµÄ·½·¨ÎŞÈ¨·ÃÎÊÖ¸¶¨Àà¡¢×Ö¶Î¡¢·½·¨»ò¹¹Ôìº¯Êı
+     * @throws NoSuchFieldException è¯¥ç±»æ²¡æœ‰æŒ‡å®šåç§°çš„å­—æ®µã€‚
+     * @throws IllegalAccessException å½“å‰æ­£åœ¨æ‰§è¡Œçš„æ–¹æ³•æ— æƒè®¿é—®æŒ‡å®šç±»ã€å­—æ®µã€æ–¹æ³•æˆ–æ„é€ å‡½æ•°
      */
     @Test
     public void testModifyIntegerValueByReflection() throws NoSuchFieldException, IllegalAccessException {
@@ -46,7 +46,7 @@ public class IntegerTest {
     }
 
     /**
-     * Í¨¹ıÌá¹©Ô­×Ó²Ù×÷µÄÕûÊıÀà AtomicInteger ĞŞ¸ÄÖµ
+     * é€šè¿‡æä¾›åŸå­æ“ä½œçš„æ•´æ•°ç±» AtomicInteger ä¿®æ”¹å€¼
      * @see java.util.concurrent.atomic.AtomicInteger
      */
     @Test

@@ -81,10 +81,7 @@ package java.util;
  * @see Collections#EMPTY_SET
  * @since 1.2
  */
-// ¼Ì³Ğ×ÔCollection½Ó¿Ú£¬ÓÃÓÚ´æ´¢²»ÖØ¸´ÔªËØ£¬²»±£Ö¤Ë³Ğò£¬ÇÒ²»°üº¬ÖØ¸´ÔªËØ
-// ÓëCollection½Ó¿ÚÖĞµÄ·½·¨»ù±¾Ò»ÖÂ£¬²¢Ã»ÓĞ¶ÔCollection½Ó¿Ú½øĞĞ¹¦ÄÜÉÏµÄÀ©³ä£¬
-//      Ö»ÊÇ±ÈCollection½Ó¿Ú¸ü¼ÓÑÏ¸ñ¡£
-// ÔªËØÎŞĞòµ«ÊÇÎ¨Ò»
+// ç»§æ‰¿è‡ªCollectionæ¥å£ï¼Œç”¨äºå­˜å‚¨ä¸é‡å¤å…ƒç´ ï¼Œä¸ä¿è¯é¡ºåºï¼Œä¸”ä¸åŒ…å«é‡å¤å…ƒç´ 
 public interface Set<E> extends Collection<E> {
     // Query Operations
 
@@ -95,7 +92,6 @@ public interface Set<E> extends Collection<E> {
      *
      * @return the number of elements in this set (its cardinality)
      */
-    // ·µ»Ø¼¯ºÏÔªËØÊıÁ¿
     int size();
 
     /**
@@ -120,7 +116,6 @@ public interface Set<E> extends Collection<E> {
      *         set does not permit null elements
      * (<a href="Collection.html#optional-restrictions">optional</a>)
      */
-    // ÅĞ¶Ïµ±Ç°¼¯ºÏÖĞÊÇ·ñ°üº¬ÔªËØo
     boolean contains(Object o);
 
     /**
@@ -148,7 +143,6 @@ public interface Set<E> extends Collection<E> {
      *
      * @return an array containing all the elements in this set
      */
-    // ÒÔÊı×éĞÎÊ½·µ»Øµ±Ç°SetÔªËØ
     Object[] toArray();
 
     /**
@@ -193,7 +187,6 @@ public interface Set<E> extends Collection<E> {
      *         set
      * @throws NullPointerException if the specified array is null
      */
-    // ½«µ±Ç°SetÖĞµÄÔªËØ´æÈëÊı×éaºó·µ»Ø£¬ĞèÒª½«SetÖĞµÄÔªËØ×ª»»ÎªTÀàĞÍ
     <T> T[] toArray(T[] a);
 
 
@@ -253,7 +246,6 @@ public interface Set<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>remove</tt> operation
      *         is not supported by this set
      */
-    // ÒÆ³ıÖ¸¶¨µÄÔªËØ
     boolean remove(Object o);
 
 
@@ -278,7 +270,6 @@ public interface Set<E> extends Collection<E> {
      *         or if the specified collection is null
      * @see    #contains(Object)
      */
-    // ÅĞ¶ÁÖ¸¶¨ÈİÆ÷ÖĞµÄÔªËØÊÇ·ñ¶¼°üº¬ÔÚµ±Ç°¼¯ºÏÖĞ
     boolean containsAll(Collection<?> c);
 
     /**
@@ -303,7 +294,6 @@ public interface Set<E> extends Collection<E> {
      *         specified collection prevents it from being added to this set
      * @see #add(Object)
      */
-    // ½«Ö¸¶¨¼¯ºÏÖĞµÄÔªËØÌí¼Óµ½µ±Ç°SetÖĞ
     boolean addAll(Collection<? extends E> c);
 
     /**
@@ -327,7 +317,6 @@ public interface Set<E> extends Collection<E> {
      *         or if the specified collection is null
      * @see #remove(Object)
      */
-    // (²»Æ¥ÅäÔòÒÆ³ı)ÒÆ³ıµ±Ç°¼¯ºÏÖĞËùÓĞÓë¸ø¶¨ÈİÆ÷ÖĞµÄÔªËØ²»Æ¥ÅäµÄÔªËØ
     boolean retainAll(Collection<?> c);
 
     /**
@@ -351,7 +340,6 @@ public interface Set<E> extends Collection<E> {
      * @see #remove(Object)
      * @see #contains(Object)
      */
-    // (Æ¥ÅäÔòÒÆ³ı)ÒÆ³ıµ±Ç°¼¯ºÏÖĞËùÓĞÓë¸ø¶¨ÈİÆ÷ÖĞµÄÔªËØ²»Æ¥ÅäµÄÔªËØ
     boolean removeAll(Collection<?> c);
 
     /**
@@ -361,7 +349,6 @@ public interface Set<E> extends Collection<E> {
      * @throws UnsupportedOperationException if the <tt>clear</tt> method
      *         is not supported by this set
      */
-    // Çå¿Õµ±Ç°¼¯ºÏÖĞËùÓĞÔªËØ
     void clear();
 
 
