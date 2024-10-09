@@ -221,21 +221,31 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @return array containing the elements in the given array, plus any
      *         further elements returned by the iterator, trimmed to size
      */
+    // 当迭代器返回的元素多于预期时，重新分配 toArray 中使用的数组，
+    // 并完成从迭代器的填充。
     @SuppressWarnings("unchecked")
     private static <T> T[] finishToArray(T[] r, Iterator<?> it) {
+        // 获取数组长度，便于后续比较是否超过长度，注意此处是动态的会随数组长度变化而变化
         int i = r.length;
         while (it.hasNext()) {
+            // 再次获取因为此值在循环中会被改变
             int cap = r.length;
+            // 若当前数组下标等于数组长度则扩容
             if (i == cap) {
+                // 扩容：(原长度 * 1.5 + 1)
                 int newCap = cap + (cap >> 1) + 1;
                 // overflow-conscious code
+                // 判断扩容后是否超过数组上限
                 if (newCap - MAX_ARRAY_SIZE > 0)
+                    // 判断原数组长度+1是否超过数组长度上限，若超过则将数组扩容为最大Integer值，否则扩容为数组的最大长度
                     newCap = hugeCapacity(cap + 1);
+                // 复制数组
                 r = Arrays.copyOf(r, newCap);
             }
             r[i++] = (T)it.next();
         }
         // trim if overallocated
+        // 判断数组是否已被元素占满，没有占满则使用Arrays.copyOf将多余的位置去除
         return (i == r.length) ? r : Arrays.copyOf(r, i);
     }
 

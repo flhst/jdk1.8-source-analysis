@@ -3205,6 +3205,10 @@ public class Arrays {
      *     an array of class <tt>newType</tt>
      * @since 1.6
      */
+    // 该Java代码创建一个新的数组copy：
+    // 1、判断新类型newType是否为Object[].class。
+    // 2、若是，则直接创建一个长度为newLength的Object数组。（效率更高）
+    // 3、若否，则创建一个长度为newLength的新数组，类型由newType.getComponentType()决定。
     public static <T,U> T[] copyOf(U[] original, int newLength, Class<? extends T[]> newType) {
         @SuppressWarnings("unchecked")
         T[] copy = ((Object)newType == (Object)Object[].class)
