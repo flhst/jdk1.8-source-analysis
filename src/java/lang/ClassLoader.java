@@ -175,8 +175,18 @@ import sun.security.util.SecurityConstants;
  * @see      #resolveClass(Class)
  * @since 1.0
  */
+/*
+ * 所有类加载器的祖先，主要用于加载类和加载资源
+ *
+ * 加载类分为查找类和定义类两个方面
+ * 开始加载一个类时，先从子级类加载器向上搜索看该类是否已加载过
+ * 如果该类还未加载，则从父级类加载器向下定义类（将class文件的二进制流转换为JVM类对象）
+ * 向上搜索类时，只要搜索到目标类，就将结果返回
+ * 向下定义类时，只要某个类加载器有能力完成加载任务，它就将加载任务揽下来
+ */
 public abstract class ClassLoader {
 
+    // system class loader，可能是内置的AppClassLoader(默认)，也可能是自定义的类加载器
     private static native void registerNatives();
     static {
         registerNatives();
@@ -185,19 +195,25 @@ public abstract class ClassLoader {
     // The parent class loader for delegation
     // Note: VM hardcoded the offset of this field, thus all new fields
     // must be added *after* it.
+    // 父级类加载器
     private final ClassLoader parent;
 
     /**
      * Encapsulates the set of parallel capable loader types.
      */
+    /**
+     * 封装一组"并行"的类加载器：允许多个线程同时使用该并行类加载器加载类
+     */
     private static class ParallelLoaders {
         private ParallelLoaders() {}
 
+        // 存储一组具有并行能力的类加载器
         // the set of parallel capable loader types
         private static final Set<Class<? extends ClassLoader>> loaderTypes =
             Collections.newSetFromMap(
                 new WeakHashMap<Class<? extends ClassLoader>, Boolean>());
         static {
+            // 注册所有类加载器的祖先ClassLoader并行
             synchronized (loaderTypes) { loaderTypes.add(ClassLoader.class); }
         }
 
@@ -206,8 +222,10 @@ public abstract class ClassLoader {
          * Returns {@code true} is successfully registered; {@code false} if
          * loader's super class is not registered.
          */
+        // 注册该类加载器为并行
         static boolean register(Class<? extends ClassLoader> c) {
             synchronized (loaderTypes) {
+                // 确保该类加载器的父类型也已注册为并行，否则不会注册成功
                 if (loaderTypes.contains(c.getSuperclass())) {
                     // register the class loader as parallel capable
                     // if and only if all of its super classes are.
@@ -226,6 +244,7 @@ public abstract class ClassLoader {
          * Returns {@code true} if the given class loader type is
          * registered as parallel capable.
          */
+        // 判断当前的类加载器是否为并行
         static boolean isRegistered(Class<? extends ClassLoader> c) {
             synchronized (loaderTypes) {
                 return loaderTypes.contains(c);
@@ -237,9 +256,11 @@ public abstract class ClassLoader {
     // class loader is parallel capable.
     // Note: VM also uses this field to decide if the current class loader
     // is parallel capable and the appropriate lock object for class loading.
+    // 当前类加载器具有并行功能时，将其下的类名映射到锁对象
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
     // Hashtable that maps packages to certs
+    // 将包名映射到身份证书
     private final Map <String, Certificate[]> package2certs;
 
     // Shared among all packages with unsigned classes
@@ -247,6 +268,7 @@ public abstract class ClassLoader {
 
     // The classes loaded by this class loader. The only purpose of this table
     // is to keep the classes from being GC'ed until the loader is GC'ed.
+    // 记录当前类加载器加载的类
     private final Vector<Class<?>> classes = new Vector<>();
 
     // The "default" domain. Set as the default ProtectionDomain on newly
@@ -263,6 +285,7 @@ public abstract class ClassLoader {
     // The packages defined in this class loader.  Each package name is mapped
     // to its corresponding Package object.
     // @GuardedBy("itself")
+    // 记录当前类加载器定义的包
     private final HashMap<String, Package> packages = new HashMap<>();
 
     private static Void checkCreateClassLoader() {
@@ -347,6 +370,7 @@ public abstract class ClassLoader {
      * @throws  ClassNotFoundException
      *          If the class was not found
      */
+    // 根据给定类的全名加载类
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         return loadClass(name, false);
     }
@@ -392,6 +416,28 @@ public abstract class ClassLoader {
      * @throws  ClassNotFoundException
      *          If the class could not be found
      */
+    /**
+     * 根据给定类的全名加载类，resolve指示是否链接类
+     * 1、获取类加载锁：
+     *      确保在多线程环境下类加载的原子性。
+     * 2、检查类是否已加载：
+     *      避免重复加载类，提高性能。
+     * 3、委托父类加载器：
+     *      遵循类加载的委托模型，优先由父类加载器加载类。
+     * 4、查找引导类加载器：
+     *      如果父类加载器不存在，尝试使用引导类加载器加载类。
+     * 5、自定义类加载：
+     *      如果类未被父类加载器或引导类加载器找到，则调用 findClass 方法自定义加载类。
+     * 6、记录统计信息：
+     *      记录类加载的时间和次数，用于性能监控。
+     * 7、解析类：
+     *      如果需要解析类，则调用 resolveClass 方法解析类，确保类的链接过程完成。
+     *
+     * @param name
+     * @param resolve
+     * @return
+     * @throws ClassNotFoundException
+     */
     protected Class<?> loadClass(String name, boolean resolve)
         throws ClassNotFoundException
     {
@@ -401,20 +447,23 @@ public abstract class ClassLoader {
             if (c == null) {
                 long t0 = System.nanoTime();
                 try {
+                    // 委托父类加载器：遵循类加载的委托模型，优先由父类加载器加载类。
                     if (parent != null) {
                         c = parent.loadClass(name, false);
                     } else {
+                        // 如果父类加载器不存在，尝试使用引导类加载器加载类。
                         c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
                     // ClassNotFoundException thrown if class not found
                     // from the non-null parent class loader
                 }
-
+                // 此类还没被加载
                 if (c == null) {
                     // If still not found, then invoke findClass in order
                     // to find the class.
                     long t1 = System.nanoTime();
+                    // 查找定义类，如果此类在模块中，则在模块中查找该类，否则在类路径下查找（如果待查找的类存在，则会加载字节码并交给虚拟机去定义）
                     c = findClass(name);
 
                     // this is the defining class loader; record the stats
@@ -450,6 +499,7 @@ public abstract class ClassLoader {
      *
      * @since  1.7
      */
+    // 返回类加载操作中使用的锁对象
     protected Object getClassLoadingLock(String className) {
         Object lock = this;
         if (parallelLockMap != null) {
@@ -463,6 +513,9 @@ public abstract class ClassLoader {
     }
 
     // This method is invoked by the virtual machine to load a class.
+    // 根据类的名称加载类
+    // 1、兼容性处理，如果当前类加载器不支持并行加载，则使用this作为锁对象进行同步
+    // 2、直接调用loadClass方法加载类
     private Class<?> loadClassInternal(String name)
         throws ClassNotFoundException
     {
@@ -519,6 +572,9 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    // [子类覆盖]查找(定义)类，如果该类在模块中，则在模块中查找该类，
+    // 否则在类路径下查找（如果待查找的类存在，则会加载器字节码，
+    // 并交给虚拟机去定义）
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name);
     }
@@ -564,6 +620,7 @@ public abstract class ClassLoader {
      * @deprecated  Replaced by {@link #defineClass(String, byte[], int, int)
      * defineClass(String, byte[], int, int)}
      */
+    // 利用存储在缓冲区中的字节码去定义类（无保护域）
     @Deprecated
     protected final Class<?> defineClass(byte[] b, int off, int len)
         throws ClassFormatError
@@ -629,6 +686,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      */
+    // 利用存储在字节数组中的字节码去定义类（无保护域）
     protected final Class<?> defineClass(String name, byte[] b, int off, int len)
         throws ClassFormatError
     {
@@ -640,6 +698,7 @@ public abstract class ClassLoader {
         - signer of this class matches signers for the rest of the classes in
           package.
     */
+    // 预定义类，主要是进行一些安全检查和证书设置
     private ProtectionDomain preDefineClass(String name,
                                             ProtectionDomain pd)
     {
@@ -649,6 +708,7 @@ public abstract class ClassLoader {
         // Note:  Checking logic in java.lang.invoke.MemberName.checkForTypeAlias
         // relies on the fact that spoofing is impossible if a class has a name
         // of the form "java.*"
+        // 禁止app class loader 以及一些自定义的类加载器加载亿java开头的报名的类
         if ((name != null) && name.startsWith("java.")) {
             throw new SecurityException
                 ("Prohibited package name: " +
@@ -658,11 +718,13 @@ public abstract class ClassLoader {
             pd = defaultDomain;
         }
 
+        // 为className这个类所在的包设置身份证书
         if (name != null) checkCerts(name, pd.getCodeSource());
 
         return pd;
     }
 
+    // 从保护域中获取代码源的位置信息
     private String defineClassSourceLocation(ProtectionDomain pd)
     {
         CodeSource cs = pd.getCodeSource();
@@ -673,6 +735,7 @@ public abstract class ClassLoader {
         return source;
     }
 
+    // 在类定义完之后的一些收尾操作，主要是定义NamedPackage和设置签名
     private void postDefineClass(Class<?> c, ProtectionDomain pd)
     {
         if (pd.getCodeSource() != null) {
@@ -747,13 +810,18 @@ public abstract class ClassLoader {
      *          certificates than this class, or if <tt>name</tt> begins with
      *          "<tt>java.</tt>".
      */
+    // 利用存储在字节数组中的字节码去定义类
     protected final Class<?> defineClass(String name, byte[] b, int off, int len,
                                          ProtectionDomain protectionDomain)
         throws ClassFormatError
     {
+        // 预定义类，主要是进行一些安全检查和证书设置
         protectionDomain = preDefineClass(name, protectionDomain);
+        // 从保护域中获取代码源的位置信息
         String source = defineClassSourceLocation(protectionDomain);
+        // 由虚拟机调用，用来定义类（将class字节码加载到JVM）
         Class<?> c = defineClass1(name, b, off, len, protectionDomain, source);
+        // 在类定义完之后的一些收尾操作，主要是定义NamedPackage和设置签名
         postDefineClass(c, protectionDomain);
         return c;
     }
@@ -820,13 +888,16 @@ public abstract class ClassLoader {
      *
      * @since  1.5
      */
+    // 利用存储在缓冲区中的字节码去定义类
     protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
                                          ProtectionDomain protectionDomain)
         throws ClassFormatError
     {
+        // 获取二进制流长度
         int len = b.remaining();
 
         // Use byte[] if not a direct ByteBufer:
+        // 如果不是直接缓冲区，则使用byte[]存储该二进制流
         if (!b.isDirect()) {
             if (b.hasArray()) {
                 return defineClass(name, b.array(),
@@ -858,6 +929,7 @@ public abstract class ClassLoader {
                                          String source);
 
     // true if the name is null or has the potential to be a valid binary name
+    // 校验类名
     private boolean checkName(String name) {
         if ((name == null) || (name.isEmpty()))
             return true;
@@ -867,6 +939,7 @@ public abstract class ClassLoader {
         return true;
     }
 
+    // 为className这个类所在的包设置身份证书
     private void checkCerts(String name, CodeSource cs) {
         int i = name.lastIndexOf('.');
         String pname = (i == -1) ? "" : name.substring(0, i);
@@ -897,6 +970,7 @@ public abstract class ClassLoader {
      * check to make sure the certs for the new class (certs) are the same as
      * the certs for the first class inserted in the package (pcerts)
      */
+    // 比较身份信息
     private boolean compareCerts(Certificate[] pcerts,
                                  Certificate[] certs)
     {
@@ -953,6 +1027,7 @@ public abstract class ClassLoader {
      *
      * @see  #defineClass(String, byte[], int, int)
      */
+    // 链接类
     protected final void resolveClass(Class<?> c) {
         resolveClass0(c);
     }
@@ -981,6 +1056,7 @@ public abstract class ClassLoader {
      * @see  #ClassLoader(ClassLoader)
      * @see  #getParent()
      */
+    // 使用system类加载器加载指定的类
     protected final Class<?> findSystemClass(String name)
         throws ClassNotFoundException
     {
@@ -1001,6 +1077,7 @@ public abstract class ClassLoader {
      * Returns a class loaded by the bootstrap class loader;
      * or return null if not found.
      */
+    // 查找指定的类，如果该类未被bootstrap类加载器加载，返回null
     private Class<?> findBootstrapClassOrNull(String name)
     {
         if (!checkName(name)) return null;
@@ -1009,6 +1086,7 @@ public abstract class ClassLoader {
     }
 
     // return null if not found
+    // 查找指定的类，如果该类未被bootstrap类加载器加载，返回null
     private native Class<?> findBootstrapClass(String name);
 
     /**
@@ -1025,12 +1103,14 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      */
+    // 查找指定的类，如果该类未被当前类加载器加载，返回null
     protected final Class<?> findLoadedClass(String name) {
         if (!checkName(name))
             return null;
         return findLoadedClass0(name);
     }
 
+    // 查找指定的类，如果该类未被当前类加载器加载，返回null
     private native final Class<?> findLoadedClass0(String name);
 
     /**
@@ -1045,6 +1125,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      */
+    // 设置签名信息，在类定义完成后调用
     protected final void setSigners(Class<?> c, Object[] signers) {
         c.setSigners(signers);
     }
@@ -1078,14 +1159,20 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      */
+    // 自顶向下加载资源，截止到调用此方法的类加载器。返回【首个】匹配到的资源的URL
     public URL getResource(String name) {
         URL url;
+        // 先尝试由父级类加载器搜索资源
         if (parent != null) {
+            // 如果存在父级类加载器，继续向上搜索
             url = parent.getResource(name);
         } else {
+            // 如果不存在父级类加载器,使用bootstrap类加载器搜索
             url = getBootstrapResource(name);
         }
+        // 如果父级类加载器没有找到，则尝试由当前类加载器搜索
         if (url == null) {
+            // 在当前类加载器可以访问到的模块路径/类路径下搜索首个匹配的资源
             url = findResource(name);
         }
         return url;
@@ -1124,14 +1211,19 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    // 自顶向下加载资源，截止到调用此方法的类加载器。返回【所有】匹配资源的URL
     public Enumeration<URL> getResources(String name) throws IOException {
         @SuppressWarnings("unchecked")
         Enumeration<URL>[] tmp = (Enumeration<URL>[]) new Enumeration<?>[2];
+        // 先尝试由父级类加载器搜索资源
         if (parent != null) {
+            // 如果存在父级类加载器，继续向上搜索
             tmp[0] = parent.getResources(name);
         } else {
+            // 如果不存在父级类加载器，说明遇到了bootstrap类加载器
             tmp[0] = getBootstrapResources(name);
         }
+        // 在当前类加载器下辖的模块路径/类路径的根目录下搜索所有匹配的资源
         tmp[1] = findResources(name);
 
         return new CompoundEnumeration<>(tmp);
@@ -1149,6 +1241,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    // [子类覆盖]在当前类加载器可以访问到的模块路径/类路径下搜索首个匹配的资源
     protected URL findResource(String name) {
         return null;
     }
@@ -1170,6 +1263,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    // [子类覆盖]在当前类加载器下辖的模块路径/类路径的根目录下搜索所有匹配的资源
     protected Enumeration<URL> findResources(String name) throws IOException {
         return java.util.Collections.emptyEnumeration();
     }
@@ -1191,8 +1285,11 @@ public abstract class ClassLoader {
      *
      * @since   1.7
      */
+    // 将当前类加载器注册为并行，需要在静态初始化块中进行
     @CallerSensitive
     protected static boolean registerAsParallelCapable() {
+        // Reflection.getCallerClass() 获取registerAsParallelCapable()方法的调用者所处的类
+        // 如果ClassLoader类型是caller类型的父类/父接口，则返回父类型
         Class<? extends ClassLoader> callerClass =
             Reflection.getCallerClass().asSubclass(ClassLoader.class);
         return ParallelLoaders.register(callerClass);
@@ -1211,6 +1308,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      */
+    // 自顶向下加载资源，截止到system类加载器。返回【首个】匹配到的资源的URL
     public static URL getSystemResource(String name) {
         ClassLoader system = getSystemClassLoader();
         if (system == null) {
@@ -1239,6 +1337,7 @@ public abstract class ClassLoader {
 
      * @since  1.2
      */
+    // 自顶向下加载资源，截止到system类加载器。返回【所有】匹配资源的URL
     public static Enumeration<URL> getSystemResources(String name)
         throws IOException
     {
@@ -1252,6 +1351,14 @@ public abstract class ClassLoader {
     /**
      * Find resources from the VM's built-in classloader.
      */
+    /**
+     * 从VM的内置类加载器中查找资源。具体步骤如下：
+     * 1、获取引导类路径（URLClassPath）。
+     * 2、使用引导类路径查找指定名称的资源。
+     * 3、如果找到资源，则返回资源的URL；否则返回null。
+     * @param name
+     * @return
+     */
     private static URL getBootstrapResource(String name) {
         URLClassPath ucp = getBootstrapClassPath();
         Resource res = ucp.getResource(name);
@@ -1260,6 +1367,18 @@ public abstract class ClassLoader {
 
     /**
      * Find resources from the VM's built-in classloader.
+     */
+    /**
+     * 从启动类路径中查找资源。具体功能如下：
+     * 1、获取资源枚举：
+     *      调用 getBootstrapClassPath().getResources(name)
+     *      获取启动类路径中指定名称的资源枚举。
+     * 2、转换枚举类型：
+     *      将 Enumeration<Resource> 转换为 Enumeration<URL>，
+     *      以便返回 URL 类型的资源枚举。
+     * @param name
+     * @return
+     * @throws IOException
      */
     private static Enumeration<URL> getBootstrapResources(String name)
         throws IOException
@@ -1277,6 +1396,12 @@ public abstract class ClassLoader {
     }
 
     // Returns the URLClassPath that is used for finding system resources.
+
+    /**
+     * 从 sun.misc.Launcher 类中获取引导类路径（Bootstrap Class Path）。
+     * 引导类路径包含了 JVM 启动时加载的核心类库的路径信息。
+     * @return
+     */
     static URLClassPath getBootstrapClassPath() {
         return sun.misc.Launcher.getBootstrapClassPath();
     }
@@ -1295,6 +1420,16 @@ public abstract class ClassLoader {
      *          if the resource could not be found
      *
      * @since  1.1
+     */
+    /**
+     * 从当前类加载器中获取指定名称的资源，并返回一个输入流。
+     * 1、获取资源URL：
+     *      调用 getResource(name) 方法，尝试从类路径中找到指定名称的资源，并返回其URL。
+     * 2、打开输入流：
+     *      如果找到了资源URL，则调用 url.openStream() 方法打开输入流并返回。
+     *      如果未找到资源或打开输入流时发生异常，则返回 null。
+     * @param name
+     * @return
      */
     public InputStream getResourceAsStream(String name) {
         URL url = getResource(name);
@@ -1317,6 +1452,16 @@ public abstract class ClassLoader {
      *          if the resource could not be found
      *
      * @since  1.1
+     */
+    /**
+     * 从系统类加载器中获取指定名称的资源，并返回一个输入流。
+     * 1、获取资源URL：
+     *      调用 getSystemResource(name) 方法，尝试从系统类加载器中获取指定名称的资源URL。
+     * 2、打开输入流：
+     *      如果获取到的URL不为null，调用 url.openStream() 方法打开输入流，
+     *      如果URL为null或打开过程中发生IO异常，返回null。
+     * @param name
+     * @return
      */
     public static InputStream getSystemResourceAsStream(String name) {
         URL url = getSystemResource(name);
@@ -1354,6 +1499,20 @@ public abstract class ClassLoader {
      *          loader.
      *
      * @since  1.2
+     */
+    /**
+     * 获取当前类加载器的父类加载器。
+     * 1、检查父类加载器是否为 null：
+     *      如果 parent 为 null，则直接返回 null。
+     * 2、获取安全管理器：
+     *      调用 System.getSecurityManager() 获取当前的安全管理器。
+     * 3、检查安全管理器是否存在：
+     *      如果安全管理器存在，则进行权限检查。
+     * 4、权限检查：
+     *      调用 checkClassLoaderPermission 方法，检查调用者是否有权限访问父类加载器。
+     * 5、返回父类加载器：
+     *      如果通过权限检查，返回 parent。
+     * @return
      */
     @CallerSensitive
     public final ClassLoader getParent() {
@@ -1424,6 +1583,22 @@ public abstract class ClassLoader {
      *
      * @revised  1.4
      */
+    /**
+     * 获取系统类加载器
+     * 1、初始化系统类加载器：
+     *      调用 initSystemClassLoader 方法，确保系统类加载器已经初始化。
+     *      如果 scl 已经被设置，则直接返回。
+     * 2、检查系统类加载器是否为 null：
+     *      如果 scl 为 null，直接返回 null。
+     * 3、获取安全管理器：
+     *      调用 System.getSecurityManager 获取当前的安全管理器。
+     * 4、检查权限：
+     *      如果存在安全管理器，调用 checkClassLoaderPermission 方法检查调用者是否有权限访问系统类加载器。
+     *      checkClassLoaderPermission 方法会检查调用者的类加载器是否与系统类加载器相同或为其祖先，如果不是，则需要检查 RuntimePermission("getClassLoader") 权限。
+     * 5、返回系统类加载器：
+     *      如果所有检查都通过，返回系统类加载器 scl。
+     * @return
+     */
     @CallerSensitive
     public static ClassLoader getSystemClassLoader() {
         initSystemClassLoader();
@@ -1437,6 +1612,9 @@ public abstract class ClassLoader {
         return scl;
     }
 
+    /*
+     * 初始化系统类加载器(SystemClassLoader)，并将其返回
+     */
     private static synchronized void initSystemClassLoader() {
         if (!sclSet) {
             if (scl != null)
@@ -1469,6 +1647,22 @@ public abstract class ClassLoader {
 
     // Returns true if the specified class loader can be found in this class
     // loader's delegation chain.
+
+    /**
+     * 这段代码定义了一个名为 isAncestor 的方法，用于判断传入的类加载器 cl 是否是当前类加载器的祖先类加载器。
+     * 1、初始化：
+     *      将当前类加载器赋值给 acl。
+     * 2、循环：
+     *      使用 do-while 循环遍历当前类加载器及其所有父类加载器。
+     * 3、条件判断：
+     *      在每次循环中，检查 cl 是否等于 acl，如果是则返回 true。
+     * 4、更新：
+     *      将 acl 更新为其父类加载器。
+     * 5、结束：
+     *      如果遍历完所有父类加载器仍未找到匹配的 cl，则返回 false。
+     * @param cl
+     * @return
+     */
     boolean isAncestor(ClassLoader cl) {
         ClassLoader acl = this;
         do {
@@ -1485,6 +1679,18 @@ public abstract class ClassLoader {
     // class loader 'from' is same as class loader 'to' or an ancestor
     // of 'to'.  The class loader in a system domain can access
     // any class loader.
+
+    /**
+     * 从 from 类加载器到 to 类加载器是否需要进行权限检查。具体逻辑如下：
+     * 1、如果 from 和 to 是同一个类加载器，返回 false。
+     * 2、如果 from 为 null，返回 false。
+     * 3、否则，返回 to 是否不是 from 的祖先类加载器。：
+     *      如果 to 不是 from 的祖先，返回 true。
+     *      如果 to 是 from 的祖先，返回 false。
+     * @param from
+     * @param to
+     * @return
+     */
     private static boolean needsClassLoaderPermissionCheck(ClassLoader from,
                                                            ClassLoader to)
     {
@@ -1498,6 +1704,7 @@ public abstract class ClassLoader {
     }
 
     // Returns the class's class loader, or null if none.
+    // 返回caller的类加载器
     static ClassLoader getClassLoader(Class<?> caller) {
         // This can be null if the VM is requesting it
         if (caller == null) {
@@ -1512,10 +1719,12 @@ public abstract class ClassLoader {
      * if caller's class loader is not null and caller's class loader
      * is not the same as or an ancestor of the given cl argument.
      */
+    // 访问权限检查（检查的是caller的类加载器对cl的访问权限）
     static void checkClassLoaderPermission(ClassLoader cl, Class<?> caller) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // caller can be null if the VM is requesting it
+            // 返回caller的类加载器
             ClassLoader ccl = getClassLoader(caller);
             if (needsClassLoaderPermissionCheck(ccl, cl)) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
@@ -1525,6 +1734,7 @@ public abstract class ClassLoader {
 
     // The class loader for the system
     // @GuardedBy("ClassLoader.class")
+    // system class loader，可能是内置的AppClassLoader(默认)，也可能是自定义的类加载器
     private static ClassLoader scl;
 
     // Set to true once the system class loader has been set
@@ -1575,6 +1785,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    // 用于在类加载器中定义一个新的包
     protected Package definePackage(String name, String specTitle,
                                     String specVersion, String specVendor,
                                     String implTitle, String implVersion,
@@ -1582,13 +1793,16 @@ public abstract class ClassLoader {
         throws IllegalArgumentException
     {
         synchronized (packages) {
+            // 检查包是否存在
             Package pkg = getPackage(name);
             if (pkg != null) {
                 throw new IllegalArgumentException(name);
             }
+            // 创建新包
             pkg = new Package(name, specTitle, specVersion, specVendor,
                               implTitle, implVersion, implVendor,
                               sealBase, this);
+            // 将包添加到集合中
             packages.put(name, pkg);
             return pkg;
         }
@@ -1640,6 +1854,18 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    /**
+     * 返回对当前类加载器可视的包对象
+     * 1、检查本地缓存：
+     *      首先在当前类加载器的 packages 缓存中查找指定名称的包。
+     * 2、递归查找父类加载器：
+     *      如果本地缓存中没有找到，递归调用父类加载器的 getPackage 方法。
+     * 3、系统包查找：
+     *      如果父类加载器也没有找到，调用 Package.getSystemPackage 方法查找系统包。
+     * 4、缓存结果：
+     *      如果在上述步骤中找到了包，将其缓存到当前类加载器的 packages 中，以提高后续查找效率。
+     * @return
+     */
     protected Package[] getPackages() {
         Map<String, Package> map;
         synchronized (packages) {
@@ -1682,6 +1908,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    // 返回本地库的绝对路径名
     protected String findLibrary(String libname) {
         return null;
     }
@@ -1701,6 +1928,7 @@ public abstract class ClassLoader {
      * @see      ClassLoader
      * @since    1.2
      */
+    // 已加载的本地库
     static class NativeLibrary {
         // opaque handle to native library, used in native code.
         long handle;
@@ -1708,28 +1936,46 @@ public abstract class ClassLoader {
         private int jniVersion;
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
+        // 加载当前本地库的类，也能识别出加载该本地库的类加载器
         private final Class<?> fromClass;
         // the canonicalized name of the native library.
         // or static library name
+        // 被加载的本地库的规范路径
         String name;
         // Indicates if the native library is linked into the VM
+        // 指示当前本地库是否为链接到VM的静态库
         boolean isBuiltin;
         // Indicates if the native library is loaded
+        // 确定某个资源或操作是否已经成功加载。
         boolean loaded;
 
         private static final boolean loadLibraryOnlyIfPresent = ClassLoaderHelper.loadLibraryOnlyIfPresent();
+
 
         native void load(String name, boolean isBuiltin, boolean throwExceptionIfFail);
 
         native long find(String name);
         native void unload(String name, boolean isBuiltin);
 
+        /**
+         * 构造方法 NativeLibrary:
+         * 1、初始化 NativeLibrary 对象，设置本地库的名称、
+         *  加载该库的类和是否为内置库。
+         * @param fromClass
+         * @param name
+         * @param isBuiltin
+         */
         public NativeLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
             this.name = name;
             this.fromClass = fromClass;
             this.isBuiltin = isBuiltin;
         }
 
+        /**
+         * 在对象被垃圾回收时调用，确保本地库被正确卸载。
+         * 同步 loadedLibraryNames，检查 fromClass 的类加载器是否存在且库已加载。
+         * 移除已加载的库名，调用 unload 方法卸载库。
+         */
         protected void finalize() {
             synchronized (loadedLibraryNames) {
                 if (fromClass.getClassLoader() != null && loaded) {
@@ -1753,30 +1999,39 @@ public abstract class ClassLoader {
         }
         // Invoked in the VM to determine the context class in
         // JNI_Load/JNI_Unload
+        // 返回当前上下文中加载本地库的类。
         static Class<?> getFromClass() {
             return ClassLoader.nativeLibraryContext.peek().fromClass;
         }
     }
 
     // All native library names we've loaded.
+    // 所有已加载的本地库名称(规范路径)
     private static Vector<String> loadedLibraryNames = new Vector<>();
 
     // Native libraries belonging to system classes.
+    // 被bootstrap类加载器加载的本地库列表
     private static Vector<NativeLibrary> systemNativeLibraries
         = new Vector<>();
 
     // Native libraries associated with the class loader.
+    // 被当前类加载器加载的本地库列表
     private Vector<NativeLibrary> nativeLibraries = new Vector<>();
 
     // native libraries being loaded/unloaded.
+    // 待加载/卸载的本地库列表(加载/卸载完成后从此列表中移除)
     private static Stack<NativeLibrary> nativeLibraryContext = new Stack<>();
 
     // The paths searched for libraries
+    // 用户本地库路径
     private static String usr_paths[];
+    // 系统本地库路径
     private static String sys_paths[];
 
+    // 从路径属性propname中解析出对应的所有路径信息
     private static String[] initializePath(String propname) {
         String ldpath = System.getProperty(propname, "");
+        // 路径之间的分隔符：Windows系统上是';'，类Unix系统上是':'
         String ps = File.pathSeparator;
         int ldlen = ldpath.length();
         int i, j, n;
@@ -1803,11 +2058,17 @@ public abstract class ClassLoader {
             i = j + 1;
             j = ldpath.indexOf(ps, i);
         }
+        // 无论如何，把当前目录加进来
         paths[n] = ldpath.substring(i, ldlen);
         return paths;
     }
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
+    /*
+     * 加载指定名称的本地库。
+     * isAbsolute用来指示libName是否为绝对路径，如果是绝对路径，可以直接去该路径下加载该资源。
+     * fromClass通常是发起加载操作的类型，此处用来提供类加载器对象(可能为null，因为fromClass类可能由bootstrap类加载器加载)。
+     */
     static void loadLibrary(Class<?> fromClass, String name,
                             boolean isAbsolute) {
         ClassLoader loader =
@@ -1816,43 +2077,57 @@ public abstract class ClassLoader {
             usr_paths = initializePath("java.library.path");
             sys_paths = initializePath("sun.boot.library.path");
         }
+        // 如果libName是绝对路径
         if (isAbsolute) {
+            // 加载指定的本地库文件
             if (loadLibrary0(fromClass, new File(name))) {
                 return;
             }
             throw new UnsatisfiedLinkError("Can't load library: " + name);
         }
         if (loader != null) {
+            // 返回本地库的绝对路径名
             String libfilename = loader.findLibrary(name);
             if (libfilename != null) {
                 File libfile = new File(libfilename);
+                // 确保获取到了本地库的绝对名称
                 if (!libfile.isAbsolute()) {
                     throw new UnsatisfiedLinkError(
     "ClassLoader.findLibrary failed to return an absolute path: " + libfilename);
                 }
+                // 加载指定的本地库文件
                 if (loadLibrary0(fromClass, libfile)) {
                     return;
                 }
                 throw new UnsatisfiedLinkError("Can't load " + libfilename);
             }
         }
+        // 遍历系统本地库路径
         for (int i = 0 ; i < sys_paths.length ; i++) {
+            // 返回指定名称的本地库在当前平台上的名称，如从"net"映射到"net.dll"
             File libfile = new File(sys_paths[i], System.mapLibraryName(name));
+            // 加载指定的本地库文件
             if (loadLibrary0(fromClass, libfile)) {
                 return;
             }
+            // 获取给定文件的备用路径名
             libfile = ClassLoaderHelper.mapAlternativeName(libfile);
+            // 加载指定的本地库文件
             if (libfile != null && loadLibrary0(fromClass, libfile)) {
                 return;
             }
         }
+        // 遍历用户本地库路径
         if (loader != null) {
             for (int i = 0 ; i < usr_paths.length ; i++) {
+                // 返回指定名称的本地库在当前平台上的名称，如从"net"映射到"net.dll"
                 File libfile = new File(usr_paths[i],
                                         System.mapLibraryName(name));
+                // 加载指定的本地库文件
                 if (loadLibrary0(fromClass, libfile)) {
                     return;
                 }
+                // 获取给定文件的备用路径名
                 libfile = ClassLoaderHelper.mapAlternativeName(libfile);
                 if (libfile != null && loadLibrary0(fromClass, libfile)) {
                     return;
@@ -1863,13 +2138,19 @@ public abstract class ClassLoader {
         throw new UnsatisfiedLinkError("no " + name + " in java.library.path");
     }
 
+    // 判断待加载的本地库是否为与VM关联的静态库，如果是的话，返回其名称
     private static native String findBuiltinLib(String name);
 
+    // 加载指定的本地库文件
     private static boolean loadLibrary0(Class<?> fromClass, final File file) {
         // Check to see if we're attempting to access a static library
+        // 判断待加载的本地库是否为与VM关联的静态库，如果是的话，返回其名称
         String name = findBuiltinLib(file.getName());
+        // 是否为静态库
         boolean isBuiltin = (name != null);
+        // 如果不是静态库
         if (!isBuiltin) {
+            // 获取该动态库文件的规范名称
             boolean exists = AccessController.doPrivileged(
                 new PrivilegedAction<Object>() {
                     public Object run() {
@@ -1885,8 +2166,10 @@ public abstract class ClassLoader {
                 return false;
             }
         }
+        // 根据 fromClass 确定类加载器，选择相应的本地库列表。
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
+        // 在本地库列表中检查该库是否已加载，如果已加载则返回 true。
         Vector<NativeLibrary> libs =
             loader != null ? loader.nativeLibraries : systemNativeLibraries;
         synchronized (libs) {
@@ -1898,6 +2181,7 @@ public abstract class ClassLoader {
                 }
             }
 
+            // 在 loadedLibraryNames 和 nativeLibraryContext 中检查该库是否正在被其他类加载器加载，如果正在加载则抛出异常。
             synchronized (loadedLibraryNames) {
                 if (loadedLibraryNames.contains(name)) {
                     throw new UnsatisfiedLinkError
@@ -1931,6 +2215,7 @@ public abstract class ClassLoader {
                         }
                     }
                 }
+                // 创建 NativeLibrary 对象并加载库文件，如果加载成功则更新相关列表并返回 true，否则返回 false。
                 NativeLibrary lib = new NativeLibrary(fromClass, name, isBuiltin);
                 nativeLibraryContext.push(lib);
                 try {
@@ -1949,6 +2234,20 @@ public abstract class ClassLoader {
     }
 
     // Invoked in the VM class linking code.
+
+    /**
+     * 在给定的类加载器中查找指定名称的本地库函数入口地址。
+     * 1、获取本地库列表：
+     *      如果 loader 不为 null，则使用 loader 的 nativeLibraries 列表。
+     *      如果 loader 为 null，则使用 systemNativeLibraries 列表。
+     * 2、同步访问本地库列表：
+     *      使用 synchronized 关键字确保对本地库列表的访问是线程安全的。
+     * 3、遍历本地库列表：
+     *      遍历本地库列表，逐个调用每个 NativeLibrary 对象的 find 方法，尝试查找指定名称的函数入口地址。
+     * 4、返回结果：
+     *      如果在某个 NativeLibrary 中找到了匹配的函数入口地址，则立即返回该地址。
+     *      如果遍历完所有本地库仍未找到匹配的函数入口地址，则返回 0。
+     */
     static long findNative(ClassLoader loader, String name) {
         Vector<NativeLibrary> libs =
             loader != null ? loader.nativeLibraries : systemNativeLibraries;

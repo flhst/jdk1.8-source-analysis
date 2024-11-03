@@ -172,6 +172,24 @@ import java.util.Spliterator;
  * @since 1.4
  */
 
+/*
+ * 缓冲区的抽象基类，其内部实现为一个数组或一个直接缓冲区。
+ *
+ * 该缓冲区读写两用，靠着游标position和上界limit标记【活跃区域】。
+ * 不管处于读模式还是处于写模式，【活跃区域】总是：[position, limit)。
+ * 要特别区分【读模式】和【写模式】下各方法及参数的含义。
+ *
+ * 缓冲区有四个关键属性(标记)，它们的关系是: mark <= position <= limit <= capacity
+ * 注意，这些属性表示的是相对于当前缓存区的位置（相对位置），而不是相对于内部存储结构的位置（绝对位置）。
+ * 比如postion=1，代表的是当前缓冲区中索引为1的元素，而不是内部存储结构中索引为1的元素。
+ * 当前缓冲区脱胎于其内部存储结构，该内部存储结构是共享的，可被多个缓冲区共享。
+ * 区分每个缓冲区的【绝对起点】靠的是address字段和offset字段。
+ *
+ * 非直接缓冲区：(堆内存)
+ *     通过allocate()分配缓冲区，将缓冲区建立在JVM的内存中。通过常规手段存取元素。
+ * 直接缓冲区：（堆外内存，可通过-XX:MaxDirectMemorySize设置大小）
+ *     通过allocateDirect()分配直接缓冲区，将缓冲区建立在物理内存中，可以提高效率。通过Unsafe存取元素。
+ */
 public abstract class Buffer {
 
     /**
@@ -182,18 +200,29 @@ public abstract class Buffer {
         Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED;
 
     // Invariants: mark <= position <= limit <= capacity
+    /*
+     * 关系: mark <= position <= limit <= capacity
+     * 这里约定一些术语：：
+     * 【活跃区域】：[position, limit)范围的区域，这个区域是不断变化的
+     * 【原始区域】：position的初始值和limit的初始值限定的区域，这个区域一般不变
+     */
+    // 标记。一个备忘位置。调用mark()来设定mark = postion。调用reset()设定position = mark。标记在设定前是未定义的(undefined)。
     private int mark = -1;
+    // 游标。下一个要被读或写的元素的索引。位置会自动由相应的get()和put()函数更新。
     private int position = 0;
+    // 上界。缓冲区的第一个不能被读或写的元素。或者说，缓冲区中现存元素的计数。
     private int limit;
+    // 容量。缓冲区能够容纳的数据元素的最大数量。这一容量在缓冲区创建时被设定，并且永远不能被改变。
     private int capacity;
 
     // Used only by direct buffers
     // NOTE: hoisted here for speed in JNI GetDirectBufferAddress
+    // 缓冲区【绝对】起始地址，用于Unsafe类访问堆缓冲区或访问直接缓冲区
     long address;
 
     // Creates a new buffer with the given mark, position, limit, and capacity,
     // after checking invariants.
-    //
+    // 初始化一个Buffer
     Buffer(int mark, int pos, int lim, int cap) {       // package-private
         if (cap < 0)
             throw new IllegalArgumentException("Negative capacity: " + cap);
@@ -239,9 +268,12 @@ public abstract class Buffer {
      * @throws  IllegalArgumentException
      *          If the preconditions on <tt>newPosition</tt> do not hold
      */
+    // 设置新的游标position
     public final Buffer position(int newPosition) {
+        // 检查newPosition是否在合法范围内（0 <= newPosition <= limit）
         if ((newPosition > limit) || (newPosition < 0))
             throw createPositionException(newPosition);
+        // 重置标记，如果当前mark大于newPosition,则将mark重置为-1，表示标记无效
         if (mark > newPosition) mark = -1;
         position = newPosition;
         return this;
@@ -292,6 +324,7 @@ public abstract class Buffer {
      * @throws  IllegalArgumentException
      *          If the preconditions on <tt>newLimit</tt> do not hold
      */
+    // 设置新的上界limit
     public final Buffer limit(int newLimit) {
         if ((newLimit > capacity) || (newLimit < 0))
             throw new IllegalArgumentException();
@@ -306,6 +339,7 @@ public abstract class Buffer {
      *
      * @return  This buffer
      */
+    // 在当前游标position处设置新的mark（备忘）
     public final Buffer mark() {
         mark = position;
         return this;
@@ -322,6 +356,7 @@ public abstract class Buffer {
      * @throws  InvalidMarkException
      *          If the mark has not been set
      */
+    // 加个当前游标position回退到mark（备忘）位置
     public final Buffer reset() {
         int m = mark;
         if (m < 0)
@@ -347,6 +382,7 @@ public abstract class Buffer {
      *
      * @return  This buffer
      */
+    // 清理缓冲区，重置标记
     public final Buffer clear() {
         position = 0;
         limit = capacity;
@@ -375,6 +411,7 @@ public abstract class Buffer {
      *
      * @return  This buffer
      */
+    // 修改标记，可以切换缓冲区读/写模式
     public final Buffer flip() {
         limit = position;
         position = 0;
@@ -397,6 +434,7 @@ public abstract class Buffer {
      *
      * @return  This buffer
      */
+    // 丢弃备忘，游标归零
     public final Buffer rewind() {
         position = 0;
         mark = -1;
@@ -409,6 +447,7 @@ public abstract class Buffer {
      *
      * @return  The number of elements remaining in this buffer
      */
+    // 返回缓冲区长度（还剩多少元素/还剩多少空间）
     public final int remaining() {
         int rem = limit - position;
         return rem > 0 ? rem : 0;
@@ -421,6 +460,7 @@ public abstract class Buffer {
      * @return  <tt>true</tt> if, and only if, there is at least one element
      *          remaining in this buffer
      */
+    // 缓冲区是否还有剩余（未读完/未写完）
     public final boolean hasRemaining() {
         return position < limit;
     }
@@ -430,6 +470,7 @@ public abstract class Buffer {
      *
      * @return  <tt>true</tt> if, and only if, this buffer is read-only
      */
+    // 告知当前缓冲区是否只读
     public abstract boolean isReadOnly();
 
     /**
@@ -445,6 +486,7 @@ public abstract class Buffer {
      *
      * @since 1.6
      */
+    // 告知此buffer是否由可访问的数组实现
     public abstract boolean hasArray();
 
     /**
@@ -472,6 +514,7 @@ public abstract class Buffer {
      *
      * @since 1.6
      */
+    // 返回该buffer内部的非只读数组
     public abstract Object array();
 
     /**
@@ -496,6 +539,7 @@ public abstract class Buffer {
      *
      * @since 1.6
      */
+    // 返回此缓冲区中的第一个元素在缓冲区的底层实现数组中的偏移量（可选操作）
     public abstract int arrayOffset();
 
     /**
@@ -506,6 +550,7 @@ public abstract class Buffer {
      *
      * @since 1.6
      */
+    // 是否是直接缓冲区
     public abstract boolean isDirect();
 
 
@@ -518,6 +563,7 @@ public abstract class Buffer {
      *
      * @return  The current position value, before it is incremented
      */
+    // 返回position,并将position递增
     final int nextGetIndex() {                          // package-private
         int p = position;
         if (p >= limit)
@@ -526,6 +572,7 @@ public abstract class Buffer {
         return p;
     }
 
+    // 返回position,并将position增加nb个单位
     final int nextGetIndex(int nb) {                    // package-private
         int p = position;
         if (limit - p < nb)
@@ -541,6 +588,7 @@ public abstract class Buffer {
      *
      * @return  The current position value, before it is incremented
      */
+    // 返回position，并将position递增
     final int nextPutIndex() {                          // package-private
         int p = position;
         if (p >= limit)
@@ -549,6 +597,7 @@ public abstract class Buffer {
         return p;
     }
 
+    // 返回position，并将position增加nb个单位
     final int nextPutIndex(int nb) {                    // package-private
         int p = position;
         if (limit - p < nb)
@@ -562,12 +611,14 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
+    // 用于检查给定的索引i是否在缓冲区的有效范围内（0 <= i < limit）
     final int checkIndex(int i) {                       // package-private
         if ((i < 0) || (i >= limit))
             throw new IndexOutOfBoundsException();
         return i;
     }
 
+    // 返回索引i和nb的和是否在缓冲区的有效范围内（0 <= i < limit）
     final int checkIndex(int i, int nb) {               // package-private
         if ((i < 0) || (nb > limit - i))
             throw new IndexOutOfBoundsException();
@@ -578,6 +629,7 @@ public abstract class Buffer {
         return mark;
     }
 
+    // 消耗缓冲区（容量清空）
     final void truncate() {                             // package-private
         mark = -1;
         position = 0;
@@ -585,10 +637,12 @@ public abstract class Buffer {
         capacity = 0;
     }
 
+    // 丢弃备忘
     final void discardMark() {                          // package-private
         mark = -1;
     }
 
+    // 保证off+len <= size
     static void checkBounds(int off, int len, int size) { // package-private
         if ((off | len | (off + len) | (size - (off + len))) < 0)
             throw new IndexOutOfBoundsException();
