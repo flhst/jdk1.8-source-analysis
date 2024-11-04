@@ -57,17 +57,20 @@ import java.lang.annotation.Native;
 //          - Java的Integer缓存机制仅适用于通过自动装箱或使用Integer.valueOf(int)方法创建的Integer对象。
 //          - new Integer()： 每次都会创建新的对象，即使值在 -128 到 127 范围内也不会使用缓存的对象。
 //          - 在这种情况下，Java会返回缓存的对象实例。
+// int 的包装类
 public final class Integer extends Number implements Comparable<Integer> {
     /**
      * A constant holding the minimum value an {@code int} can
      * have, -2<sup>31</sup>.
      */
+    // int最小值
     @Native public static final int   MIN_VALUE = 0x80000000;
 
     /**
      * A constant holding the maximum value an {@code int} can
      * have, 2<sup>31</sup>-1.
      */
+    // int最大值
     @Native public static final int   MAX_VALUE = 0x7fffffff;
 
     /**
@@ -77,11 +80,13 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @since   JDK1.1
      */
     @SuppressWarnings("unchecked")
+    // 相当于int.class
     public static final Class<Integer>  TYPE = (Class<Integer>) Class.getPrimitiveClass("int");
 
     /**
      * All possible chars for representing a number as a String
      */
+    // 进制
     final static char[] digits = {
             '0' , '1' , '2' , '3' , '4' , '5' ,
             '6' , '7' , '8' , '9' , 'a' , 'b' ,
@@ -347,6 +352,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         return charPos;
     }
 
+    // 十位数
     final static char [] DigitTens = {
             '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
             '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
@@ -360,6 +366,7 @@ public final class Integer extends Number implements Comparable<Integer> {
             '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
     } ;
 
+    // 个位数
     final static char [] DigitOnes = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -402,7 +409,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @param   i   an integer to be converted.
      * @return  a string representation of the argument in base&nbsp;10.
      */
+    // 将整数i按照10进制转换为字符串
     public static String toString(int i) {
+        // 对最小值进行特殊处理，避免溢出
         if (i == Integer.MIN_VALUE)
             return "-2147483648";
         int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
@@ -438,9 +447,12 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * Will fail if i == Integer.MIN_VALUE
      */
+    // 将整数i中包含的符号转为byte存入buf
     static void getChars(int i, int index, char[] buf) {
         int q, r;
+        // 用于记录当前字符在buf中的位置
         int charPos = index;
+        // 记录整数的符号
         char sign = 0;
 
         if (i < 0) {
@@ -450,18 +462,24 @@ public final class Integer extends Number implements Comparable<Integer> {
 
         // Generate two digits per iteration
         while (i >= 65536) {
+            // 商
             q = i / 100;
             // really: r = i - (q * 100);
+            // 余数
             r = i - ((q << 6) + (q << 5) + (q << 2));
             i = q;
+            // 将r的个位数存储在buf中
             buf [--charPos] = DigitOnes[r];
+            // 将r的十位数存储在buf中
             buf [--charPos] = DigitTens[r];
         }
 
         // Fall thru to fast mode for smaller numbers
         // assert(i <= 65536, i);
         for (;;) {
+            // 商
             q = (i * 52429) >>> (16+3);
+            // 除以10的余数
             r = i - ((q << 3) + (q << 1));  // r = i-(q*10) ...
             buf [--charPos] = digits [r];
             i = q;
@@ -472,6 +490,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         }
     }
 
+    // 静态常量数组，数组中存储了一系列整数，这个数组通常用于查找某个整数的位数
     final static int [] sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999,
             99999999, 999999999, Integer.MAX_VALUE };
 
@@ -858,6 +877,7 @@ public final class Integer extends Number implements Comparable<Integer> {
     //    方法二：使用AtomicInteger
     //     - AtomicInteger atomicInteger = new AtomicInteger(10);
     //     - atomicInteger.set(20);
+    // 当前类包装的值
     private final int value;
 
     /**
@@ -952,6 +972,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @return  a string representation of the value of this object in
      *          base&nbsp;10.
      */
+    // 将 Integer 对象的整数值转换为字符串
     public String toString() {
         return toString(value);
     }
@@ -1341,6 +1362,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @since 1.5
      */
+    // 当前类型所占bit[位]数
     @Native public static final int SIZE = 32;
 
     /**
@@ -1349,6 +1371,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @since 1.8
      */
+    // 当前类型所占字节数
     public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
@@ -1364,9 +1387,14 @@ public final class Integer extends Number implements Comparable<Integer> {
      *     the specified value is itself equal to zero.
      * @since 1.5
      */
+    // 返回二进制位中开头首次出现的1所占的数位，比如00110100，返回32 --> 100000
+    // 通过多次右移和或运算，将所有比最高位1低的位都设置位1，然后通过i - (i >>> 1)操作，将最高位
+    // 1以下的所有位清零，只保留最高位1
     public static int highestOneBit(int i) {
         // HD, Figure 3-1
+        // 将最高位1向右移动1位然后或，将最高位1右侧的第一位变为1
         i |= (i >>  1);
+        // 向右移动2位然后或，将最高位1右侧的第三位和第四位变为1
         i |= (i >>  2);
         i |= (i >>  4);
         i |= (i >>  8);
@@ -1387,6 +1415,10 @@ public final class Integer extends Number implements Comparable<Integer> {
      *     the specified value is itself equal to zero.
      * @since 1.5
      */
+    // 返回一个整数i中最低位的1所在的位的数字
+    // i = 10  -->  1010
+    // i 取反 0101，-i 0110
+    // i & -i  1010 & 0110 --> 0010 --> 2
     public static int lowestOneBit(int i) {
         // HD, Section 2-1
         return i & -i;
@@ -1413,11 +1445,14 @@ public final class Integer extends Number implements Comparable<Integer> {
      *     is equal to zero.
      * @since 1.5
      */
+    // 返回二进制位中末尾连续的0的个数
+    // 二分搜索算法 二分搜索计算前导0
     public static int numberOfLeadingZeros(int i) {
         // HD, Figure 5-6
         if (i == 0)
             return 32;
         int n = 1;
+        // 第一次检查32-17位，都为0，继续检查16-9位，否则检查32-25位
         if (i >>> 16 == 0) { n += 16; i <<= 16; }
         if (i >>> 24 == 0) { n +=  8; i <<=  8; }
         if (i >>> 28 == 0) { n +=  4; i <<=  4; }
@@ -1579,6 +1614,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @see java.util.function.BinaryOperator
      * @since 1.8
      */
+    // 求和
     public static int sum(int a, int b) {
         return a + b;
     }
@@ -1593,6 +1629,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @see java.util.function.BinaryOperator
      * @since 1.8
      */
+    // 最大值
     public static int max(int a, int b) {
         return Math.max(a, b);
     }
@@ -1607,6 +1644,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @see java.util.function.BinaryOperator
      * @since 1.8
      */
+    // 最小值
     public static int min(int a, int b) {
         return Math.min(a, b);
     }

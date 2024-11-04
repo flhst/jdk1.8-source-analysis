@@ -2433,6 +2433,7 @@ public final class Class<T> implements java.io.Serializable,
      * Return the Virtual Machine's Class object for the named
      * primitive type.
      */
+    // 从虚拟机中获取指定名称的基本类型（如 int, boolean 等）对应的 Class 对象
     static native Class<?> getPrimitiveClass(String name);
 
     /*
