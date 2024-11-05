@@ -52,6 +52,7 @@ package java.lang;
  * @jls 5.1.3 Narrowing Primitive Conversions
  * @since   JDK1.0
  */
+// 数值类型包装类的共同祖先，声明了各种类型的拆箱方法
 public abstract class Number implements java.io.Serializable {
     /**
      * Returns the value of the specified number as an {@code int},
@@ -60,6 +61,7 @@ public abstract class Number implements java.io.Serializable {
      * @return  the numeric value represented by this object after conversion
      *          to type {@code int}.
      */
+    // 以int形式返回当前对象的值
     public abstract int intValue();
 
     /**
@@ -69,6 +71,7 @@ public abstract class Number implements java.io.Serializable {
      * @return  the numeric value represented by this object after conversion
      *          to type {@code long}.
      */
+    // 以long形式返回当前对象的值
     public abstract long longValue();
 
     /**
@@ -78,6 +81,7 @@ public abstract class Number implements java.io.Serializable {
      * @return  the numeric value represented by this object after conversion
      *          to type {@code float}.
      */
+    // 以float形式返回当前对象的值
     public abstract float floatValue();
 
     /**
@@ -87,6 +91,7 @@ public abstract class Number implements java.io.Serializable {
      * @return  the numeric value represented by this object after conversion
      *          to type {@code double}.
      */
+    // 以double形式返回当前对象的值
     public abstract double doubleValue();
 
     /**
@@ -100,6 +105,7 @@ public abstract class Number implements java.io.Serializable {
      *          to type {@code byte}.
      * @since   JDK1.1
      */
+    // 以byte形式返回当前对象的值
     public byte byteValue() {
         return (byte)intValue();
     }
@@ -115,6 +121,7 @@ public abstract class Number implements java.io.Serializable {
      *          to type {@code short}.
      * @since   JDK1.1
      */
+    // 以short形式返回当前对象的值
     public short shortValue() {
         return (short)intValue();
     }
