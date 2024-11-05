@@ -51,17 +51,20 @@ import java.math.*;
  * @author  Joseph D. Darcy
  * @since   JDK1.0
  */
+// long的包装类
 public final class Long extends Number implements Comparable<Long> {
     /**
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
      */
+    // long 最小值
     @Native public static final long MIN_VALUE = 0x8000000000000000L;
 
     /**
      * A constant holding the maximum value a {@code long} can
      * have, 2<sup>63</sup>-1.
      */
+    // long 最大值
     @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
     /**
@@ -71,6 +74,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @since   JDK1.1
      */
     @SuppressWarnings("unchecked")
+    // 相当于long.class
     public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
 
     /**
@@ -935,6 +939,7 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @serial
      */
+    // 当前类
     private final long value;
 
     /**
@@ -1340,6 +1345,7 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @since 1.5
      */
+    // 当前类型所占bit[位]数
     @Native public static final int SIZE = 64;
 
     /**
@@ -1348,6 +1354,7 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @since 1.8
      */
+    // 当前类型所占字节数
     public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
@@ -1568,7 +1575,30 @@ public final class Long extends Number implements Comparable<Long> {
      *     {@code long} value.
      * @since 1.5
      */
+
+    /**
+     * 以字节为单位逆置字节顺序
+     * i & 0x00ff00ff00ff00ffL：保留每个字节的低8位。
+     *      (i & 0x00ff00ff00ff00ffL) << 8：将每个字节左移8位。
+     *      (i >>> 8) & 0x00ff00ff00ff00ffL：将每个字节右移8位并保留低8位。
+     *      或将两个结果合并，实现每对字节的交换。
+     * @param i
+     * @return
+     */
+    // long 8 byte 两个16进制是8位 是1个byte
+    // a b c d e f g h start
+    // b a d c f e h g
+    // h g
+    //     f e
+    //         d c
+    //             b a
+    // h g f e d c b a end
+    // 只有一次反转，每个字母代表两个16进制，代表8位，所以只需要整体反转就行了
+    // 151翻转字符串里的单词 "the sky is blue" --> "blue is sky the"
+    // 1、将字符串中的每个单词逆序 "eht yks si eulb"
+    // 2、将整个字符串逆序 "blue is sky the"
     public static long reverseBytes(long i) {
+        // i & 0x00ff00ff00ff00ffL：保留每个字节的低8位。
         i = (i & 0x00ff00ff00ff00ffL) << 8 | (i >>> 8) & 0x00ff00ff00ff00ffL;
         return (i << 48) | ((i & 0xffff0000L) << 16) |
             ((i >>> 16) & 0xffff0000L) | (i >>> 48);
