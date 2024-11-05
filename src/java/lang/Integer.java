@@ -1563,6 +1563,8 @@ public final class Integer extends Number implements Comparable<Integer> {
      *     {@code int} value.
      * @since 1.5
      */
+    // int 4 bytes
+    // a b c d
     public static int reverseBytes(int i) {
         return ((i >>> 24)           ) |
                 ((i >>   8) &   0xFF00) |
