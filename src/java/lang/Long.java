@@ -1585,14 +1585,15 @@ public final class Long extends Number implements Comparable<Long> {
      * @param i
      * @return
      */
-    // long 8 byte 一个16进制数是2个byte
-    // a b c d e f g h
+    // long 8 byte 两个16进制是8位 是1个byte
+    // a b c d e f g h start
     // b a d c f e h g
     // h g
     //     f e
     //         d c
     //             b a
-    // h g f e d c b a
+    // h g f e d c b a end
+    // 只有一次反转，每个字母代表两个16进制，代表8位，所以只需要整体反转就行了
     // 151翻转字符串里的单词 "the sky is blue" --> "blue is sky the"
     // 1、将字符串中的每个单词逆序 "eht yks si eulb"
     // 2、将整个字符串逆序 "blue is sky the"
