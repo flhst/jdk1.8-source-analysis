@@ -70,29 +70,43 @@ package java.lang.annotation;
  * @jls 9.6.4.1 @Target
  * @jls 4.1 The Kinds of Types and Values
  */
+
+/**
+ * 表示注解应用范围的常量，使用方式：@Target(ElementType.XXX)
+ * 除了TYPE_PARAMETER和TYPE_USE属于类型注解，其他注解属于声明式注解
+ */
 public enum ElementType {
     /** Class, interface (including annotation type), or enum declaration */
+    // 用于类、接口、注解、枚举类型的声明
     TYPE,
 
     /** Field declaration (includes enum constants) */
+    // 用于字段、枚举常量的声明
     FIELD,
 
     /** Method declaration */
+    // 方法声明
     METHOD,
 
     /** Formal parameter declaration */
+    // 用于形参声明（包括异常参数）
     PARAMETER,
 
     /** Constructor declaration */
+    // 用于构造器的声明
     CONSTRUCTOR,
 
     /** Local variable declaration */
+    // 用于局部变量的声明
+    // 但是需要注意的是，java注解在java 8之前不能用于局部变量
     LOCAL_VARIABLE,
 
     /** Annotation type declaration */
+    // 用于注解类型的声明
     ANNOTATION_TYPE,
 
     /** Package declaration */
+    // 用于包声明
     PACKAGE,
 
     /**
@@ -100,6 +114,7 @@ public enum ElementType {
      *
      * @since 1.8
      */
+    // 类型参数声明
     TYPE_PARAMETER,
 
     /**
@@ -107,5 +122,6 @@ public enum ElementType {
      *
      * @since 1.8
      */
+    // 用于广义的类型声明（不能用于package）,比TYPE的应用范围更广，可通过AnnotatedType获取
     TYPE_USE
 }
