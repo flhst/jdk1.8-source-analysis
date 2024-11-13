@@ -40,6 +40,7 @@ package java.lang.annotation;
  * @since 1.5
  * @jls 9.6.3.2 @Retention
  */
+// 元注解，标记注解的保留范围，默认是RetentionPolicy.CLASS, 表示在运行时可以获取到
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
