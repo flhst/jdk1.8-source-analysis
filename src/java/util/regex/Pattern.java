@@ -765,7 +765,7 @@ import java.util.stream.StreamSupport;
  * @since       1.4
  * @spec        JSR-51
  */
-
+// 正则表达式对象
 public final class Pattern
     implements java.io.Serializable
 {
@@ -792,6 +792,7 @@ public final class Pattern
      * <p> Unix lines mode can also be enabled via the embedded flag
      * expression&nbsp;<tt>(?d)</tt>.
      */
+    // (?d)，只使用Unix行终止符'\n'
     public static final int UNIX_LINES = 0x01;
 
     /**
@@ -807,6 +808,7 @@ public final class Pattern
      *
      * <p> Specifying this flag may impose a slight performance penalty.  </p>
      */
+    // (?i)，不区分大小写
     public static final int CASE_INSENSITIVE = 0x02;
 
     /**
@@ -818,6 +820,7 @@ public final class Pattern
      * <p> Comments mode can also be enabled via the embedded flag
      * expression&nbsp;<tt>(?x)</tt>.
      */
+    // (?x)，忽略空格和#开头的注释
     public static final int COMMENTS = 0x04;
 
     /**
@@ -831,6 +834,7 @@ public final class Pattern
      * <p> Multiline mode can also be enabled via the embedded flag
      * expression&nbsp;<tt>(?m)</tt>.  </p>
      */
+    // (?m)，多行模式
     public static final int MULTILINE = 0x08;
 
     /**
@@ -861,6 +865,7 @@ public final class Pattern
      * expression&nbsp;<tt>(?s)</tt>.  (The <tt>s</tt> is a mnemonic for
      * "single-line" mode, which is what this is called in Perl.)  </p>
      */
+    // (?s)，.可以匹配任意字符，包括行终止符
     public static final int DOTALL = 0x20;
 
     /**
@@ -877,6 +882,7 @@ public final class Pattern
      *
      * <p> Specifying this flag may impose a performance penalty.  </p>
      */
+    // (?u)，正确识别码点大于0xFFFF的Unicode字符和大括号{}表示的Unicode字符
     public static final int UNICODE_CASE = 0x40;
 
     /**
@@ -893,6 +899,7 @@ public final class Pattern
      *
      * <p> Specifying this flag may impose a performance penalty.  </p>
      */
+    // 启用规范等价模式
     public static final int CANON_EQ = 0x80;
 
     /**
@@ -915,6 +922,7 @@ public final class Pattern
      * Specifying this flag may impose a performance penalty.  </p>
      * @since 1.7
      */
+    // (?U)，启用对预定义字符和POSIX字符的Unicode支持(包含了(?u)的功能)
     public static final int UNICODE_CHARACTER_CLASS = 0x100;
 
     /* Pattern has only two serialized components: The pattern string
@@ -930,6 +938,7 @@ public final class Pattern
      *
      * @serial
      */
+    // 当前Pattern中的正则表达式
     private String pattern;
 
     /**
@@ -1024,6 +1033,7 @@ public final class Pattern
      * @throws  PatternSyntaxException
      *          If the expression's syntax is invalid
      */
+    // 解析正则表达式regex
     public static Pattern compile(String regex) {
         return new Pattern(regex, 0);
     }
@@ -1050,6 +1060,7 @@ public final class Pattern
      * @throws  PatternSyntaxException
      *          If the expression's syntax is invalid
      */
+    // 解析正则表达式regex，flags是正则表达式的选择标记
     public static Pattern compile(String regex, int flags) {
         return new Pattern(regex, flags);
     }
@@ -1059,6 +1070,7 @@ public final class Pattern
      *
      * @return  The source of this pattern
      */
+    // 获取当前Pattern中的正则表达式
     public String pattern() {
         return pattern;
     }
@@ -1083,6 +1095,7 @@ public final class Pattern
      *
      * @return  A new matcher for this pattern
      */
+    // 利用当前Pattern中的正则表达式创建Matcher以进行匹配动作，input是待匹配文本
     public Matcher matcher(CharSequence input) {
         if (!compiled) {
             synchronized(this) {
@@ -1099,6 +1112,7 @@ public final class Pattern
      *
      * @return  The match flags specified when this pattern was compiled
      */
+    // 获取当前Pattern中的选择标记
     public int flags() {
         return flags;
     }
@@ -1129,6 +1143,9 @@ public final class Pattern
      * @throws  PatternSyntaxException
      *          If the expression's syntax is invalid
      */
+    // 判断正则表达式regex是否与给定的输入完全匹配
+    //
+    // 等价于：Pattern.compile(regex).matcher(input).matches()
     public static boolean matches(String regex, CharSequence input) {
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(input);
@@ -1335,6 +1352,7 @@ public final class Pattern
      * a Pattern. An empty pattern string results in an object tree with
      * only a Start node and a LastNode node.
      */
+    // 私有构造函数，用于初始化正则表达式模式对象
     private Pattern(String p, int f) {
         pattern = p;
         flags = f;

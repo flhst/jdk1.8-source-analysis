@@ -101,7 +101,7 @@ import java.util.Objects;
  * @since       1.4
  * @spec        JSR-51
  */
-
+// 对接正则表达式与待检索字符串，以完成匹配任务
 public final class Matcher implements MatchResult {
 
     /**
@@ -120,6 +120,7 @@ public final class Matcher implements MatchResult {
      * will match at these "hard" boundaries. Changing the region
      * changes these values.
      */
+    // 要匹配的序列内的范围。
     int from, to;
 
     /**
@@ -600,6 +601,8 @@ public final class Matcher implements MatchResult {
      * @return  <tt>true</tt> if, and only if, the entire region sequence
      *          matches this matcher's pattern
      */
+    // 判断当前的正则表达式与当前的目标字符串是否完全匹配
+    // 该方法受检索范围的影响
     public boolean matches() {
         return match(from, ENDANCHOR);
     }
@@ -1031,6 +1034,7 @@ public final class Matcher implements MatchResult {
      * @return  this matcher
      * @since 1.5
      */
+    // 将matcher的检索范围设定在整个目标串的[start, end)之间
     public Matcher region(int start, int end) {
         if ((start < 0) || (start > getTextLength()))
             throw new IndexOutOfBoundsException("start");
@@ -1053,6 +1057,7 @@ public final class Matcher implements MatchResult {
      * @return  The starting point of this matcher's region
      * @since 1.5
      */
+    // 返回当前检索范围起点
     public int regionStart() {
         return from;
     }
@@ -1066,6 +1071,7 @@ public final class Matcher implements MatchResult {
      * @return  the ending point of this matcher's region
      * @since 1.5
      */
+    // 返回当前检索返回终点
     public int regionEnd() {
         return to;
     }
@@ -1087,6 +1093,7 @@ public final class Matcher implements MatchResult {
      * @see java.util.regex.Matcher#useTransparentBounds(boolean)
      * @since 1.5
      */
+    // 判断是否使用了透明边界（默认为false）
     public boolean hasTransparentBounds() {
         return transparentBounds;
     }
@@ -1117,6 +1124,13 @@ public final class Matcher implements MatchResult {
      * @see java.util.regex.Matcher#hasTransparentBounds
      * @since 1.5
      */
+    // 设置是否使用透明边界（默认不使用透明边界，即使用不透明边界）
+    // 使用不透明边界时（默认），前瞻、后顾、边界匹配这些操作不会越过检索范围去匹配
+    // 换句话说，此时\b匹配到的边界未必是原文中真正的边界
+    //
+    // 例如使用"\bapple"去匹配"xapple"的[1, 6)范围：
+    // 如果使用了透明边界，可以看到a之前还有个x，无法匹配到满足条件的边界
+    // 如果使用了不透明边界，则索引1之前的x会被忽略，所以认为输入文本就是"apple"，此时可以匹配到边界
     public Matcher useTransparentBounds(boolean b) {
         transparentBounds = b;
         return this;
@@ -1138,6 +1152,7 @@ public final class Matcher implements MatchResult {
      * @see java.util.regex.Matcher#useAnchoringBounds(boolean)
      * @since 1.5
      */
+    // 判断是否使用了锚点边界（默认为true）
     public boolean hasAnchoringBounds() {
         return anchoringBounds;
     }
@@ -1163,6 +1178,9 @@ public final class Matcher implements MatchResult {
      * @see java.util.regex.Matcher#hasAnchoringBounds
      * @since 1.5
      */
+    // 设置是否使用锚点边界（默认使用）
+    // 使用锚点边界时，行锚点^、\A、$、\Z、\z能匹配检索范围的边界，即检索范围不等于整个字符串
+    // 如果不使用锚点边界，则行锚点只能匹配检索范围内，整个目标字符串中符合规定的位置
     public Matcher useAnchoringBounds(boolean b) {
         anchoringBounds = b;
         return this;
