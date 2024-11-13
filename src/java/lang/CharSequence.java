@@ -55,7 +55,7 @@ import java.util.stream.StreamSupport;
  * @since 1.4
  * @spec JSR-51
  */
-
+// 字符序列接口，封装了对字符序列的一些操作（包括转换为流的操作）
 public interface CharSequence {
 
     /**
@@ -127,6 +127,7 @@ public interface CharSequence {
      * @return an IntStream of char values from this sequence
      * @since 1.8
      */
+    // 将当前char序列转为流序列，序列中每个元素是char
     public default IntStream chars() {
         class CharIterator implements PrimitiveIterator.OfInt {
             int cur = 0;
@@ -174,6 +175,7 @@ public interface CharSequence {
      * @return an IntStream of Unicode code points from this sequence
      * @since 1.8
      */
+    // 将当前Unicode符号序列转为流序列，序列中每个元素是Unicode符号
     public default IntStream codePoints() {
         class CodePointIterator implements PrimitiveIterator.OfInt {
             int cur = 0;
