@@ -121,6 +121,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see     java.lang.Character#MAX_RADIX
      * @see     java.lang.Character#MIN_RADIX
      */
+    // 按radix进制返回i的值
     public static String toString(long i, int radix) {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
@@ -173,6 +174,8 @@ public final class Long extends Number implements Comparable<Long> {
      * @see     #toString(long, int)
      * @since 1.8
      */
+    // 按radix进制返回i的无符号值，即如果i是负数，
+    // 不会在结果字符串前加上负号，而是将其转换为相应的无符号表示
     public static String toUnsignedString(long i, int radix) {
         if (i >= 0)
             return toString(i, radix);
@@ -196,6 +199,10 @@ public final class Long extends Number implements Comparable<Long> {
                  * isolated more quickly than by an initial conversion
                  * to BigInteger.
                  */
+                // 这段注释解释了一种优化技巧，
+                // 用于在 Java 中实现无符号长整数除以 10 的效果。
+                // 这种方法比直接将 long 转换为 BigInteger 并进行除法运算更高效。
+                // toUnsignedBigInteger(i).toString(radix);
                 long quot = (i >>> 1) / 5;
                 long rem = i - quot * 10;
                 return toString(quot) + rem;
@@ -216,6 +223,18 @@ public final class Long extends Number implements Comparable<Long> {
      * Return a BigInteger equal to the unsigned value of the
      * argument.
      */
+    // 将当前long转换为无符号形式，用BigInteger存储
+    // 正数处理：
+    //      如果 i 大于等于 0，直接调用 BigInteger.valueOf(i) 并返回结果。
+    // 负数处理：
+    //      将 i 分解为高 32 位和低 32 位。
+    //      高 32 位使用 Integer.toUnsignedLong 转换为无符号 long。
+    //      低 32 位使用 Integer.toUnsignedLong 转换为无符号 long。
+    //      高 32 位左移 32 位。
+    //      将左移后的高 32 位和低 32 位分别转换为 BigInteger。
+    //      将两个 BigInteger 相加，得到最终的无符号 BigInteger。
+    // 返回结果：
+    //      返回转换后的 BigInteger。
     private static BigInteger toUnsignedBigInteger(long i) {
         if (i >= 0L)
             return BigInteger.valueOf(i);
@@ -272,6 +291,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see #toUnsignedString(long, int)
      * @since   JDK 1.0.2
      */
+    // 按16进制返回i的无符号值
     public static String toHexString(long i) {
         return toUnsignedString0(i, 4);
     }
@@ -311,6 +331,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see #toUnsignedString(long, int)
      * @since   JDK 1.0.2
      */
+    // 按8进制返回i的无符号值
     public static String toOctalString(long i) {
         return toUnsignedString0(i, 3);
     }
@@ -344,6 +365,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see #toUnsignedString(long, int)
      * @since   JDK 1.0.2
      */
+    // 按二进制返回i的无符号值
     public static String toBinaryString(long i) {
         return toUnsignedString0(i, 1);
     }
@@ -353,9 +375,13 @@ public final class Long extends Number implements Comparable<Long> {
      * @param val the value to format
      * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
      */
+    // 按2^shift进制返回val的无符号值
     static String toUnsignedString0(long val, int shift) {
         // assert shift > 0 && shift <=5 : "Illegal shift value";
+        // 获取val的二进制有效位数
         int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
+        // ((mag + (shift - 1)) / shift)确保mag在不是shift的整数倍数时，
+        // 向上取整，1确保即使val为0，也会返回1
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
         char[] buf = new char[chars];
 
@@ -372,7 +398,8 @@ public final class Long extends Number implements Comparable<Long> {
      * @param len the number of characters to write
      * @return the lowest character location used
      */
-     static int formatUnsignedLong(long val, int shift, char[] buf, int offset, int len) {
+    // 将数字0到9分别存储为对应的ANSI码，'\0'存储为数字0。byte[]/LATIN1版本。参见Integer#formatUnsignedInt
+    static int formatUnsignedLong(long val, int shift, char[] buf, int offset, int len) {
         int charPos = len;
         int radix = 1 << shift;
         int mask = radix - 1;
@@ -394,6 +421,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @param   i   a {@code long} to be converted.
      * @return  a string representation of the argument in base&nbsp;10.
      */
+    // 按10进制返回i的值
     public static String toString(long i) {
         if (i == Long.MIN_VALUE)
             return "-9223372036854775808";
@@ -417,6 +445,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see     #toUnsignedString(long, int)
      * @since 1.8
      */
+    // 按10进制返回i的无符号值
     public static String toUnsignedString(long i) {
         return toUnsignedString(i, 10);
     }
@@ -430,10 +459,13 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * Will fail if i == Long.MIN_VALUE
      */
+    // 将整数i中包含的符号转为byte存入buf
     static void getChars(long i, int index, char[] buf) {
         long q;
         int r;
+        // 用于记录当前字符在buf中的位置
         int charPos = index;
+        // long的符号
         char sign = 0;
 
         if (i < 0) {
@@ -455,18 +487,24 @@ public final class Long extends Number implements Comparable<Long> {
         int q2;
         int i2 = (int)i;
         while (i2 >= 65536) {
+            // 商
             q2 = i2 / 100;
             // really: r = i2 - (q * 100);
+            // 余数
             r = i2 - ((q2 << 6) + (q2 << 5) + (q2 << 2));
             i2 = q2;
+            // 将r的个位数存储在buf中
             buf[--charPos] = Integer.DigitOnes[r];
+            // 将r的十位数存储在buf中
             buf[--charPos] = Integer.DigitTens[r];
         }
 
         // Fall thru to fast mode for smaller numbers
         // assert(i2 <= 65536, i2);
         for (;;) {
+            // 除100的商
             q2 = (i2 * 52429) >>> (16+3);
+            // 余数
             r = i2 - ((q2 << 3) + (q2 << 1));  // r = i2-(q2*10) ...
             buf[--charPos] = Integer.digits[r];
             i2 = q2;
@@ -478,6 +516,7 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     // Requires positive x
+    // 统计整数i中包含的符号数量，x不能位负数，为转为字符串做准备
     static int stringSize(long x) {
         long p = 10;
         for (int i=1; i<19; i++) {
@@ -549,6 +588,12 @@ public final class Long extends Number implements Comparable<Long> {
      * @throws     NumberFormatException  if the string does not contain a
      *             parsable {@code long}.
      */
+    // 按radix进制形式将字符串s解析为long值
+    // 1、参数检查
+    // 2、初始化变量
+    // 3、处理符号
+    // 4、解析数组
+    // 5、返回结果
     public static long parseLong(String s, int radix)
               throws NumberFormatException
     {
@@ -568,23 +613,29 @@ public final class Long extends Number implements Comparable<Long> {
         long result = 0;
         boolean negative = false;
         int i = 0, len = s.length();
+        // 设置溢出限制
         long limit = -Long.MAX_VALUE;
         long multmin;
         int digit;
 
         if (len > 0) {
+            // 处理第一个符合
+            //      1、如果是负号，设置negative为true，并更新limit
             char firstChar = s.charAt(0);
             if (firstChar < '0') { // Possible leading "+" or "-"
                 if (firstChar == '-') {
                     negative = true;
                     limit = Long.MIN_VALUE;
+                // 如果不是正负号且不为'+'，抛出NumberFormatException
                 } else if (firstChar != '+')
                     throw NumberFormatException.forInputString(s);
-
+                // 如果字符串长度为1且只有一个正负号，抛出NumberFormatException
                 if (len == 1) // Cannot have lone "+" or "-"
                     throw NumberFormatException.forInputString(s);
                 i++;
             }
+            // 解析数字
+            //      1、溢出检查，这个计算的目的是确定在乘法操作中不会导致溢出的最大值
             multmin = limit / radix;
             while (i < len) {
                 // Accumulating negatively avoids surprises near MAX_VALUE
@@ -592,6 +643,7 @@ public final class Long extends Number implements Comparable<Long> {
                 if (digit < 0) {
                     throw NumberFormatException.forInputString(s);
                 }
+                // result 和 multmin 都是负数
                 if (result < multmin) {
                     throw NumberFormatException.forInputString(s);
                 }
@@ -604,6 +656,7 @@ public final class Long extends Number implements Comparable<Long> {
         } else {
             throw NumberFormatException.forInputString(s);
         }
+        // 因为结果是按照负数求的
         return negative ? result : -result;
     }
 
@@ -631,6 +684,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @throws     NumberFormatException  if the string does not contain a
      *             parsable {@code long}.
      */
+    // 按10进制形式将字符串s解析为long值
     public static long parseLong(String s) throws NumberFormatException {
         return parseLong(s, 10);
     }
@@ -678,6 +732,11 @@ public final class Long extends Number implements Comparable<Long> {
      *             does not contain a parsable {@code long}.
      * @since 1.8
      */
+    // 按radix进制形式将无符号符串s解析为有符号long值
+    // 无符号的范围超过了有符号的范围
+    // 无符号s对应的值是正数，所以不用考虑负数的情况
+    // 而且转为的结果也只会是正数
+    // 对应为"0" -> 0
     public static long parseUnsignedLong(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {
@@ -687,18 +746,25 @@ public final class Long extends Number implements Comparable<Long> {
         int len = s.length();
         if (len > 0) {
             char firstChar = s.charAt(0);
+            // 无符号数不能存在负号
             if (firstChar == '-') {
                 throw new
                     NumberFormatException(String.format("Illegal leading minus sign " +
                                                        "on unsigned string %s.", s));
             } else {
+                // 根据字符串长度len和基数radix判断是否可以直接调用parseLong方法解析
                 if (len <= 12 || // Long.MAX_VALUE in Character.MAX_RADIX is 13 digits
                     (radix == 10 && len <= 18) ) { // Long.MAX_VALUE in base 10 is 19 digits
                     return parseLong(s, radix);
                 }
 
                 // No need for range checks on len due to testing above.
+                // 这部分解析的结果存储在first变量中，如果这部分解析已经溢出，
+                // 会抛出NumberFormatException
                 long first = parseLong(s.substring(0, len - 1), radix);
+                // 最后一个字符的值存储在 second 变量中，
+                // 如果这个字符不是有效的数字，
+                // 也会抛出 NumberFormatException。
                 int second = Character.digit(s.charAt(len - 1), radix);
                 if (second < 0) {
                     throw new NumberFormatException("Bad digit at end of " + s);
@@ -720,6 +786,10 @@ public final class Long extends Number implements Comparable<Long> {
                      * incorporating the contribution of the final
                      * digit.
                      */
+                    // 无符号最大值 (2^64)-1 比有符号最大值 (2^63)-1 多一位表示。
+                    // 因此，解析 (len - 1) 位数字时，结果会在有符号解析的范围内。
+                    // 即first一定不会溢出，所以比较result和first，如果result小于first，
+                    // 则表示result溢出，抛出异常
                     throw new NumberFormatException(String.format("String value %s exceeds " +
                                                                   "range of unsigned long.", s));
                 }
@@ -746,6 +816,7 @@ public final class Long extends Number implements Comparable<Long> {
      *            parsable unsigned integer.
      * @since 1.8
      */
+    // 按10进制形式将无符号整型字符串s解析为有符号整型值
     public static long parseUnsignedLong(String s) throws NumberFormatException {
         return parseUnsignedLong(s, 10);
     }
@@ -776,6 +847,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @throws     NumberFormatException  If the {@code String} does not
      *             contain a parsable {@code long}.
      */
+    // 按radix进制形式将字符串s解析为long值，随后再装箱
     public static Long valueOf(String s, int radix) throws NumberFormatException {
         return Long.valueOf(parseLong(s, radix));
     }
@@ -802,12 +874,15 @@ public final class Long extends Number implements Comparable<Long> {
      * @throws     NumberFormatException  If the string cannot be parsed
      *             as a {@code long}.
      */
+    // 按10进制形式将字符串s解析为long值，随后再装箱
     public static Long valueOf(String s) throws NumberFormatException
     {
         return Long.valueOf(parseLong(s, 10));
     }
 
+    // Long缓存，缓存了-128~127之间的Long对象
     private static class LongCache {
+        // 256个Long对象缓存，依次表示-128~127
         private LongCache(){}
 
         static final Long cache[] = new Long[-(-128) + 127 + 1];
@@ -836,6 +911,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @return a {@code Long} instance representing {@code l}.
      * @since  1.5
      */
+    // long-->Long 默认的装箱行为
     public static Long valueOf(long l) {
         final int offset = 128;
         if (l >= -128 && l <= 127) { // will cache
@@ -887,6 +963,12 @@ public final class Long extends Number implements Comparable<Long> {
      * @see java.lang.Long#parseLong(String, int)
      * @since 1.2
      */
+
+    // 将字符串nm解析为long，随后再装箱
+    // 采用哪种进制解析nm取决于nm的格式：
+    // > 0x、0X、#开头，代表按16进制解析
+    // > 0开头，代表按8进制解析
+    // > 其他情形默认按10进制解析
     public static Long decode(String nm) throws NumberFormatException {
         int radix = 10;
         int index = 0;
@@ -897,6 +979,7 @@ public final class Long extends Number implements Comparable<Long> {
             throw new NumberFormatException("Zero length string");
         char firstChar = nm.charAt(0);
         // Handle sign, if present
+        // 处理符号
         if (firstChar == '-') {
             negative = true;
             index++;
@@ -904,6 +987,7 @@ public final class Long extends Number implements Comparable<Long> {
             index++;
 
         // Handle radix specifier, if present
+        // 处理进制
         if (nm.startsWith("0x", index) || nm.startsWith("0X", index)) {
             index += 2;
             radix = 16;
@@ -917,9 +1001,11 @@ public final class Long extends Number implements Comparable<Long> {
             radix = 8;
         }
 
+        // 确保负号不在中间位置
         if (nm.startsWith("-", index) || nm.startsWith("+", index))
             throw new NumberFormatException("Sign character in wrong position");
 
+        // 将字符串转换为Long类型的数值，并处理负数
         try {
             result = Long.valueOf(nm.substring(index), radix);
             result = negative ? Long.valueOf(-result.longValue()) : result;
@@ -975,6 +1061,7 @@ public final class Long extends Number implements Comparable<Long> {
      * a narrowing primitive conversion.
      * @jls 5.1.3 Narrowing Primitive Conversions
      */
+    // 以byte形式返回当前对象的值
     public byte byteValue() {
         return (byte)value;
     }
@@ -1113,6 +1200,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
+    // 从系统属性中获取值，然后再装箱。如果取不到值，返回null
     public static Long getLong(String nm) {
         return getLong(nm, null);
     }
@@ -1158,6 +1246,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
+    // 从系统属性中获取值，然后再装箱。如果取不到值，选用val
     public static Long getLong(String nm, long val) {
         Long result = Long.getLong(nm, null);
         return (result == null) ? Long.valueOf(val) : result;
@@ -1207,6 +1296,13 @@ public final class Long extends Number implements Comparable<Long> {
      * @see     System#getProperty(java.lang.String)
      * @see     System#getProperty(java.lang.String, java.lang.String)
      */
+    // 从系统属性中获取值，然后再装箱
+    // 其中，nm为某个系统属性，val为备用值
+    // 比如：
+    //  System.setProperty("age", "20");
+    //  Long x = getLong("age", 25);
+    // 如果属性age存在（被提前设置），x的值为20。
+    // 如果属性age不存在，则x的值为备用值25。
     public static Long getLong(String nm, Long val) {
         String v = null;
         try {
@@ -1235,6 +1331,7 @@ public final class Long extends Number implements Comparable<Long> {
      *           comparison).
      * @since   1.2
      */
+    // 比较两个Long（按自然顺序比较）
     public int compareTo(Long anotherLong) {
         return compare(this.value, anotherLong.value);
     }
@@ -1253,6 +1350,7 @@ public final class Long extends Number implements Comparable<Long> {
      *         a value greater than {@code 0} if {@code x > y}
      * @since 1.7
      */
+    // 比较两个long（按自然顺序比较）
     public static int compare(long x, long y) {
         return (x < y) ? -1 : ((x == y) ? 0 : 1);
     }
@@ -1269,6 +1367,11 @@ public final class Long extends Number implements Comparable<Long> {
      *         unsigned values
      * @since 1.8
      */
+    // 以无符号形式比较两个long（按自然顺序比较）
+    // 先将两个long值转换为无符号形式
+    // 通过加上最小值MIN_VALUE，可以将负数转换为正数，从而实现无符号数的比较
+    // 对于负数 x，x + Long.MIN_VALUE 会将 x 转换为一个正数。
+    // 对于正数 x，x + Long.MIN_VALUE 会将 x 转换为一个更大的正数。
     public static int compareUnsigned(long x, long y) {
         return compare(x + MIN_VALUE, y + MIN_VALUE);
     }
@@ -1292,7 +1395,11 @@ public final class Long extends Number implements Comparable<Long> {
      * @see #remainderUnsigned
      * @since 1.8
      */
+    // 除法运算。计算前需要先将两个long值转换为无符号形式
     public static long divideUnsigned(long dividend, long divisor) {
+        // 除数为负数，则根据被除数的相对大小返回0或-1
+        // 当一个有符号的long值为负数时，
+        // 实际上表示的是一个很大的无符号数
         if (divisor < 0L) { // signed comparison
             // Answer must be 0 or 1 depending on relative magnitude
             // of dividend and divisor.
@@ -1308,6 +1415,8 @@ public final class Long extends Number implements Comparable<Long> {
              * possible; see "Hacker's Delight" for divide and remainder
              * algorithms.
              */
+            // 如果被除数为负数，而且除数不是负数，
+            // 使用BigInteger类进行无符号除法运算
             return toUnsignedBigInteger(dividend).
                 divide(toUnsignedBigInteger(divisor)).longValue();
         }
@@ -1325,6 +1434,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @see #divideUnsigned
      * @since 1.8
      */
+    // 取余运算。计算前需要先将两个long值转换为无符号形式
     public static long remainderUnsigned(long dividend, long divisor) {
         if (dividend > 0 && divisor > 0) { // signed comparisons
             return dividend % divisor;
@@ -1370,6 +1480,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     the specified value is itself equal to zero.
      * @since 1.5
      */
+    // 返回二进制位中开头首次出现的1所占的数位，比如00110100，返回32
     public static long highestOneBit(long i) {
         // HD, Figure 3-1
         i |= (i >>  1);
@@ -1394,6 +1505,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     the specified value is itself equal to zero.
      * @since 1.5
      */
+    // 计算给定长整型数 i 的最低位的1的位置
     public static long lowestOneBit(long i) {
         // HD, Section 2-1
         return i & -i;
@@ -1420,6 +1532,8 @@ public final class Long extends Number implements Comparable<Long> {
      *     is equal to zero.
      * @since 1.5
      */
+    // 返回二进制位中开头连续的0的个数
+    // 二分搜索算法 二分搜索计算前导0
     public static int numberOfLeadingZeros(long i) {
         // HD, Figure 5-6
          if (i == 0)
@@ -1449,11 +1563,13 @@ public final class Long extends Number implements Comparable<Long> {
      *     to zero.
      * @since 1.5
      */
+    // 返回二进制位中末尾连续的0的个数（把int值i表示为二进制形式）
     public static int numberOfTrailingZeros(long i) {
         // HD, Figure 5-14
         int x, y;
         if (i == 0) return 64;
         int n = 63;
+        // 通过int(i)，取出低32位
         y = (int)i; if (y != 0) { n = n -32; x = y; } else x = (int)(i>>>32);
         y = x <<16; if (y != 0) { n = n -16; x = y; }
         y = x << 8; if (y != 0) { n = n - 8; x = y; }
@@ -1472,7 +1588,8 @@ public final class Long extends Number implements Comparable<Long> {
      *     representation of the specified {@code long} value.
      * @since 1.5
      */
-     public static int bitCount(long i) {
+    // 返回二进制位中值为1的bit位的数量（把long值i表示为二进制形式）
+    public static int bitCount(long i) {
         // HD, Figure 5-14
         i = i - ((i >>> 1) & 0x5555555555555555L);
         i = (i & 0x3333333333333333L) + ((i >>> 2) & 0x3333333333333333L);
@@ -1503,6 +1620,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     specified number of bits.
      * @since 1.5
      */
+    // 将i中的bit循环左移distance位
     public static long rotateLeft(long i, int distance) {
         return (i << distance) | (i >>> -distance);
     }
@@ -1527,6 +1645,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     specified number of bits.
      * @since 1.5
      */
+    // 将i中的bit循环右移distance位
     public static long rotateRight(long i, int distance) {
         return (i >>> distance) | (i << -distance);
     }
@@ -1541,6 +1660,7 @@ public final class Long extends Number implements Comparable<Long> {
      *     specified {@code long} value.
      * @since 1.5
      */
+    // 以bit为单位逆置bit顺序
     public static long reverse(long i) {
         // HD, Figure 7-1
         i = (i & 0x5555555555555555L) << 1 | (i >>> 1) & 0x5555555555555555L;
@@ -1561,6 +1681,13 @@ public final class Long extends Number implements Comparable<Long> {
      * @return the signum function of the specified {@code long} value.
      * @since 1.5
      */
+    // 判断i的正负。遇到负数返回-1，正数返回1，0返回0。
+    //    如果i为正数：
+    //      i >> 63前面补0，所以是0，所以i >> 63为0，
+    //      但是-i一定是负数，64位为1，所以i >>> 63无符号右移动后是1
+    //    如果i是负数：
+    //      i >> 63前面补1，所以是所有位都为1，
+    //      -i 是正数，所以最高位是0，-i >>> 63无符号右移动后是0
     public static int signum(long i) {
         // HD, Section 2-7
         return (int) ((i >> 63) | (-i >>> 63));
