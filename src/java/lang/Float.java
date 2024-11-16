@@ -46,12 +46,14 @@ import sun.misc.DoubleConsts;
  * @author  Joseph D. Darcy
  * @since JDK1.0
  */
+// float的包装类
 public final class Float extends Number implements Comparable<Float> {
     /**
      * A constant holding the positive infinity of type
      * {@code float}. It is equal to the value returned by
      * {@code Float.intBitsToFloat(0x7f800000)}.
      */
+    // 代表正无穷大
     public static final float POSITIVE_INFINITY = 1.0f / 0.0f;
 
     /**
@@ -59,6 +61,7 @@ public final class Float extends Number implements Comparable<Float> {
      * {@code float}. It is equal to the value returned by
      * {@code Float.intBitsToFloat(0xff800000)}.
      */
+    // 代表负无穷大
     public static final float NEGATIVE_INFINITY = -1.0f / 0.0f;
 
     /**
@@ -66,6 +69,7 @@ public final class Float extends Number implements Comparable<Float> {
      * {@code float}.  It is equivalent to the value returned by
      * {@code Float.intBitsToFloat(0x7fc00000)}.
      */
+    // 代表非数字
     public static final float NaN = 0.0f / 0.0f;
 
     /**
@@ -75,6 +79,7 @@ public final class Float extends Number implements Comparable<Float> {
      * {@code 0x1.fffffeP+127f} and also equal to
      * {@code Float.intBitsToFloat(0x7f7fffff)}.
      */
+    // float最大值：3.4028235e+38f
     public static final float MAX_VALUE = 0x1.fffffeP+127f; // 3.4028235e+38f
 
     /**
@@ -85,6 +90,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @since 1.6
      */
+    // float最小正值：1.17549435E-38f，正规数
     public static final float MIN_NORMAL = 0x1.0p-126f; // 1.17549435E-38f
 
     /**
@@ -93,6 +99,7 @@ public final class Float extends Number implements Comparable<Float> {
      * hexadecimal floating-point literal {@code 0x0.000002P-126f}
      * and also equal to {@code Float.intBitsToFloat(0x1)}.
      */
+    // float最小正值：1.4e-45f，次正规数
     public static final float MIN_VALUE = 0x0.000002P-126f; // 1.4e-45f
 
     /**
@@ -102,6 +109,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @since 1.6
      */
+    // float二进制形式指数部分最大值
     public static final int MAX_EXPONENT = 127;
 
     /**
@@ -111,6 +119,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @since 1.6
      */
+    // float二进制形式指数部分最小值
     public static final int MIN_EXPONENT = -126;
 
     /**
@@ -118,6 +127,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @since 1.5
      */
+    // 当前类型所占bit[位]数
     public static final int SIZE = 32;
 
     /**
@@ -125,6 +135,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @since 1.8
      */
+    // 当前类型所占字节数
     public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
@@ -133,6 +144,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @since JDK1.1
      */
+    // 相当于float.class
     @SuppressWarnings("unchecked")
     public static final Class<Float> TYPE = (Class<Float>) Class.getPrimitiveClass("float");
 
@@ -202,6 +214,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @param   f   the float to be converted.
      * @return a string representation of the argument.
      */
+    // 将字符串s解析为float值
     public static String toString(float f) {
         return FloatingDecimal.toJavaFormatString(f);
     }
@@ -280,6 +293,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @since 1.5
      * @author Joseph D. Darcy
      */
+    // 返回浮点值f的十六进制形式
     public static String toHexString(float f) {
         if (Math.abs(f) < FloatConsts.MIN_NORMAL
             &&  f != 0.0f ) {// float subnormal
@@ -412,6 +426,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @throws  NumberFormatException  if the string does not contain a
      *          parsable number.
      */
+    // 将字符串s解析为float值，然后再装箱
     public static Float valueOf(String s) throws NumberFormatException {
         return new Float(parseFloat(s));
     }
@@ -429,6 +444,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return a {@code Float} instance representing {@code f}.
      * @since  1.5
      */
+    // float-->Float 默认的装箱行为
     public static Float valueOf(float f) {
         return new Float(f);
     }
@@ -447,6 +463,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @see    java.lang.Float#valueOf(String)
      * @since 1.2
      */
+    // 将字符串s解析为float值
     public static float parseFloat(String s) throws NumberFormatException {
         return FloatingDecimal.parseFloat(s);
     }
@@ -459,6 +476,8 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  {@code true} if the argument is NaN;
      *          {@code false} otherwise.
      */
+    // 判断f是否为NaN
+    // 只有NaN与自身不相同
     public static boolean isNaN(float v) {
         return (v != v);
     }
@@ -471,6 +490,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  {@code true} if the argument is positive infinity or
      *          negative infinity; {@code false} otherwise.
      */
+    // 判断v是否为正无穷大/负无穷大
     public static boolean isInfinite(float v) {
         return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
     }
@@ -486,7 +506,8 @@ public final class Float extends Number implements Comparable<Float> {
      * floating-point value, {@code false} otherwise.
      * @since 1.8
      */
-     public static boolean isFinite(float f) {
+    // 判断f是否为有限值
+    public static boolean isFinite(float f) {
         return Math.abs(f) <= FloatConsts.MAX_VALUE;
     }
 
@@ -495,6 +516,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @serial
      */
+    // 当前类包装的值
     private final float value;
 
     /**
@@ -539,6 +561,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  {@code true} if the value represented by this object is
      *          NaN; {@code false} otherwise.
      */
+    // 判断当前float值是否为NaN
     public boolean isNaN() {
         return isNaN(value);
     }
@@ -551,6 +574,7 @@ public final class Float extends Number implements Comparable<Float> {
      *          positive infinity or negative infinity;
      *          {@code false} otherwise.
      */
+    // 判断当前float值是否为正无穷大/负无穷大
     public boolean isInfinite() {
         return isInfinite(value);
     }
@@ -740,6 +764,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @param   value   a floating-point number.
      * @return the bits that represent the floating-point number.
      */
+    // 先计算value的二进制格式，然后返回该二进制格式表示的int
     public static int floatToIntBits(float value) {
         int result = floatToRawIntBits(value);
         // Check for NaN based on values of bit fields, maximum
@@ -786,6 +811,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return the bits that represent the floating-point number.
      * @since 1.3
      */
+    // 先计算value的二进制格式，然后返回该二进制格式表示的int
     public static native int floatToRawIntBits(float value);
 
     /**
@@ -847,6 +873,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  the {@code float} floating-point value with the same bit
      *          pattern.
      */
+    // 先计算bits的二进制格式，然后返回该二进制格式表示的float
     public static native float intBitsToFloat(int bits);
 
     /**
@@ -881,6 +908,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @since   1.2
      * @see Comparable#compareTo(Object)
      */
+    // 比较两个Float
     public int compareTo(Float anotherFloat) {
         return Float.compare(value, anotherFloat.value);
     }
@@ -903,6 +931,7 @@ public final class Float extends Number implements Comparable<Float> {
      *          {@code f2}.
      * @since 1.4
      */
+    // 比较两个float
     public static int compare(float f1, float f2) {
         if (f1 < f2)
             return -1;           // Neither val is NaN, thisVal is smaller
