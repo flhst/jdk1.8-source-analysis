@@ -736,6 +736,7 @@ public final class Double extends Number implements Comparable<Double> {
      *
      * @return the {@code double} value represented by this object
      */
+    // Double --> double 默认的拆箱行为
     public double doubleValue() {
         return value;
     }

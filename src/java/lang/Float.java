@@ -646,6 +646,7 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @return the {@code float} value represented by this object
      */
+    // Float --> float 默认的拆箱行为
     public float floatValue() {
         return value;
     }

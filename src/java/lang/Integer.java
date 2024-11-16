@@ -985,6 +985,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Returns the value of this {@code Integer} as an
      * {@code int}.
      */
+    // Integer-->int 默认的拆箱行为
     public int intValue() {
         return value;
     }

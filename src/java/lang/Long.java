@@ -1088,6 +1088,7 @@ public final class Long extends Number implements Comparable<Long> {
      * Returns the value of this {@code Long} as a
      * {@code long} value.
      */
+    // Long-->long 默认的拆箱行为
     public long longValue() {
         return value;
     }
