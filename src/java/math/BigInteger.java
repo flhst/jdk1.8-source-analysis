@@ -121,7 +121,13 @@ import sun.misc.FloatConsts;
  * @author  Timothy Buktu
  * @since JDK1.1
  */
-
+/*
+ * 大整数
+ *
+ * BigInteger将符号位和数值分开存储，其存储数据的基本原理是将数据切割成不同的分段后存入数组
+ *
+ * 注：该对象本身是不可变的，类似String，在运算之后会产生一个新对象
+ */
 public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
@@ -131,6 +137,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @serial
      */
+    // BigInteger符号位，用-1、0、1分别表示该数值为负数、0、正数
     final int signum;
 
     /**
@@ -142,6 +149,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * value.  Note that this implies that the BigInteger zero has a
      * zero-length mag array.
      */
+    // BigInteger数值
     final int[] mag;
 
     // These "redundant fields" are initialized with recognizable nonsense
@@ -625,16 +633,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         this(1, randomBits(numBits, rnd));
     }
 
+    // 返回随机填充的byte数组（前导0是无效位），numBits代表byte中的有效位（即主观需要numBits个随机的bit位）
     private static byte[] randomBits(int numBits, Random rnd) {
         if (numBits < 0)
             throw new IllegalArgumentException("numBits must be non-negative");
+        // 向上取整并且防止溢出 将bit数变为byte数
         int numBytes = (int)(((long)numBits+7)/8); // avoid overflow
         byte[] randomBits = new byte[numBytes];
 
         // Generate random bytes and mask out any excess bits
         if (numBytes > 0) {
+            // 随机均匀地生成byte以填充randomBits数组，有正有负
             rnd.nextBytes(randomBits);
+            // 无效位的数量（比如只需要3个bit位，那么返回一个byte后，其中包含5个无效位）
             int excessBits = 8*numBytes - numBits;
+            // 去除第一个字节多余的位
             randomBits[0] &= (1 << (8-excessBits)) - 1;
         }
         return randomBits;
@@ -692,6 +705,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see    #bitLength()
      * @since 1.4
      */
+    // 生成一个指定位长的可能质数，返回合数的概率不超过2^(-100)
     public static BigInteger probablePrime(int bitLength, Random rnd) {
         if (bitLength < 2)
             throw new ArithmeticException("bitLength < 2");
@@ -785,7 +799,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     * @throws ArithmeticException {@code this < 0} or {@code this} is too large.
     * @since 1.5
     */
-    public BigInteger nextProbablePrime() {
+   // （可能）返回大于当前BigInteger的下一个质数，返回合数的概率不超过2^(-100)
+   public BigInteger nextProbablePrime() {
         if (this.signum < 0)
             throw new ArithmeticException("start < 0: " + this);
 
@@ -1097,6 +1112,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value of the BigInteger to return.
      * @return a BigInteger with the specified value.
      */
+    // 返回值为val的BigInteger
     public static BigInteger valueOf(long val) {
         // If -MAX_CONSTANT < val < MAX_CONSTANT, return stashed constant
         if (val == 0)
@@ -1231,6 +1247,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value to be added to this BigInteger.
      * @return {@code this + val}
      */
+    // 加法
     public BigInteger add(BigInteger val) {
         if (val.signum == 0)
             return this;
@@ -1433,6 +1450,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value to be subtracted from this BigInteger.
      * @return {@code this - val}
      */
+    // 减法
     public BigInteger subtract(BigInteger val) {
         if (val.signum == 0)
             return this;
@@ -1491,6 +1509,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value to be multiplied by this BigInteger.
      * @return {@code this * val}
      */
+    // 乘法
     public BigInteger multiply(BigInteger val) {
         return multiply(val, false);
     }
@@ -2182,6 +2201,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this / val}
      * @throws ArithmeticException if {@code val} is zero.
      */
+    // 除法
     public BigInteger divide(BigInteger val) {
         if (val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
                 mag.length - val.mag.length < BURNIKEL_ZIEGLER_OFFSET) {
@@ -2219,6 +2239,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         is the final element.
      * @throws ArithmeticException if {@code val} is zero.
      */
+    // 除法&取余
     public BigInteger[] divideAndRemainder(BigInteger val) {
         if (val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
                 mag.length - val.mag.length < BURNIKEL_ZIEGLER_OFFSET) {
@@ -2248,6 +2269,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this % val}
      * @throws ArithmeticException if {@code val} is zero.
      */
+    // 取余，结果的正负取决于左操作数
     public BigInteger remainder(BigInteger val) {
         if (val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
                 mag.length - val.mag.length < BURNIKEL_ZIEGLER_OFFSET) {
@@ -2431,6 +2453,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value with which the GCD is to be computed.
      * @return {@code GCD(abs(this), abs(val))}
      */
+    // 最大公约数
     public BigInteger gcd(BigInteger val) {
         if (val.signum == 0)
             return this.abs();
@@ -2521,6 +2544,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return {@code abs(this)}
      */
+    // 绝对值
     public BigInteger abs() {
         return (signum >= 0 ? this : this.negate());
     }
@@ -2530,6 +2554,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return {@code -this}
      */
+    // -x
     public BigInteger negate() {
         return new BigInteger(this.mag, -this.signum);
     }
@@ -2540,6 +2565,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return -1, 0 or 1 as the value of this BigInteger is negative, zero or
      *         positive.
      */
+    // 返回符号位
     public int signum() {
         return this.signum;
     }
@@ -2556,6 +2582,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException {@code m} &le; 0
      * @see    #remainder
      */
+    // 模运算，结果非负
     public BigInteger mod(BigInteger m) {
         if (m.signum <= 0)
             throw new ArithmeticException("BigInteger: modulus not positive");
@@ -3169,16 +3196,19 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this << n}
      * @see #shiftRight
      */
+    // this<<n
     public BigInteger shiftLeft(int n) {
         if (signum == 0)
             return ZERO;
         if (n > 0) {
+            // 调用 shiftLeft 方法将 mag 数组左移 n 位
             return new BigInteger(shiftLeft(mag, n), signum);
         } else if (n == 0) {
             return this;
         } else {
             // Possible int overflow in (-n) is not a trouble,
             // because shiftRightImpl considers its argument unsigned
+            // 调用 shiftRightImpl 方法将 BigInteger 右移 -n 位
             return shiftRightImpl(-n);
         }
     }
@@ -3229,6 +3259,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this >> n}
      * @see #shiftLeft
      */
+    // this>>n
     public BigInteger shiftRight(int n) {
         if (signum == 0)
             return ZERO;
@@ -3316,6 +3347,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param val value to be AND'ed with this BigInteger.
      * @return {@code this & val}
      */
+    // 位与
     public BigInteger and(BigInteger val) {
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i=0; i < result.length; i++)
@@ -3333,6 +3365,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param val value to be OR'ed with this BigInteger.
      * @return {@code this | val}
      */
+     // 位或
     public BigInteger or(BigInteger val) {
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i=0; i < result.length; i++)
@@ -3350,6 +3383,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param val value to be XOR'ed with this BigInteger.
      * @return {@code this ^ val}
      */
+    // 异或
     public BigInteger xor(BigInteger val) {
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i=0; i < result.length; i++)
@@ -3366,6 +3400,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return {@code ~this}
      */
+    // 位非
     public BigInteger not() {
         int[] result = new int[intLength()];
         for (int i=0; i < result.length; i++)
@@ -3384,6 +3419,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param val value to be complemented and AND'ed with this BigInteger.
      * @return {@code this & ~val}
      */
+    // this & -val
     public BigInteger andNot(BigInteger val) {
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i=0; i < result.length; i++)
@@ -3419,6 +3455,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this | (1<<n)}
      * @throws ArithmeticException {@code n} is negative.
      */
+    // 将右起第n位设置为1（从第0位开始算）
     public BigInteger setBit(int n) {
         if (n < 0)
             throw new ArithmeticException("Negative bit address");
@@ -3443,6 +3480,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this & ~(1<<n)}
      * @throws ArithmeticException {@code n} is negative.
      */
+    // 将右起第n位设置为0（从第0位开始算）
     public BigInteger clearBit(int n) {
         if (n < 0)
             throw new ArithmeticException("Negative bit address");
@@ -3467,6 +3505,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this ^ (1<<n)}
      * @throws ArithmeticException {@code n} is negative.
      */
+    // 反转右起第n位，即1变0，或0变1（从第0位开始算）
     public BigInteger flipBit(int n) {
         if (n < 0)
             throw new ArithmeticException("Negative bit address");
@@ -3490,6 +3529,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return index of the rightmost one bit in this BigInteger.
      */
+    // 返回右起第一个1出现的索引
     public int getLowestSetBit() {
         @SuppressWarnings("deprecation") int lsb = lowestSetBit - 2;
         if (lsb == -2) {  // lowestSetBit not initialized yet
@@ -3521,6 +3561,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return number of bits in the minimal two's-complement
      *         representation of this BigInteger, <i>excluding</i> a sign bit.
      */
+    // 返回二进制位长度（不包括符号位）
     public int bitLength() {
         @SuppressWarnings("deprecation") int n = bitLength - 1;
         if (n == -1) { // bitLength not initialized yet
@@ -3555,6 +3596,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return number of bits in the two's complement representation
      *         of this BigInteger that differ from its sign bit.
      */
+    // 返回二进制位中值为1的bit位的数量（如果是负数，不包括最高位的1，即不包括符号位）
     public int bitCount() {
         @SuppressWarnings("deprecation") int bc = bitCount - 1;
         if (bc == -1) {  // bitCount not initialized yet
@@ -3591,6 +3633,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code true} if this BigInteger is probably prime,
      *         {@code false} if it's definitely composite.
      */
+    // 测试当前数值是否为质数，出错的概率不超过2^(-certainty)
     public boolean isProbablePrime(int certainty) {
         if (certainty <= 0)
             return true;
@@ -3740,6 +3783,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return the BigInteger whose value is the lesser of this BigInteger and
      *         {@code val}.  If they are equal, either may be returned.
      */
+    // 较小值
     public BigInteger min(BigInteger val) {
         return (compareTo(val) < 0 ? this : val);
     }
@@ -3751,6 +3795,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return the BigInteger whose value is the greater of this and
      *         {@code val}.  If they are equal, either may be returned.
      */
+    // 较大值
     public BigInteger max(BigInteger val) {
         return (compareTo(val) > 0 ? this : val);
     }
@@ -4229,6 +4274,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the input array stripped of any leading zero bytes.
      * Since the source is trusted the copying may be skipped.
      */
+    // 压缩数组val，砍掉val中前导空元素（没有参与存储大数）
     private static int[] trustedStripLeadingZeroInts(int val[]) {
         int vlen = val.length;
         int keep;
@@ -4242,6 +4288,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a copy of the input array stripped of any leading zero bytes.
      */
+    // 将数组a的二进制位从高到低依次存储到int数组中（剥离前导0）
     private static int[] stripLeadingZeroBytes(byte a[]) {
         int byteLength = a.length;
         int keep;
