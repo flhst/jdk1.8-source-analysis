@@ -47,6 +47,9 @@ import java.util.function.Supplier;
  *
  * @since 1.8
  */
+// 单元素容器(引用类型版本)
+// 通常用于在流的终端阶段收集完数据后进行一些收尾工作。
+// 当然，还可以用在一些非空判断中，用于简化非空判断的逻辑以及将非空判断与其他逻辑进行整合。
 public final class Optional<T> {
     /**
      * Common instance for {@code empty()}.
@@ -56,6 +59,7 @@ public final class Optional<T> {
     /**
      * If non-null, the value; if null, indicates no value is present
      */
+    // 封装的元素
     private final T value;
 
     /**
@@ -104,6 +108,7 @@ public final class Optional<T> {
      * @return an {@code Optional} with the value present
      * @throws NullPointerException if value is null
      */
+    // 创建并返回一个Optional对象
     public static <T> Optional<T> of(T value) {
         return new Optional<>(value);
     }
@@ -130,6 +135,7 @@ public final class Optional<T> {
      *
      * @see Optional#isPresent()
      */
+    // 获取Optional中元素（如果没有元素将抛出异常）
     public T get() {
         if (value == null) {
             throw new NoSuchElementException("No value present");
@@ -142,6 +148,7 @@ public final class Optional<T> {
      *
      * @return {@code true} if there is a value present, otherwise {@code false}
      */
+    // 元素是否存在值
     public boolean isPresent() {
         return value != null;
     }
@@ -154,6 +161,7 @@ public final class Optional<T> {
      * @throws NullPointerException if value is present and {@code consumer} is
      * null
      */
+    // 如果元素存在，执行action动作
     public void ifPresent(Consumer<? super T> consumer) {
         if (value != null)
             consumer.accept(value);
@@ -170,6 +178,7 @@ public final class Optional<T> {
      * otherwise an empty {@code Optional}
      * @throws NullPointerException if the predicate is null
      */
+    // 过滤元素
     public Optional<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
         if (!isPresent())
@@ -207,6 +216,7 @@ public final class Optional<T> {
      * otherwise an empty {@code Optional}
      * @throws NullPointerException if the mapping function is null
      */
+    // 映射元素
     public<U> Optional<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
         if (!isPresent())
@@ -233,6 +243,7 @@ public final class Optional<T> {
      * @throws NullPointerException if the mapping function is null or returns
      * a null result
      */
+    // 对元素降维，flatMap不会使用Optional包装Function执行的返回结果
     public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
         Objects.requireNonNull(mapper);
         if (!isPresent())
@@ -249,6 +260,7 @@ public final class Optional<T> {
      * be null
      * @return the value, if present, otherwise {@code other}
      */
+    // 如果元素存在，返回它。否则，返回other
     public T orElse(T other) {
         return value != null ? value : other;
     }
@@ -263,6 +275,7 @@ public final class Optional<T> {
      * @throws NullPointerException if value is not present and {@code other} is
      * null
      */
+    // 如果元素存在，返回它。否则，从supplier中获取
     public T orElseGet(Supplier<? extends T> other) {
         return value != null ? value : other.get();
     }
@@ -283,6 +296,7 @@ public final class Optional<T> {
      * @throws NullPointerException if no value is present and
      * {@code exceptionSupplier} is null
      */
+    // 如果元素存在，返回它。否则，从exceptionSupplier中取出异常并抛出
     public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (value != null) {
             return value;
