@@ -81,6 +81,29 @@ import java.util.concurrent.Executor;
  * @see ResultSet
  * @see DatabaseMetaData
  */
+// 与特定数据库的连接（会话）。 SQL 语句在连接上下文中执行并返回结果。
+// Connection对象能够提供描述其表、其支持的 SQL 语法、其存储过程、
+// 此连接的功能等的信息。此信息是通过getMetaData方法获取的。
+// 注意：配置Connection时，JDBC 应用程序应使用适当的Connection方法，
+// 例如setAutoCommit或setTransactionIsolation 。
+// 当有可用的 JDBC 方法时，应用程序不应直接调用 SQL 命令来更改连接的配置。
+// 默认情况下， Connection对象处于自动提交模式，这意味着它在执行每个语句后自动提交更改。
+// 如果自动提交模式已被禁用，则必须显式调用commit方法才能提交更改；否则，数据库更改将不会被保存。
+// 应用程序和数据库之间建立 Connection连接，而数据库机器会为之分配一定的线程资源来维护这种连接，
+// 连接数越多，消耗数据库的线程资源也就越多；
+// 另外不同的connection实例之间，可能会操作相同的表数据，也就是高并发，
+// 为了支持数据库对ACID特性的支持，数据库又会牺牲更多的资源。
+// 消耗资源如下：
+// 1. 线程资源：一个连接对象对应一个线程，连接数越多，消耗的线程资源越多。
+//      线程的上下文切换会越频繁，会影响其处理能力
+// 2、创建Connection的开销：
+//      由于Connection负责和数据库之间的通信，
+//      在创建环节会做大量的初始化 ，创建过程所需时间和内存资源上都有一定的开销
+// 3、内存资源：
+//      为了维护Connection对象会消耗一定的内存
+// 4、锁占用：
+//     在高并发模式下，不同的Connection可能会操作相同的表数据，
+//     就会存在锁的情况，数据库为了维护这种锁会有不少的内存开销
 public interface Connection  extends Wrapper, AutoCloseable {
 
     /**
@@ -101,6 +124,8 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @exception SQLException if a database access error occurs
      * or this method is called on a closed connection
      */
+    // 创建一个Statement对象，用于执行SQL语句
+    // 如果多次执行相同的 SQL 语句，则使用PreparedStatement对象可能会更有效。
     Statement createStatement() throws SQLException;
 
     /**
@@ -135,6 +160,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @exception SQLException if a database access error occurs
      * or this method is called on a closed connection
      */
+    // 创建一个预编译的PreparedStatement对象，用于执行SQL语句
     PreparedStatement prepareStatement(String sql)
         throws SQLException;
 
@@ -168,6 +194,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @exception SQLException if a database access error occurs
      * or this method is called on a closed connection
      */
+    // 创建一个CallableStatement，用于执行存储过程或函数
     CallableStatement prepareCall(String sql) throws SQLException;
 
     /**
@@ -219,6 +246,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * or this method is called on a closed connection
      * @see #getAutoCommit
      */
+    // 设置自动提交模式，默认自动提交
     void setAutoCommit(boolean autoCommit) throws SQLException;
 
     /**
@@ -246,6 +274,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *            <code>Connection</code> object is in auto-commit mode
      * @see #setAutoCommit
      */
+    // 提交当前的事务
     void commit() throws SQLException;
 
     /**
@@ -260,6 +289,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *            <code>Connection</code> object is in auto-commit mode
      * @see #setAutoCommit
      */
+    // 回滚当前事务
     void rollback() throws SQLException;
 
     /**
@@ -277,6 +307,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *
      * @exception SQLException SQLException if a database access error occurs
      */
+    // 关闭当前连接
     void close() throws SQLException;
 
     /**
@@ -296,6 +327,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *         is closed; <code>false</code> if it is still open
      * @exception SQLException if a database access error occurs
      */
+    // 检查连接是否已关闭
     boolean isClosed() throws SQLException;
 
     //======================================================================
@@ -314,6 +346,8 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @exception  SQLException if a database access error occurs
      * or this method is called on a closed connection
      */
+    // 检索DatabaseMetaData对象，该对象包含有关此Connection对象表示的连接的数据库的元数据。
+    // 元数据包括有关数据库表、其支持的 SQL 语法、其存储过程、此连接的功能等的信息。
     DatabaseMetaData getMetaData() throws SQLException;
 
     /**
@@ -445,6 +479,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @see DatabaseMetaData#supportsTransactionIsolationLevel
      * @see #getTransactionIsolation
      */
+    // 设置事务隔离级别
     void setTransactionIsolation(int level) throws SQLException;
 
     /**

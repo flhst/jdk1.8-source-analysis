@@ -40,6 +40,10 @@ package java.sql;
  * call when the JDBC driver is de-registered.
  * @since 1.8
  */
+// 用于通知JDBC驱动程序已被注销。
+// 此方法仅供JDBC驱动内部使用，不推荐应用程序直接调用。
+// 当驱动被注销时，现有数据库连接的行为（如是否关闭）取决于具体实现。
+// 调用此方法后，驱动可能限制新连接的创建或其他操作，具体行为需参考驱动文档。
 public interface DriverAction {
     /**
      * Method called by

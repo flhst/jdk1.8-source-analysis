@@ -144,7 +144,9 @@ import java.io.InputStream;
  * @see Statement#getResultSet
  * @see ResultSetMetaData
  */
-
+// ResultSet接口是用于生成数据库结果集的数据表。
+// 它是由Statement对象的executeQuery()方法产生的结果集。
+// ResultSet对象具有一个指向当前数据行的光标，使用next()方法可以把光标移到下一行中。
 public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
@@ -1114,6 +1116,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @since 1.2
      */
+    // 光标移至ResultSet对象第一行之前
     void beforeFirst() throws SQLException;
 
     /**
@@ -1142,6 +1145,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @since 1.2
      */
+    // 光标移至ResultSet的第一行
     boolean first() throws SQLException;
 
     /**
@@ -1174,6 +1178,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @since 1.2
      */
+    // 检索当前行号。第一行是数字 1，第二行是数字 2，依此类推。
     int getRow() throws SQLException;
 
     /**
@@ -1270,6 +1275,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @since 1.2
      */
+    // 光标移至ResultSet对象上一行。
     boolean previous() throws SQLException;
 
     //---------------------------------------------------------------------
@@ -2291,6 +2297,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @since 1.2
      */
+    // 插入行。
     void insertRow() throws SQLException;
 
     /**
@@ -2321,6 +2328,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @since 1.2
      */
+    // 删除行
     void deleteRow() throws SQLException;
 
     /**
@@ -2400,6 +2408,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @since 1.2
      */
+    // 光标移至ResultSet对象插入行。
     void moveToInsertRow() throws SQLException;
 
     /**

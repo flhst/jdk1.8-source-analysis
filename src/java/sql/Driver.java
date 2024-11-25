@@ -55,6 +55,8 @@ import java.util.logging.Logger;
  * @see Connection
  * @see DriverAction
  */
+// 驱动接口，每个数据库驱动必须实现此接口
+// 该Java接口Driver定义了每个数据库驱动程序必须实现的方法，以便与数据库建立连接
 public interface Driver {
 
     /**
@@ -87,6 +89,7 @@ public interface Driver {
      * @exception SQLException if a database access error occurs or the url is
      * {@code null}
      */
+    // 尝试根据给定的URL和属性信息建立数据库连接
     Connection connect(String url, java.util.Properties info)
         throws SQLException;
 
@@ -102,6 +105,7 @@ public interface Driver {
      * @exception SQLException if a database access error occurs or the url is
      * {@code null}
      */
+    // 判断驱动是否支持给定的URL
     boolean acceptsURL(String url) throws SQLException;
 
 
@@ -124,6 +128,7 @@ public interface Driver {
      *          no properties are required.
      * @exception SQLException if a database access error occurs
      */
+    // 获取驱动可能需要的属性信息，用于提示用户输入必要的连接信息。
     DriverPropertyInfo[] getPropertyInfo(String url, java.util.Properties info)
                          throws SQLException;
 
@@ -133,12 +138,14 @@ public interface Driver {
      *
      * @return this driver's major version number
      */
+    // 获取驱动的主要版本号
     int getMajorVersion();
 
     /**
      * Gets the driver's minor version number. Initially this should be 0.
      * @return this driver's minor version number
      */
+    // 获取驱动的次要版本号
     int getMinorVersion();
 
 
@@ -161,6 +168,7 @@ public interface Driver {
      * @return <code>true</code> if this driver is JDBC Compliant; <code>false</code>
      *         otherwise
      */
+    // 判断驱动是否符合jdbc规范
     boolean jdbcCompliant();
 
     //------------------------- JDBC 4.1 -----------------------------------
@@ -177,5 +185,6 @@ public interface Driver {
      * {@code java.util.logging}.
      * @since 1.7
      */
+    // 返回父日志
     public Logger getParentLogger() throws SQLFeatureNotSupportedException;
 }

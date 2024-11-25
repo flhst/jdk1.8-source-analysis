@@ -66,7 +66,7 @@ package java.sql;
  *
  * @since 1.2
  */
-
+// 该接口是Java编程语言中对SQL类型ARRAY的映射。
 public interface Array {
 
   /**
@@ -86,6 +86,7 @@ public interface Array {
    * this method
    * @since 1.2
    */
+  // 获取数组元素的SQL类型名称
   String getBaseTypeName() throws SQLException;
 
   /**
@@ -101,6 +102,7 @@ public interface Array {
    * this method
    * @since 1.2
    */
+  // 获取数组元素的JDBC类型
   int getBaseType() throws SQLException;
 
   /**
@@ -125,6 +127,7 @@ public interface Array {
    * this method
    * @since 1.2
    */
+  // 获取整个数组的内容
   Object getArray() throws SQLException;
 
   /**

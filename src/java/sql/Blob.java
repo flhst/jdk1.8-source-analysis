@@ -56,7 +56,12 @@ import java.io.InputStream;
  *
  * @since 1.2
  */
-
+// java.sql.Blob是Java JDBC API中的一个接口，用于表示SQL中的BLOB数据类型，
+// BLOB通常用于存储大量二进制数据，如图像，文档，视频等。
+// 主要功能：
+// 读取和写入二进制数据
+// 获取和设置BLOB的长度
+// 位置操作
 public interface Blob {
 
   /**
@@ -94,6 +99,7 @@ public interface Blob {
    * @see #setBytes
    * @since 1.2
    */
+  // 获取从指定位置开始的指定长度的字节数组
   byte[] getBytes(long pos, int length) throws SQLException;
 
   /**
@@ -108,6 +114,7 @@ public interface Blob {
    * @see #setBinaryStream
    * @since 1.2
    */
+  // 获取一个输入流，用于读取BLOB数据
   java.io.InputStream getBinaryStream () throws SQLException;
 
   /**
@@ -127,6 +134,7 @@ public interface Blob {
    * this method
    * @since 1.2
    */
+  // 获取从指定位置开始指定字节数组第一次出现的位置
   long position(byte pattern[], long start) throws SQLException;
 
   /**
@@ -146,6 +154,7 @@ public interface Blob {
    * this method
    * @since 1.2
    */
+  // 获取指定Blob对象的指定位置开始的指定Blob对象中第一次出现的位置
   long position(Blob pattern, long start) throws SQLException;
 
     // -------------------------- JDBC 3.0 -----------------------------------
@@ -178,6 +187,7 @@ public interface Blob {
      * @see #getBytes
      * @since 1.4
      */
+    // 在指定位置pos写入数组bytes
     int setBytes(long pos, byte[] bytes) throws SQLException;
 
     /**
@@ -214,6 +224,11 @@ public interface Blob {
      * @see #getBytes
      * @since 1.4
      */
+    // 指定位置设置字节数组的一部分
+    // pos：指定要设置字节的位置
+    // bytes：要设置的字节数组
+    // offset：从数组bytes中读取的起始位置
+    // len：要设置的字节数组的长度
     int setBytes(long pos, byte[] bytes, int offset, int len) throws SQLException;
 
     /**
@@ -243,6 +258,7 @@ public interface Blob {
      * @see #getBinaryStream
      * @since 1.4
      */
+    // 获取一个输出流，从指定位置写入BLOB数据
     java.io.OutputStream setBinaryStream(long pos) throws SQLException;
 
     /**
@@ -263,6 +279,7 @@ public interface Blob {
      * this method
      * @since 1.4
      */
+    // 将BLOG截断为指定长度
     void truncate(long len) throws SQLException;
 
     /**
@@ -282,6 +299,9 @@ public interface Blob {
      * this method
      * @since 1.6
      */
+    // 释放与当前对象关联的数据库资源。
+    // 调用此方法后，对象将不再持有任何数据库连接或其他资源，
+    // 从而可以被垃圾回收器回收。
     void free() throws SQLException;
 
     /**
@@ -300,5 +320,6 @@ public interface Blob {
      * this method
      * @since 1.6
      */
+    // 从数据库中获取指定位置和长度的二进制数据流
     InputStream getBinaryStream(long pos, long length) throws SQLException;
 }

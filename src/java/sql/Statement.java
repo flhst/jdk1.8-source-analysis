@@ -40,6 +40,12 @@ package java.sql;
  * @see Connection#createStatement
  * @see ResultSet
  */
+// 门面设计模式
+// 用于执行SQL语句，并获取结果集，提供了执行SQL语句，返回结果集
+// 通常与Connection对象一起使用，提供了以下几种方式来执行SQL语句
+// execute：执行任意类型的SQL语句
+// executeQuery：仅执行select查询语句，并返回结果集
+// executeUpdate：执行insert、update、delete语句，并返回受影响的行数
 public interface Statement extends Wrapper, AutoCloseable {
 
     /**
@@ -62,6 +68,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * method has been exceeded and has at least attempted to cancel
      * the currently running {@code Statement}
      */
+    // 执行select查询语句，并返回结果集
     ResultSet executeQuery(String sql) throws SQLException;
 
     /**
@@ -87,6 +94,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * method has been exceeded and has at least attempted to cancel
      * the currently running {@code Statement}
      */
+    // 执行insert、update、delete语句，并返回受影响的行数
     int executeUpdate(String sql) throws SQLException;
 
     /**
@@ -278,6 +286,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @exception SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      */
+    // 获取当前的警告信息
     SQLWarning getWarnings() throws SQLException;
 
     /**
@@ -290,6 +299,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @exception SQLException if a database access error occurs or
      * this method is called on a closed <code>Statement</code>
      */
+    // 清除当前的警告信息
     void clearWarnings() throws SQLException;
 
     /**
@@ -351,6 +361,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @see #getUpdateCount
      * @see #getMoreResults
      */
+    // 执行任意类型的SQL语句，并返回一个布尔值，指示是否返回结果集
     boolean execute(String sql) throws SQLException;
 
     /**
@@ -363,6 +374,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * this method is called on a closed <code>Statement</code>
      * @see #execute
      */
+    // 获取当前的结果集
     ResultSet getResultSet() throws SQLException;
 
     /**
@@ -376,6 +388,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * this method is called on a closed <code>Statement</code>
      * @see #execute
      */
+    // 获取当前的更新计数
     int getUpdateCount() throws SQLException;
 
     /**

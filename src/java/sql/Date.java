@@ -40,6 +40,7 @@ import java.time.LocalDate;
  * hours, minutes, seconds, and milliseconds to zero in the particular
  * time zone with which the instance is associated.
  */
+// 使用给定毫秒值构造一个Date对象
 public class Date extends java.util.Date {
 
     /**
@@ -71,6 +72,7 @@ public class Date extends java.util.Date {
      *        A negative number indicates the number of milliseconds
      *        before January 1, 1970, 00:00:00 GMT.
      */
+    // 使用给定毫秒时间值构造一个Date对象
     public Date(long date) {
         // If the millisecond date value contains time info, mask it out.
         super(date);
@@ -90,6 +92,7 @@ public class Date extends java.util.Date {
      *        A negative number indicates the number of milliseconds
      *        before January 1, 1970, 00:00:00 GMT.
      */
+    // 使用给定毫秒时间值设置现有 Date 对象。
     public void setTime(long date) {
         // If the millisecond date value contains time info, mask it out.
         super.setTime(date);
@@ -107,6 +110,7 @@ public class Date extends java.util.Date {
      * @throws IllegalArgumentException if the date given is not in the
      *         JDBC date escape format (yyyy-[m]m-[d]d)
      */
+    // 将JDBC日期转义形式的字符串转换为Date值。
     public static Date valueOf(String s) {
         final int YEAR_LENGTH = 4;
         final int MONTH_LENGTH = 2;
@@ -153,6 +157,7 @@ public class Date extends java.util.Date {
      * <P>
      * @return a String in yyyy-mm-dd format
      */
+    // 格式化日期，转义形式 yyyy-mm-dd 的日期。
     @SuppressWarnings("deprecation")
     public String toString () {
         int year = super.getYear() + 1900;
@@ -287,6 +292,8 @@ public class Date extends java.util.Date {
      *
      * @since 1.8
      */
+    // 将此Date对象转换为LocalDate
+    // 该转换创建一个LocalDate ，它表示与本地时区中的此Date相同的日期值
     @SuppressWarnings("deprecation")
     public LocalDate toLocalDate() {
         return LocalDate.of(getYear() + 1900, getMonth() + 1, getDate());

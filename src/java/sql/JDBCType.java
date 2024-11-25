@@ -31,6 +31,11 @@ package java.sql;
  * @see SQLType
  * @since 1.8
  */
+// java.sql.JDBCType是一个枚举类。
+// 该类中定义了JDBC类型的常量，这些常量对应于SQL数据类型。
+// 每个常量都具有一个整数值，
+// 该值是在java.sql.Types中定义的JDBC数据类型代码。
+// 该类中定义了java.sql.JDBCType枚举常量，这些常量包含了大多数常见的SQL数据类型。
 public enum JDBCType implements SQLType {
 
     /**
@@ -221,6 +226,7 @@ public enum JDBCType implements SQLType {
      *{@inheritDoc }
      * @return The name of this {@code SQLType}.
      */
+    // 用于获取类型名称
     public String getName() {
         return name();
     }
@@ -229,6 +235,7 @@ public enum JDBCType implements SQLType {
      * @return  The name of the vendor for this data type which is
      * {@literal java.sql} for JDBCType.
      */
+    // 用于获取供应商名称
     public String getVendor() {
         return "java.sql";
     }
