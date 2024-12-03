@@ -37,7 +37,9 @@ import javax.xml.validation.Schema;
  * @version $Revision: 1.9 $, $Date: 2010/05/25 16:19:44 $
 
  */
-
+// 这段代码定义类DocumentBuilderFactory类
+// 用于创建DocuemntBuilder实例
+// DocumentBuilder用于解析XML文档并生成DOM树
 public abstract class DocumentBuilderFactory {
 
     private boolean validating = false;
@@ -116,6 +118,7 @@ public abstract class DocumentBuilderFactory {
      * java.util.ServiceConfigurationError service configuration error} or if
      * the implementation is not available or cannot be instantiated.
      */
+    // 静态方法，用于创建DocumentBuilderFactory实例
     public static DocumentBuilderFactory newInstance() {
         return FactoryFinder.find(
                 /* The default property name according to the JAXP spec */
@@ -158,6 +161,7 @@ public abstract class DocumentBuilderFactory {
      *
      * @since 1.6
      */
+    // 通过指定的类名和类加载器来创建
     public static DocumentBuilderFactory newInstance(String factoryClassName, ClassLoader classLoader){
             //do not fallback if given classloader can't find the class, throw exception
             return FactoryFinder.newInstance(DocumentBuilderFactory.class,
@@ -173,7 +177,7 @@ public abstract class DocumentBuilderFactory {
      * @throws ParserConfigurationException if a DocumentBuilder
      *   cannot be created which satisfies the configuration requested.
      */
-
+    // 创建一个新的 DocumentBuilder 实例，用于解析 XML 文档。
     public abstract DocumentBuilder newDocumentBuilder()
         throws ParserConfigurationException;
 

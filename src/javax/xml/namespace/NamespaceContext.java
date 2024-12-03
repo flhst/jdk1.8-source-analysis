@@ -78,7 +78,11 @@ import java.util.Iterator;
  *   Namespaces in XML Errata</a>
  * @since 1.5
  */
-
+// 只读XML接口名称空间上下文处理。
+// 功能：
+//      1、获取命名空间URI：通过给定的前缀获取当前作用域内的命名空间URI。
+//      2、获取前缀：通过给定的命名空间URI获取当前作用域内的前缀。
+//      3、获取所有前缀：通过给定的命名空间URI获取当前作用域内所有绑定的前缀。
 public interface NamespaceContext {
 
     /**

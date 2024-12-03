@@ -58,7 +58,7 @@ import org.xml.sax.SAXException;
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
  */
-
+// 用于解析XML文档并生成DOM树
 public abstract class DocumentBuilder {
 
 
@@ -83,6 +83,7 @@ public abstract class DocumentBuilder {
      *
      * @since 1.5
      */
+    // reset() 方法将 DocumentBuilder 重置为初始状态，以便重复使用。
     public void reset() {
 
         // implementors should override this method
@@ -110,7 +111,7 @@ public abstract class DocumentBuilder {
      *
      * @see org.xml.sax.DocumentHandler
      */
-
+    // parse(InputStream) 方法解析给定的 InputStream 并返回一个新 DOM Document 对象。
     public Document parse(InputStream is)
         throws SAXException, IOException {
         if (is == null) {
@@ -138,7 +139,8 @@ public abstract class DocumentBuilder {
      *
      * @see org.xml.sax.DocumentHandler
      */
-
+    // 解析 XML 文档并生成 DOM 树
+    // systemId 为InputSource的系统标识符
     public Document parse(InputStream is, String systemId)
         throws SAXException, IOException {
         if (is == null) {
@@ -166,7 +168,7 @@ public abstract class DocumentBuilder {
      *
      * @see org.xml.sax.DocumentHandler
      */
-
+    // 从指定的 URI中 解析 XML 文档
     public Document parse(String uri)
         throws SAXException, IOException {
         if (uri == null) {
@@ -192,7 +194,7 @@ public abstract class DocumentBuilder {
      * @see org.xml.sax.DocumentHandler
      * @return A new DOM Document object.
      */
-
+    // 从文件中解析XML文档
     public Document parse(File f) throws SAXException, IOException {
         if (f == null) {
             throw new IllegalArgumentException("File cannot be null");
@@ -221,7 +223,7 @@ public abstract class DocumentBuilder {
      *
      * @see org.xml.sax.DocumentHandler
      */
-
+    // 从InputSource中解析XML文档
     public abstract Document parse(InputSource is)
         throws SAXException, IOException;
 

@@ -47,17 +47,30 @@ package javax.xml.xpath;
  *
  * @since 1.5
  */
+// 用于创建XPath实例。
+// 功能：
+// 1、创建 XPathFactory 实例：
+//      newInstance()：使用默认对象模型（W3C DOM）创建 XPathFactory 实例。
+//      newInstance(String uri)：根据指定的对象模型URI创建 XPathFactory 实例。
+//      newInstance(String uri, String factoryClassName, ClassLoader classLoader)：根据指定的工厂类名和类加载器创建 XPathFactory 实例。
+// 2、配置和查询 XPathFactory：
+//      isObjectModelSupported(String objectModel)：检查是否支持指定的对象模型。
+//      setFeature(String name, boolean value) 和 getFeature(String name)：设置和获取特性。
+//      setXPathVariableResolver(XPathVariableResolver resolver) 和 setXPathFunctionResolver(XPathFunctionResolver resolver)：设置变量解析器和函数解析器。
+//      newXPath()：创建一个新的 XPath 实例。
 public abstract class XPathFactory {
 
 
     /**
      * <p>The default property name according to the JAXP spec.</p>
      */
+    // 默认属性名称
     public static final String DEFAULT_PROPERTY_NAME = "javax.xml.xpath.XPathFactory";
 
     /**
      * <p>Default Object Model URI.</p>
      */
+    // 默认对象模型URI
     public static final String DEFAULT_OBJECT_MODEL_URI = "http://java.sun.com/jaxp/xpath/dom";
 
     /**

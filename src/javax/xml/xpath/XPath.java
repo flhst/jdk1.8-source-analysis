@@ -98,6 +98,15 @@ import javax.xml.namespace.NamespaceContext;
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version 1.0</a>
  * @since 1.5
  */
+// 提供XPath表达式的评估环境和方法。
+// 1、变量解析：
+//      通过 setXPathVariableResolver 和 getXPathVariableResolver 方法设置和获取变量解析器。
+// 2、函数解析：
+//      通过 setXPathFunctionResolver 和 getXPathFunctionResolver 方法设置和获取函数解析器。
+// 3、命名空间上下文：
+//      通过 setNamespaceContext 和 getNamespaceContext 方法设置和获取命名空间上下文。
+// 4、编译和评估XPath表达式：
+//      通过 compile 方法编译XPath表达式，通过 evaluate 方法在指定上下文中评估XPath表达式并返回结果。
 public interface XPath {
 
         /**
